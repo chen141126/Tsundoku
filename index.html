@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fff9f6">
+<meta name="description" content="吋讀：家庭藏書登記與查詢">
+<title>吋讀 Tsundoku</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon-64.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&amp;display=swap">
+<style>
+:root{
+  /* Layout: warm paper shell (big page titles, white cards), wooden bookcases with book spines, floating tab bar with an orange scan button */
+  --bg:#fff9f6;
+  --peach:#fad3c0;
+  --orange:#ff8d22;
+  --brown:#905333;
+  --wood:#7a5642;
+  --ink:#34241c;
+  --white:#ffffff;
+  --soft:#fdebe2;
+  --line:#f0cdb9;
+  --line-2:#f6e2d8;
+  --cell:#fff3ec;
+  --ok:#4f7a28;
+  --danger:#b3261e;
+  --font:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",system-ui,sans-serif;
+  --shadow:0 1px 2px rgba(52,36,28,.06),0 6px 20px rgba(52,36,28,.06);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--font);-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2.5px solid var(--orange);outline-offset:2px}
+[hidden]{display:none !important}
+#app{height:100%;display:flex;flex-direction:column;position:relative}
+main{flex:1;overflow-y:auto;overflow-x:hidden}
+.page{max-width:720px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 16px) 16px 132px;display:flex;flex-direction:column;gap:14px}
+.page.no-tabs{padding-bottom:40px}
+.page-head{display:flex;flex-direction:column;gap:4px;padding:0 4px 4px}
+.toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;margin:0 -10px 2px}
+.toprow.brand{margin:0 0 2px}
+.brandrow{display:flex;align-items:center;gap:8px}
+.brandrow img{width:30px;height:40px;object-fit:contain}
+.brandword{font-weight:900;font-size:20px;letter-spacing:.08em;color:var(--brown)}
+.toprow .mid{font-size:15px;font-weight:700}
+.toprow .acts{display:flex;align-items:center;gap:8px}
+h1.title{margin:4px 0 0;font-size:34px;font-weight:900;line-height:1.2;letter-spacing:.02em}
+h1.title .nick{font-size:20px;font-weight:500;color:var(--wood);margin-left:10px;letter-spacing:0}
+.sub{margin:0;font-size:14px;color:var(--wood)}
+.icon-btn{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:14px;border:0;background:transparent;color:var(--ink)}
+.icon-btn:hover{background:var(--soft)}
+.icon-btn svg{width:22px;height:22px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:46px;padding:0 18px;border-radius:14px;border:1.5px solid var(--line);background:var(--white);color:var(--ink);font-weight:700;font-size:15px}
+.btn:hover{border-color:var(--brown)}
+.btn.primary{background:var(--brown);border-color:var(--brown);color:#fff9f6}
+.btn.primary:hover{background:#7f4729;border-color:#7f4729}
+.btn.accent{background:var(--orange);border-color:var(--orange);color:#ffffff}
+.btn.soft{background:var(--peach);border-color:var(--peach);color:var(--ink)}
+.btn.soft:hover{border-color:var(--brown)}
+.btn.danger{background:transparent;border-color:var(--danger);color:var(--danger)}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.ghost:hover{background:var(--soft)}
+.btn.small{min-height:38px;padding:0 14px;font-size:14px;border-radius:12px}
+.btn.wide{width:100%}
+.btn svg{width:18px;height:18px}
+.link{background:none;border:0;padding:0;color:var(--brown);text-decoration:underline;font-weight:700}
+.card{display:block;width:100%;text-align:left;background:var(--white);border:0;border-radius:22px;padding:16px;color:inherit;box-shadow:var(--shadow)}
+button.card:active{transform:scale(.99)}
+.card h2{margin:0 0 6px;font-size:16px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.muted{color:var(--wood)}
+.small{font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;background:var(--soft);font-size:12px;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.chip.code{border-radius:8px;background:var(--brown);color:#fff9f6;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace}
+.chip.line{background:transparent;box-shadow:inset 0 0 0 1px var(--orange)}
+.banner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;border-radius:16px;font-size:13px;background:var(--soft)}
+.banner.warn{background:#fff0e3;box-shadow:inset 0 0 0 1.5px var(--orange)}
+.banner.err{background:#fdecea;box-shadow:inset 0 0 0 1.5px var(--danger)}
+.banner p{margin:0;flex:1;min-width:180px}
+.room{display:flex;flex-direction:column;gap:14px;padding:18px 18px 16px}
+.room-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.room-name{display:block;font-size:24px;font-weight:900;line-height:1.25}
+.bignum{display:flex;align-items:baseline;gap:3px;flex:none}
+.bignum b{font-size:28px;font-weight:900;color:var(--brown);line-height:1;font-variant-numeric:tabular-nums}
+.bignum span{font-size:13px;color:var(--wood)}
+.shelfstrip{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;padding:14px 14px 12px;border-radius:14px;background:var(--soft);min-height:70px;position:relative}
+.shelfstrip::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;border-radius:0 0 14px 14px;background:#e9b79c}
+.mini{display:grid;gap:2.5px;align-items:end;padding:2px}
+.mini i{display:flex;align-items:flex-end;gap:1px;padding:0 1px;background:var(--cell);outline:2px solid var(--wood);border-radius:1px}
+.mini i.o{background:transparent;outline:0}
+.mini b{display:block;flex:none;width:2px;border-radius:1px 1px 0 0}
+.cab{display:flex;gap:16px;align-items:center}
+.cabthumb{flex:none;width:112px;min-height:104px;border-radius:16px;background:var(--soft);display:grid;place-items:center;padding:10px}
+.cabinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.cabinfo .t{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.cabinfo .t b{font-size:21px;font-weight:900}
+.cabinfo .n{display:flex;align-items:baseline;gap:4px}
+.cabinfo .n b{font-size:22px;font-weight:900;color:var(--brown);font-variant-numeric:tabular-nums}
+.chev{flex:none;color:var(--wood);width:18px;height:18px}
+.add-row{width:100%;min-height:52px;border-radius:18px;border:1.5px dashed #d9a387;background:transparent;color:var(--brown)}
+.add-row:hover{border-color:var(--brown)}
+.empty{text-align:center;padding:28px 16px}
+.empty h2{margin:0 0 6px;font-size:17px}
+.hint{margin:0;font-size:13px;line-height:1.6;color:var(--wood)}
+.board-wrap{overflow-x:auto;margin:0 -16px;padding:8px 20px 16px}
+.board{display:grid;gap:6px;grid-template-columns:18px repeat(var(--cols),minmax(42px,1fr));min-width:min-content;filter:drop-shadow(0 10px 12px rgba(52,36,28,.16))}
+.board.editing{grid-template-columns:26px repeat(var(--cols),minmax(32px,1fr));gap:5px;filter:none}
+.hdr{display:grid;place-items:center;font-size:11px;color:var(--wood);font-variant-numeric:tabular-nums;background:none;border:0;padding:0;border-radius:8px}
+button.hdr{background:var(--peach);color:var(--ink);font-weight:700;font-size:12px}
+.cell{position:relative;min-width:0;border:0;border-radius:3px;background:var(--cell);color:var(--ink);padding:0;display:block;overflow:hidden;box-shadow:0 0 0 3.5px var(--wood),inset 0 7px 8px -7px rgba(52,36,28,.45)}
+.cell.off{background:transparent;box-shadow:none;visibility:hidden}
+button.cell:hover{box-shadow:0 0 0 3.5px var(--wood),0 0 0 6.5px var(--orange),inset 0 7px 8px -7px rgba(52,36,28,.45)}
+.cell .lbl{position:absolute;top:3px;left:5px;font-size:10px;line-height:1.2;color:var(--wood);z-index:1}
+.cell .cnt{position:absolute;top:3px;right:5px;font-size:11px;line-height:1.2;font-weight:700;z-index:1}
+.cell .spines{position:absolute;left:4px;right:4px;bottom:0;top:18px;display:flex;align-items:flex-end;gap:1px;overflow:hidden}
+.cell .spines i{flex:none;width:3.5px;border-radius:1.5px 1.5px 0 0}
+.legend{display:flex;align-items:center;gap:10px;margin:2px 4px 0;font-size:12.5px;line-height:1.6;color:var(--wood)}
+.legend .sp{flex:none;display:flex;align-items:flex-end;gap:1px;height:18px}
+.legend .sp i{width:3.5px;border-radius:1px}
+.editing .cell{display:grid;place-items:center;visibility:visible;overflow:visible;border:1.5px solid var(--line);border-radius:10px;background:var(--white);box-shadow:0 1px 2px rgba(52,36,28,.06);touch-action:none;user-select:none;-webkit-user-select:none;cursor:pointer}
+.editing .cell.off{background:transparent;border:1.5px dashed #e4b49b;box-shadow:none}
+.editing .cell .lbl{left:6px}
+.editing .cell.off .lbl{opacity:.55}
+.cell .dep{font-size:15px;color:var(--wood)}
+.cell .dep.set{font-weight:900;color:var(--ink);background:var(--peach);border-radius:8px;padding:0 7px}
+.editing .cell.tall{background-image:repeating-linear-gradient(135deg,transparent 0 6px,rgba(255,141,34,.15) 6px 12px)}
+.cell .tallmark{position:absolute;bottom:3px;right:4px;font-size:10px;line-height:1.5;padding:0 5px;border-radius:5px;background:var(--brown);color:#fff9f6}
+.form{display:flex;flex-direction:column;gap:14px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.grid-code{display:grid;grid-template-columns:84px minmax(0,1fr);gap:10px}
+.field{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--wood);min-width:0}
+.field input,.field textarea{width:100%;background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--ink);font-size:16px}
+.field input{height:46px}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,141,34,.18)}
+.field textarea{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;line-height:1.6;resize:vertical}
+.stepper{display:flex;align-items:center;justify-content:space-between;height:46px;border-radius:12px;background:var(--soft);padding:0 4px}
+.stepper button{width:38px;height:38px;border-radius:10px;border:0;background:var(--white);color:var(--ink);font-size:20px}
+.stepper output{font-size:18px;font-weight:900;color:var(--ink);font-variant-numeric:tabular-nums}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;padding:4px;border-radius:14px;background:var(--soft)}
+.seg button{border:0;background:transparent;min-height:38px;padding:0 8px;border-radius:10px;font-size:14px;color:var(--wood)}
+.seg button[aria-checked="true"],.seg button[aria-selected="true"]{background:var(--white);color:var(--ink);font-weight:700;box-shadow:0 1px 4px rgba(52,36,28,.12)}
+.tools{background:var(--wood);color:#fff9f6;border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.tools .seg{background:transparent;padding:0;gap:6px}
+.tools .seg.big button{min-height:58px;border-radius:14px;background:rgba(255,249,246,.1);color:#fff9f6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:13px}
+.tools .seg.big button svg{width:20px;height:20px}
+.tools .seg.small button{min-height:34px;background:rgba(255,249,246,.1);color:#fff9f6}
+.tools .seg button[aria-checked="true"]{background:var(--orange);color:#ffffff;font-weight:700;box-shadow:none}
+.tools p{margin:0;font-size:12.5px;line-height:1.6;color:var(--peach)}
+.summary{margin:0;font-size:13px;color:var(--wood);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.group{display:flex;flex-direction:column;gap:8px}
+.group > h2{margin:0 6px;font-size:13px;font-weight:700;color:var(--wood);letter-spacing:.06em}
+.list{background:var(--white);border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border:0;border-bottom:1px solid var(--line-2);background:transparent;text-align:left;font-size:15px;color:var(--ink)}
+.row:last-child{border-bottom:0}
+button.row:hover{background:var(--bg)}
+.row .ic{flex:none;width:36px;height:36px;border-radius:11px;background:var(--soft);display:grid;place-items:center;color:var(--brown)}
+.row .ic svg{width:20px;height:20px}
+.row .tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.row .tx b{font-size:15px}
+.row .tx span{font-size:12px;color:var(--wood);word-break:break-all}
+.row .mono{font-family:ui-monospace,Menlo,monospace}
+.status{display:flex;align-items:center;gap:5px;flex:none;font-size:12px;font-weight:700;color:var(--ok)}
+.status::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.status.demo{color:var(--brown)}
+.owners{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.owner{display:inline-flex;align-items:center;gap:2px;height:38px;padding:0 4px 0 14px;border-radius:999px;background:var(--peach);font-size:15px;font-weight:700}
+.owner button{width:30px;height:30px;border-radius:50%;border:0;background:transparent;color:var(--wood);font-size:16px}
+.owner button:hover{background:rgba(255,255,255,.6);color:var(--ink)}
+.add-chip{height:38px;padding:0 14px;border-radius:999px;border:1.5px dashed #d9a387;background:transparent;color:var(--brown);font-size:14px;font-weight:700}
+.backup-status{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:var(--soft);margin-bottom:12px}
+.backup-status b{display:block;font-size:20px;font-weight:900}
+.about{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.about b{font-size:17px;font-weight:900;color:var(--brown);letter-spacing:.04em}
+.stats{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px}
+.stats b{display:block;font-size:40px;font-weight:900;color:var(--brown);line-height:1.05;font-variant-numeric:tabular-nums}
+.roadmap{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+.roadmap li{display:flex;gap:10px;align-items:flex-start;font-size:14px}
+.roadmap .st{flex:none;width:54px;text-align:center;padding:1px 0;border-radius:999px;font-size:12px;font-weight:700;background:var(--soft);color:var(--wood)}
+.roadmap .st.done{background:#e6efdc;color:var(--ok)}
+.roadmap .st.next{background:var(--orange);color:#ffffff}
+.soon{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:30px 20px}
+.soon .badge{width:64px;height:64px;border-radius:50%;background:var(--soft);display:grid;place-items:center;color:var(--brown)}
+.soon .badge svg{width:30px;height:30px}
+.soon h2{margin:0;font-size:18px}
+.tabbar{position:absolute;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));max-width:560px;margin:0 auto;height:66px;border-radius:24px;background:var(--white);box-shadow:0 10px 30px rgba(52,36,28,.16);display:flex;align-items:center;justify-content:space-around;padding:0 4px;z-index:5}
+.tabbar button{display:flex;flex-direction:column;align-items:center;gap:3px;width:62px;padding:0;border:0;background:transparent;color:var(--wood);font-size:11px}
+.tabbar .ico{display:grid;place-items:center;padding:3px 14px;border-radius:12px}
+.tabbar svg{width:22px;height:22px}
+.tabbar button.on{color:var(--ink);font-weight:700}
+.tabbar button.on .ico{background:var(--peach)}
+.tabbar .fab{color:var(--ink);font-weight:700}
+.tabbar .fab .ico{width:58px;height:58px;margin-top:-32px;padding:0;border-radius:50%;background:var(--orange);color:#ffffff;border:4px solid var(--bg);box-shadow:0 6px 16px rgba(255,141,34,.38)}
+.tabbar .fab.on .ico{background:var(--orange);box-shadow:0 0 0 3px var(--peach),0 6px 16px rgba(255,141,34,.38)}
+.tabbar .fab svg{width:24px;height:24px}
+.center-screen{height:100%;overflow:auto;display:flex;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 40px) 20px 32px}
+.setup{width:100%;max-width:440px;display:flex;flex-direction:column;gap:18px}
+.hero{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 0 6px}
+.hero img{width:130px;height:174px;object-fit:contain}
+.hero h1{margin:4px 0 0;font-size:48px;font-weight:900;letter-spacing:.12em;color:var(--brown);line-height:1.1}
+.hero p{margin:0;font-size:14px;color:var(--wood);letter-spacing:.04em;text-align:center}
+.card-head{display:flex;align-items:center;gap:10px}
+.card-head h2{margin:0;font-size:18px}
+.stepnum{flex:none;width:28px;height:28px;border-radius:50%;background:var(--peach);font-weight:700;font-size:14px;display:grid;place-items:center}
+.dashed{display:flex;align-items:center;gap:14px;padding:18px 20px;border-radius:22px;border:1.5px dashed #e4b49b}
+.dashed .tx{flex:1;display:flex;flex-direction:column;gap:3px}
+.dashed .tx b{font-size:16px}
+.footnote{margin:auto 0 0;text-align:center;font-size:12px;color:var(--wood)}
+.spinner{width:36px;height:36px;margin:0 auto;border-radius:50%;border:3px solid var(--peach);border-top-color:var(--orange);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.layer{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(52,36,28,.45)}
+.layer.as-sheet{align-items:flex-end;padding:0}
+.dlg{position:relative;width:100%;max-width:440px;max-height:86vh;overflow:auto;background:var(--bg);border-radius:22px;padding:20px 18px 18px;box-shadow:0 20px 60px rgba(52,36,28,.28)}
+.as-sheet .dlg{max-width:560px;border-radius:28px 28px 0 0;padding:28px 20px calc(20px + env(safe-area-inset-bottom,0px))}
+.as-sheet .dlg::before{content:"";position:absolute;top:10px;left:50%;width:44px;height:5px;margin-left:-22px;border-radius:3px;background:#e4b49b}
+.dlg h2{margin:0 0 10px;font-size:18px;font-weight:900;word-break:break-all}
+.dlg-body p{margin:0 0 10px}
+.dlg-body .field{margin-bottom:4px}
+.dlg-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:16px}
+.dlg-actions.vertical{flex-direction:column}
+.dlg-actions.vertical .btn{width:100%}
+.sheet-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.sheet-head h2{margin:0;font-size:28px;line-height:1.2}
+.round-btn{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;border:0;background:var(--soft);color:var(--ink)}
+.round-btn svg{width:18px;height:18px}
+.depth-tabs{margin-top:14px}
+.depth-tabs button{min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.35}
+.depth-tabs button small{font-size:11px;font-weight:400;color:var(--wood)}
+.booklist{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:2px}
+.booklist li{display:flex;align-items:center;gap:12px;padding:8px 4px;border-radius:14px}
+.mcover{flex:none;width:38px;height:54px;border-radius:3px 6px 6px 3px;writing-mode:vertical-rl;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;letter-spacing:.05em;box-shadow:inset 3px 0 0 rgba(0,0,0,.15),0 2px 6px rgba(52,36,28,.18)}
+.binfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.binfo b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.binfo span{font-size:12px;color:var(--wood)}
+.emptylayer{margin:14px 0 4px;padding:18px;border-radius:16px;background:var(--soft);text-align:center;font-size:13px;color:var(--wood)}
+#toasts{position:fixed;left:0;right:0;bottom:calc(98px + env(safe-area-inset-bottom,0px));z-index:60;display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 16px;pointer-events:none}
+.toast{max-width:440px;padding:11px 16px;border-radius:14px;background:var(--wood);color:#fff9f6;font-size:14px;box-shadow:0 8px 24px rgba(52,36,28,.25)}
+.toast.err{background:var(--danger);color:#ffffff}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.spinner{animation-duration:3s}button.card:active{transform:none}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="layer"></div>
+<div id="toasts" aria-live="polite"></div>
+<script type="module">
+/* ========= 吋讀 Tsundoku · 第一階段：地基、書櫃編輯器、匯出備份 ========= */
+const VERSION = '0.1.2';
+const SCHEMA_VERSION = 1;
+const FB_VERSION = '10.12.2';
+const COLS = ['rooms', 'cabinets', 'categories', 'books'];
+// 以下常數是書籍資料規格的一部分，第二階段登記功能會用到
+const FORMATS = ['平裝', '精裝', '軟精裝', '線裝', '其他'];
+const ROLES = ['著', '譯', '編', '繪'];
+const READ_STATUS = { unread: '未閱讀', reading: '閱讀中', done: '閱畢', dropped: '棄讀' };
+const LANGS = { eng: '英語', jpn: '日語', kor: '韓語', fra: '法語', deu: '德語', spa: '西班牙語' };
+const MAX_ROWS = 26, MAX_COLS = 30;
+
+/* ---------- 小工具 ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+const newId = () => { try { return crypto.randomUUID().replace(/-/g, '').slice(0, 20); } catch (e) { return Date.now().toString(36) + Math.random().toString(36).slice(2, 12); } };
+const nowISO = () => new Date().toISOString();
+const clone = o => JSON.parse(JSON.stringify(o));
+const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '';
+const daysSince = iso => iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 86400000) : Infinity;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+const stamp = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`; };
+
+const MEM = {};
+const LS = {
+  get(k) { try { const v = localStorage.getItem(k); if (v != null) return JSON.parse(v); } catch (e) {} return k in MEM ? MEM[k] : null; },
+  set(k, v) { MEM[k] = v; try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  del(k) { delete MEM[k]; try { localStorage.removeItem(k); } catch (e) {} }
+};
+
+/* ---------- 資料規格 v1 ---------- */
+function defaultMeta() { return { owners: ['爸爸', '我'], lastBackupAt: null }; }
+function newRoom(name, order) { return { id: newId(), name, order, createdAt: nowISO() }; }
+function newCabinet(roomId, code) {
+  const t = nowISO();
+  // r = 由上往下第幾列（0 起算），c = 由左往右第幾欄；off/tall/depth 的鍵為 "r-c"
+  return { id: newId(), roomId, code, name: '', rows: 5, cols: 4, defaultDepth: 2, numbering: 'top', off: [], tall: [], depth: {}, createdAt: t, updatedAt: t };
+}
+function newBook(p = {}) {
+  const t = nowISO();
+  return Object.assign({
+    id: newId(), schemaVersion: SCHEMA_VERSION,
+    title: '', subtitle: '', series: '', volume: null, edition: '',
+    authors: [],               // [{ name: '唐德剛', role: '著' }]
+    publisher: '', publishedDate: '',   // YYYY、YYYY-MM 或 YYYY-MM-DD
+    isbn: '',                  // 13 碼，不含連字號
+    format: '', language: '', script: '', // language: ISO 639-2（zho、eng…）；script: Hant / Hans
+    pages: null, categories: [], summary: '', cover: '',
+    ownership: 'owned',        // owned 已收藏 / wishlist 願望清單
+    owner: '', location: null, // { cabinetId, r, c, depth }
+    locationNote: '', price: null, currency: 'TWD', purchaseDate: '', tags: [],
+    rating: null, readStatus: 'unread', currentPage: null, startDate: '', finishDate: '', favorite: false, review: '',
+    loan: null, loanHistory: [], verified: false, addedAt: t, updatedAt: t
+  }, p);
+}
+
+/* ---------- 書櫃座標 ---------- */
+const cellKey = (r, c) => r + '-' + c;
+const splitKey = k => k.split('-').map(Number);
+const rowLetter = (cab, r) => String.fromCharCode(65 + (cab.numbering === 'bottom' ? cab.rows - 1 - r : r));
+const cellLabel = (cab, r, c) => rowLetter(cab, r) + (c + 1);
+const isOff = (cab, k) => cab.off.includes(k);
+const isTall = (cab, k) => cab.tall.includes(k) && !isOff(cab, k);
+const cellDepth = (cab, k) => (cab.depth && cab.depth[k]) || cab.defaultDepth;
+function activeCount(cab) { let n = 0; for (let r = 0; r < cab.rows; r++) for (let c = 0; c < cab.cols; c++) if (!isOff(cab, cellKey(r, c))) n++; return n; }
+function tallRows(cab) { const s = new Set(); cab.tall.forEach(k => { const [r, c] = splitKey(k); if (r < cab.rows && c < cab.cols && !isOff(cab, k)) s.add(r); }); return s; }
+function locValid(cab, loc) {
+  if (!loc || loc.r >= cab.rows || loc.c >= cab.cols) return false;
+  const k = cellKey(loc.r, loc.c);
+  return !isOff(cab, k) && loc.depth >= 1 && loc.depth <= cellDepth(cab, k);
+}
+function locCode(book) {
+  const loc = book.location; if (!loc) return '';
+  const cab = B().cache.cabinets[loc.cabinetId]; if (!cab) return '';
+  const room = B().cache.rooms[cab.roomId];
+  return `${room ? room.name : '?'}-${cab.code}-${cellLabel(cab, loc.r, loc.c)}-${loc.depth}`;
+}
+const authorsText = b => (b.authors || []).map(a => a.name + (a.role && a.role !== '著' ? `（${a.role}）` : '')).join('、');
+function langLabel(b) {
+  if (!b.language) return '';
+  if (b.language === 'zho') return b.script === 'Hans' ? '簡體中文' : '正體中文';
+  return LANGS[b.language] || b.language;
+}
+
+/* ---------- 示範資料 ---------- */
+function demoSeed() {
+  const r1 = newRoom('書房一', 1), r2 = newRoom('書房二', 2), r3 = newRoom('我的房間', 3);
+  const c1 = { ...newCabinet(r1.id, 1), rows: 6, cols: 5, defaultDepth: 2, tall: ['5-0', '5-1', '5-2', '5-3', '5-4'] };
+  const c2 = { ...newCabinet(r1.id, 2), name: '前後雙層', rows: 5, cols: 4, defaultDepth: 3 };
+  const stairOff = []; for (let r = 0; r < 3; r++) stairOff.push(r + '-1'); for (let r = 0; r < 6; r++) stairOff.push(r + '-2');
+  const c3 = { ...newCabinet(r2.id, 1), name: '階梯書架', rows: 9, cols: 3, defaultDepth: 2, numbering: 'bottom', off: stairOff };
+  const c4 = { ...newCabinet(r3.id, 1), name: '床邊', rows: 4, cols: 3, defaultDepth: 2, depth: { '0-0': 1, '0-1': 1, '0-2': 1 } };
+  const list = [['紅樓夢', '曹雪芹'], ['西遊記', '吳承恩'], ['水滸傳', '施耐庵'], ['三國演義', '羅貫中'], ['儒林外史', '吳敬梓'], ['聊齋誌異', '蒲松齡'], ['浮生六記', '沈復'], ['人間詞話', '王國維'], ['老殘遊記', '劉鶚'], ['史記', '司馬遷'], ['論語', '孔子弟子'], ['唐詩三百首', '蘅塘退士'], ['往事知多少', '唐德剛'], ['鏡花緣', '李汝珍'], ['閱微草堂筆記', '紀昀'], ['世說新語', '劉義慶'], ['文心雕龍', '劉勰'], ['陶庵夢憶', '張岱']];
+  const spots = [[c1, 0, 0, 1], [c1, 0, 0, 1], [c1, 0, 0, 2], [c1, 0, 1, 1], [c1, 1, 2, 1], [c1, 1, 2, 2], [c1, 2, 3, 1], [c1, 5, 0, 1], [c2, 0, 0, 1], [c2, 0, 0, 3], [c2, 1, 1, 2], [c2, 2, 3, 1], [c3, 8, 0, 1], [c3, 8, 1, 1], [c3, 7, 2, 1], [c4, 0, 0, 1], [c4, 1, 1, 1], [c4, 1, 1, 2]];
+  const books = list.map(([title, a], i) => {
+    const [cab, r, c, depth] = spots[i];
+    return newBook({ title, authors: [{ name: a, role: '著' }], language: 'zho', script: 'Hant', owner: i < 15 ? '爸爸' : '我', location: { cabinetId: cab.id, r, c, depth }, verified: i % 3 === 0, demo: true });
+  });
+  return { schemaVersion: SCHEMA_VERSION, rooms: [r1, r2, r3], cabinets: [c1, c2, c3, c4], categories: [], books, photos: [], settings: defaultMeta() };
+}
+
+/* ---------- 資料來源：示範模式（存在這台裝置） ---------- */
+class LocalBackend {
+  constructor() { this.kind = 'demo'; this.cache = {}; this.photos = {}; this.meta = defaultMeta(); this.listeners = new Set(); }
+  async init() {
+    const saved = LS.get('tsundoku-demo-data');
+    this._load(saved && saved.schemaVersion === SCHEMA_VERSION ? saved : demoSeed());
+    this._save();
+  }
+  _load(d) {
+    for (const c of COLS) { this.cache[c] = {}; (d[c] || []).forEach(x => { this.cache[c][x.id] = x; }); }
+    this.photos = {}; (d.photos || []).forEach(p => { this.photos[p.id] = p; });
+    this.meta = Object.assign(defaultMeta(), d.settings || {});
+  }
+  _dump() { const o = { schemaVersion: SCHEMA_VERSION }; for (const c of COLS) o[c] = Object.values(this.cache[c]); o.photos = Object.values(this.photos); o.settings = clone(this.meta); return o; }
+  _save() { LS.set('tsundoku-demo-data', this._dump()); }
+  onChange(fn) { this.listeners.add(fn); }
+  _emit() { this.listeners.forEach(f => f()); }
+  put(col, obj) { obj = clone(obj); obj.updatedAt = nowISO(); this.cache[col][obj.id] = obj; this._save(); this._emit(); }
+  remove(col, id) { delete this.cache[col][id]; this._save(); this._emit(); }
+  putMeta(patch) { Object.assign(this.meta, clone(patch)); this._save(); this._emit(); }
+  async exportAll() { return this._dump(); }
+  async importAll(data, mode) {
+    if (mode === 'replace') { for (const c of COLS) this.cache[c] = {}; this.photos = {}; }
+    for (const c of COLS) (data[c] || []).forEach(x => { this.cache[c][x.id] = x; });
+    (data.photos || []).forEach(p => { this.photos[p.id] = p; });
+    if (data.settings) Object.assign(this.meta, data.settings);
+    this._save(); this._emit();
+  }
+  resetDemo() { this._load(demoSeed()); this._save(); this._emit(); }
+}
+
+/* ---------- 資料來源：Firebase ---------- */
+class FirebaseBackend {
+  constructor(cfg) { this.kind = 'firebase'; this.cfg = cfg; this.cache = {}; COLS.forEach(c => { this.cache[c] = {}; }); this.meta = defaultMeta(); this.listeners = new Set(); this.unsubs = []; this.user = null; }
+  async init() {
+    const base = `https://www.gstatic.com/firebasejs/${FB_VERSION}/`;
+    const [appM, authM, fsM] = await Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-firestore.js')]);
+    this.A = authM; this.F = fsM;
+    this.app = appM.initializeApp(this.cfg);
+    this.auth = authM.getAuth(this.app);
+    try { this.db = fsM.initializeFirestore(this.app, { localCache: fsM.persistentLocalCache({ tabManager: fsM.persistentMultipleTabManager() }) }); }
+    catch (e) { this.db = fsM.getFirestore(this.app); }
+    try { await authM.getRedirectResult(this.auth); } catch (e) { this.redirectError = e; }
+    this.user = await new Promise(res => { const off = authM.onAuthStateChanged(this.auth, u => { off(); res(u); }); });
+  }
+  async signIn() {
+    const p = new this.A.GoogleAuthProvider();
+    p.setCustomParameters({ prompt: 'select_account' });
+    try { const r = await this.A.signInWithPopup(this.auth, p); this.user = r.user; }
+    catch (e) {
+      if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') { await this.A.signInWithRedirect(this.auth, p); return; }
+      throw e;
+    }
+  }
+  async signOut() { this.unsubs.forEach(u => u()); this.unsubs = []; await this.A.signOut(this.auth); this.user = null; }
+  col(c) { return this.F.collection(this.db, 'users', this.user.uid, c); }
+  ref(c, id) { return this.F.doc(this.db, 'users', this.user.uid, c, id); }
+  startSync(onError) {
+    const F = this.F; let pending = COLS.length + 1;
+    return new Promise(resolve => {
+      const done = () => { if (--pending === 0) resolve(); };
+      for (const c of COLS) {
+        let first = true;
+        this.unsubs.push(F.onSnapshot(this.col(c), snap => {
+          const m = {}; snap.forEach(d => { m[d.id] = { ...d.data(), id: d.id }; });
+          this.cache[c] = m;
+          if (first) { first = false; done(); } else this._emit();
+        }, err => { onError(err); if (first) { first = false; done(); } }));
+      }
+      let firstM = true;
+      this.unsubs.push(F.onSnapshot(this.ref('meta', 'settings'), d => {
+        this.meta = Object.assign(defaultMeta(), d.exists() ? d.data() : {});
+        if (firstM) { firstM = false; done(); } else this._emit();
+      }, err => { onError(err); if (firstM) { firstM = false; done(); } }));
+    });
+  }
+  onChange(fn) { this.listeners.add(fn); }
+  _emit() { this.listeners.forEach(f => f()); }
+  _w(p) { p.catch(e => this.onWriteError && this.onWriteError(e)); }
+  put(col, obj) { obj = clone(obj); obj.updatedAt = nowISO(); this.cache[col][obj.id] = obj; this._emit(); this._w(this.F.setDoc(this.ref(col, obj.id), obj)); }
+  remove(col, id) { delete this.cache[col][id]; this._emit(); this._w(this.F.deleteDoc(this.ref(col, id))); }
+  putMeta(patch) { Object.assign(this.meta, clone(patch)); this._emit(); this._w(this.F.setDoc(this.ref('meta', 'settings'), clone(patch), { merge: true })); }
+  async exportAll() {
+    const o = { schemaVersion: SCHEMA_VERSION };
+    for (const c of COLS) o[c] = Object.values(this.cache[c]);
+    const ps = await this.F.getDocs(this.col('photos'));
+    o.photos = ps.docs.map(d => ({ ...d.data(), id: d.id }));
+    o.settings = clone(this.meta);
+    return o;
+  }
+  async importAll(data, mode) {
+    const F = this.F, ops = [], incoming = new Set();
+    for (const c of [...COLS, 'photos']) (data[c] || []).forEach(x => incoming.add(c + '/' + x.id));
+    if (mode === 'replace') {
+      for (const c of COLS) Object.keys(this.cache[c]).forEach(id => { if (!incoming.has(c + '/' + id)) ops.push(['del', c, id]); });
+      const ps = await F.getDocs(this.col('photos'));
+      ps.docs.forEach(d => { if (!incoming.has('photos/' + d.id)) ops.push(['del', 'photos', d.id]); });
+    }
+    for (const c of [...COLS, 'photos']) (data[c] || []).forEach(x => ops.push(['set', c, x.id, x]));
+    if (data.settings) ops.push(['meta', data.settings]);
+    const commits = [];
+    for (let i = 0; i < ops.length; i += 400) {
+      const b = F.writeBatch(this.db);
+      ops.slice(i, i + 400).forEach(op => {
+        if (op[0] === 'del') b.delete(this.ref(op[1], op[2]));
+        else if (op[0] === 'set') b.set(this.ref(op[1], op[2]), clone(op[3]));
+        else b.set(this.ref('meta', 'settings'), clone(op[1]), { merge: true });
+      });
+      commits.push(b.commit());
+    }
+    // 離線時寫入會先存在本機，連線後才送出，所以最多等 8 秒
+    await Promise.race([Promise.all(commits), sleep(8000)]);
+  }
+}
+
+/* ---------- App 狀態 ---------- */
+const app = { screen: 'loading', mode: null, B: null, tab: 'shelf', stack: [], draft: null, draftOrig: '', edTool: 'toggle', edDepth: 'default', histOK: false, ignorePop: false, preview: false, inFrame: false, loginError: '', syncError: '', loadingMsg: '' };
+const B = () => app.B;
+const cur = () => app.stack[app.stack.length - 1];
+const viewKey = v => v ? v.name + ':' + (v.id || '') : '';
+
+/* ---------- 圖示 ---------- */
+const svg = (inner, w = 2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+const ICON = {
+  back: svg('<path d="M15 5l-7 7 7 7"/>'),
+  close: svg('<path d="M6 6l12 12M18 6L6 18"/>', 2.2),
+  plus: svg('<path d="M12 5v14M5 12h14"/>'),
+  more: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
+  chev: '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>',
+  pencil: svg('<path d="M4 20h4L19 9l-4-4L4 16z"/>'),
+  arrow: svg('<path d="M5 12h14M13 6l6 6-6 6"/>'),
+  shelf: svg('<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M3.5 10h17M3.5 15.5h17M12 3.5v17"/>', 1.8),
+  books: svg('<rect x="4" y="4" width="4.5" height="16" rx="1"/><rect x="10" y="4" width="4.5" height="16" rx="1"/><path d="M16.2 5.5l3.2-.8 2.6 14.6-3.2.8z"/>', 1.8),
+  scan: svg('<path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M8.5 8.5v7M11 8.5v7M13.5 8.5v7M15.5 8.5v7"/>'),
+  loan: svg('<path d="M6 8h12l-3-3M18 16H6l3 3"/>', 1.8),
+  gear: svg('<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>', 1.8),
+  cloud: svg('<path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.1 10 4 4 0 0 0 7 18z"/>', 1.8),
+  user: svg('<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.5 4-5 7-5s5.8 1.5 7 5"/>', 1.8),
+  device: svg('<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 17.5h2"/>', 1.8),
+  download: svg('<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>'),
+  toggle: svg('<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5" stroke-dasharray="2 2"/>'),
+  tall: svg('<rect x="7" y="3" width="10" height="18" rx="1.5"/><path d="M12 7v10M10 9l2-2 2 2M10 15l2 2 2-2"/>'),
+  layers: svg('<path d="M4 9l8-4 8 4-8 4z"/><path d="M4 13l8 4 8-4"/><path d="M4 17l8 4 8-4" opacity=".6"/>')
+};
+const LOGO_IMG = '<img src="logo-mark.png" alt="" width="30" height="40">';
+
+/* ---------- 對話框與提示 ---------- */
+const openDialogs = [];
+function dialog({ title, body = '', actions = [], sheet = false, vertical = false, hideTitle = false, onOpen }) {
+  return new Promise(resolve => {
+    const el = document.createElement('div');
+    el.className = 'layer' + (sheet ? ' as-sheet' : '');
+    el.innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-label="${esc(title)}">${hideTitle ? '' : `<h2>${esc(title)}</h2>`}<div class="dlg-body">${body}</div>${actions.length ? `<div class="dlg-actions${vertical ? ' vertical' : ''}">${actions.map((a, i) => `<button type="button" class="btn ${a.kind || ''}" data-i="${i}">${esc(a.label)}</button>`).join('')}</div>` : ''}</div>`;
+    const entry = { el, close: v => { el.remove(); const i = openDialogs.indexOf(entry); if (i >= 0) openDialogs.splice(i, 1); resolve(v); } };
+    el.addEventListener('click', ev => {
+      if (ev.target === el) { entry.close(null); return; }
+      const btn = ev.target.closest('.dlg-actions button'); if (!btn) return;
+      const a = actions[+btn.dataset.i];
+      const v = a.get ? a.get(el) : (a.value === undefined ? null : a.value);
+      if (a.validate && !a.validate(el)) return;
+      entry.close(v);
+    });
+    el.addEventListener('keydown', ev => {
+      if (ev.key === 'Escape') entry.close(null);
+      if (ev.key === 'Enter' && ev.target.tagName === 'INPUT') { const i = actions.findIndex(a => a.kind === 'primary'); if (i >= 0) { ev.preventDefault(); el.querySelector(`.dlg-actions [data-i="${i}"]`).click(); } }
+    });
+    $('#layer').append(el); openDialogs.push(entry);
+    if (onOpen) onOpen(el, entry.close);
+    const f = el.querySelector('input,textarea') || el.querySelector('.dlg-actions .primary') || el.querySelector('.dlg-actions button');
+    if (f) setTimeout(() => f.focus(), 30);
+  });
+}
+const confirmBox = (title, msg, ok = '確定', danger = false) => dialog({ title, body: `<p>${esc(msg)}</p>`, actions: [{ label: '取消', kind: 'ghost', value: false }, { label: ok, kind: danger ? 'danger' : 'primary', value: true }] });
+const infoBox = (title, html) => dialog({ title, body: html, actions: [{ label: '知道了', kind: 'primary' }] });
+function promptBox(title, label, value = '', placeholder = '') {
+  return dialog({
+    title, body: `<label class="field"><span>${esc(label)}</span><input type="text" id="prompt-input" maxlength="30" value="${esc(value)}" placeholder="${esc(placeholder)}"></label>`,
+    actions: [{ label: '取消', kind: 'ghost', value: null }, { label: '確定', kind: 'primary', get: el => el.querySelector('input').value.trim(), validate: el => { const ok = !!el.querySelector('input').value.trim(); if (!ok) toast('請輸入名稱', 'err'); return ok; } }]
+  });
+}
+function toast(msg, kind = '') {
+  const t = document.createElement('div'); t.className = 'toast ' + kind; t.textContent = msg;
+  $('#toasts').append(t); setTimeout(() => t.remove(), kind === 'err' ? 5200 : 2600);
+}
+function errMsg(e) {
+  const c = (e && e.code) || '';
+  const map = {
+    'permission-denied': '沒有讀寫權限：請確認 firestore.rules 裡的 Email 和登入的 Google 帳號相同。',
+    'auth/unauthorized-domain': `這個網址（${location.hostname}）還不在 Firebase 的授權網域裡：到 Authentication → 設定 → 授權網域，把它加進去。`,
+    'auth/operation-not-allowed': 'Firebase 還沒開啟 Google 登入：到 Authentication → 登入方式，啟用 Google。',
+    'auth/network-request-failed': '網路連線失敗，請確認網路後再試一次。',
+    'auth/invalid-api-key': 'apiKey 不正確，請重新貼上 Firebase 設定。',
+    'auth/api-key-not-valid.-please-pass-a-valid-api-key.': 'apiKey 不正確，請重新貼上 Firebase 設定。',
+    'unavailable': '目前離線，資料會在連線後自動同步。'
+  };
+  return map[c] || (e && e.message) || String(e);
+}
+
+/* ---------- 導覽 ---------- */
+function pushLevel() { try { history.pushState({ tsundoku: true }, ''); app.histOK = true; } catch (e) { app.histOK = false; } }
+function go(v) { app.stack.push(v); pushLevel(); render(); }
+function requestBack() { if (app.histOK) history.back(); else doBack(); }
+async function doBack() {
+  const v = cur();
+  if (v && v.name === 'editor' && edDirty()) {
+    const ok = await confirmBox('放棄修改？', '這座書櫃的修改還沒儲存。', '放棄修改', true);
+    if (!ok) return false;
+    app.draft = null;
+  }
+  if (app.stack.length > 1) app.stack.pop();
+  render(); return true;
+}
+function popLevels(n) {
+  app.stack.length = Math.max(1, app.stack.length - n);
+  if (app.histOK) { app.ignorePop = true; try { history.go(-n); } catch (e) { app.ignorePop = false; } }
+  render();
+}
+window.addEventListener('popstate', async () => {
+  if (app.ignorePop) { app.ignorePop = false; return; }
+  if (openDialogs.length) { openDialogs[openDialogs.length - 1].close(null); pushLevel(); return; }
+  if (app.screen === 'main' && app.stack.length > 1) { const ok = await doBack(); if (!ok) pushLevel(); }
+});
+function switchTab(t) {
+  if (cur() && cur().name === 'editor' && edDirty()) { toast('請先儲存或放棄書櫃的修改', 'err'); return; }
+  app.draft = null; app.tab = t;
+  app.stack = [{ name: t === 'shelf' ? 'rooms' : t }];
+  render();
+}
+
+/* ---------- 計數 ---------- */
+function bookStats() {
+  const byCab = {}, byCell = {}, pendByCab = {};
+  let owned = 0, pending = 0, wish = 0;
+  for (const b of Object.values(B().cache.books)) {
+    if (b.ownership === 'wishlist') { wish++; continue; }
+    owned++; if (!b.verified) pending++;
+    const loc = b.location; if (!loc) continue;
+    byCab[loc.cabinetId] = (byCab[loc.cabinetId] || 0) + 1;
+    if (!b.verified) pendByCab[loc.cabinetId] = (pendByCab[loc.cabinetId] || 0) + 1;
+    const m = byCell[loc.cabinetId] || (byCell[loc.cabinetId] = {});
+    const k = cellKey(loc.r, loc.c);
+    m[k] = (m[k] || 0) + 1;
+  }
+  return { byCab, byCell, pendByCab, owned, pending, wish };
+}
+const sortedRooms = () => Object.values(B().cache.rooms).sort((a, b) => (a.order - b.order) || String(a.createdAt).localeCompare(String(b.createdAt)));
+const roomCabs = roomId => Object.values(B().cache.cabinets).filter(c => c.roomId === roomId).sort((a, b) => a.code - b.code || String(a.createdAt).localeCompare(String(b.createdAt)));
+const cabTitle = c => `${c.code} 號櫃${c.name ? ' · ' + c.name : ''}`;
+
+/* ---------- 繪製元件 ---------- */
+const SPINE_COLORS = ['#905333', '#ff8d22', '#7a5642', '#fad3c0', '#fff9f6', '#905333', '#7a5642'];
+function rng(seedText) {
+  let h = 2166136261;
+  for (let i = 0; i < seedText.length; i++) { h ^= seedText.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return () => { h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296; };
+}
+const lightSpine = c => c === '#fad3c0' || c === '#fff9f6';
+function spinesHTML(seed, n, max, tag = 'i', minH = 58) {
+  const r = rng(seed); let h = '';
+  for (let i = 0; i < Math.min(n, max); i++) {
+    const c = SPINE_COLORS[Math.floor(r() * SPINE_COLORS.length)];
+    h += `<${tag} style="height:${Math.round(minH + r() * (96 - minH))}%;background:${c}${lightSpine(c) ? ';box-shadow:inset 0 0 0 .6px rgba(52,36,28,.4)' : ''}"></${tag}>`;
+  }
+  return h;
+}
+function miniSize(cab, maxW, maxH, cap) {
+  const tall = tallRows(cab).size;
+  return clamp(Math.floor(Math.min((maxW - 2.5 * (cab.cols - 1)) / cab.cols, (maxH - 2.5 * (cab.rows - 1)) / (cab.rows + tall * 0.5))), 4, cap);
+}
+function miniHTML(cab, counts, s) {
+  const tr = tallRows(cab);
+  let cells = '';
+  for (let r = 0; r < cab.rows; r++) for (let c = 0; c < cab.cols; c++) {
+    const k = cellKey(r, c), h = tr.has(r) ? Math.round(s * 1.5) : s;
+    if (isOff(cab, k)) { cells += `<i class="o" style="height:${h}px"></i>`; continue; }
+    cells += `<i style="height:${h}px">${spinesHTML(cab.id + k, counts[k] || 0, s >= 9 ? 3 : 2, 'b', 50)}</i>`;
+  }
+  return `<span class="mini" style="grid-template-columns:repeat(${cab.cols},${s}px)" aria-hidden="true">${cells}</span>`;
+}
+function editorCellHTML(cab, r, c) {
+  const k = cellKey(r, c), off = isOff(cab, k), tall = isTall(cab, k), set = !!(cab.depth && cab.depth[k]);
+  const label = cellLabel(cab, r, c);
+  return `<div class="cell${off ? ' off' : ''}${tall ? ' tall' : ''}" data-key="${k}" tabindex="0" role="button" aria-label="${label}${off ? '，沒有格子' : `，深 ${cellDepth(cab, k)} 層${tall ? '，高格' : ''}`}"><span class="lbl">${label}</span>${off ? '' : `<span class="dep${set ? ' set' : ''}">${cellDepth(cab, k)}</span>${tall ? '<span class="tallmark">高</span>' : ''}`}</div>`;
+}
+function boardHTML(cab, { editor = false, counts = {} } = {}) {
+  const tr = tallRows(cab);
+  const rowH = editor ? [44, 66] : [64, 96];
+  const rows = (editor ? '28px ' : '16px ') + Array.from({ length: cab.rows }, (_, r) => (tr.has(r) ? rowH[1] : rowH[0]) + 'px').join(' ');
+  let h = `<div class="board${editor ? ' editing' : ''}" style="--cols:${cab.cols};grid-template-rows:${rows}" data-board>`;
+  h += '<div class="hdr"></div>';
+  for (let c = 0; c < cab.cols; c++) h += editor ? `<button type="button" class="hdr" data-action="hdr" data-axis="c" data-i="${c}" aria-label="整欄 ${c + 1} 切換">${c + 1}</button>` : `<div class="hdr">${c + 1}</div>`;
+  for (let r = 0; r < cab.rows; r++) {
+    const L = rowLetter(cab, r);
+    h += editor ? `<button type="button" class="hdr" data-action="hdr" data-axis="r" data-i="${r}" aria-label="整列 ${L} 切換">${L}</button>` : `<div class="hdr">${L}</div>`;
+    for (let c = 0; c < cab.cols; c++) {
+      if (editor) { h += editorCellHTML(cab, r, c); continue; }
+      const k = cellKey(r, c);
+      if (isOff(cab, k)) { h += '<div class="cell off"></div>'; continue; }
+      const n = counts[k] || 0, label = cellLabel(cab, r, c), d = cellDepth(cab, k);
+      h += `<button type="button" class="cell" data-action="open-cell" data-cab="${cab.id}" data-key="${k}" aria-label="${label}，${n} 本，深 ${d} 層"><span class="lbl">${label}</span>${n ? `<span class="cnt">${n}</span>` : ''}<span class="spines">${spinesHTML(cab.id + k, n, 14)}</span></button>`;
+    }
+  }
+  return h + '</div>';
+}
+function seg(name, opts, value, cls = '') {
+  return `<div class="seg ${cls}" role="radiogroup">${opts.map(([v, l]) => `<button type="button" role="radio" aria-checked="${String(v) === String(value)}" data-action="seg" data-seg="${name}" data-v="${v}">${l}</button>`).join('')}</div>`;
+}
+const stepper = (label, k, val) => `<div class="field">${label}<div class="stepper"><button type="button" data-action="step" data-k="${k}" data-d="-1" aria-label="減少${label}">−</button><output aria-live="polite">${val}</output><button type="button" data-action="step" data-k="${k}" data-d="1" aria-label="增加${label}">＋</button></div></div>`;
+const emptyHTML = (t, m) => `<div class="card empty"><h2>${t}</h2><p class="hint">${m}</p></div>`;
+const addRow = (action, label, extra = '') => `<button type="button" class="btn add-row" data-action="${action}" ${extra}>${ICON.plus}${label}</button>`;
+function head({ title, nick = '', sub = '', back = false, actions = '', brand = false }) {
+  let row = '';
+  if (brand) row = `<div class="toprow brand"><span class="brandrow">${LOGO_IMG}<span class="brandword">吋讀</span></span><span class="acts">${actions}</span></div>`;
+  else if (back || actions) row = `<div class="toprow">${back ? `<button type="button" class="icon-btn" data-action="back" aria-label="返回">${ICON.back}</button>` : '<span></span>'}<span class="acts">${actions}</span></div>`;
+  return `<header class="page-head">${row}<h1 class="title">${title}${nick ? `<span class="nick">${nick}</span>` : ''}</h1>${sub ? `<p class="sub">${sub}</p>` : ''}</header>`;
+}
+function bannersHTML() {
+  let h = '';
+  if (app.mode === 'demo') h += `<div class="banner"><p>${app.preview ? '預覽中' : '示範模式'}：畫面上是範例資料，只存在這台裝置的瀏覽器裡。</p><button type="button" class="link" data-action="tab" data-tab="settings">資料設定</button></div>`;
+  if (app.syncError) h += `<div class="banner err"><p>${esc(app.syncError)}</p></div>`;
+  const st = bookStats();
+  if (app.mode === 'firebase' && st.owned > 0 && daysSince(B().meta.lastBackupAt) > 30) h += `<div class="banner warn"><p>${B().meta.lastBackupAt ? `上次備份是 ${daysSince(B().meta.lastBackupAt)} 天前` : '還沒有備份過'}，建議匯出一份存到雲端硬碟。</p><button type="button" class="btn small primary" data-action="export-json">立即備份</button></div>`;
+  return h;
+}
+const nfmt = n => Number(n || 0).toLocaleString('zh-TW');
+
+/* ---------- 各頁 ---------- */
+const V = {
+  rooms() {
+    const st = bookStats(), rooms = sortedRooms(), nCabs = Object.keys(B().cache.cabinets).length;
+    let body = head({ brand: true, title: '書架', sub: `${rooms.length} 個房間 · ${nCabs} 座書櫃 · ${nfmt(st.owned)} 本書` });
+    body += bannersHTML();
+    body += rooms.length ? `<div class="stack">${rooms.map(r => {
+      const cabs = roomCabs(r.id);
+      const n = cabs.reduce((s, c) => s + (st.byCab[c.id] || 0), 0), p = cabs.reduce((s, c) => s + (st.pendByCab[c.id] || 0), 0);
+      const meta = `${cabs.length} 座書櫃 · ${n ? (p ? `${p} 本待補資料` : '資料都已確認') : '還沒有書'}`;
+      const strip = cabs.map(c => miniHTML(c, st.byCell[c.id] || {}, miniSize(c, 110, 62, 10))).join('') || '<span class="small muted">還沒有書櫃，點進去新增</span>';
+      return `<button type="button" class="card room" data-action="open-room" data-id="${r.id}"><span class="room-top"><span><span class="room-name">${esc(r.name)}</span><span class="small muted">${meta}</span></span><span class="bignum"><b>${nfmt(n)}</b><span>本</span></span></span><span class="shelfstrip">${strip}</span></button>`;
+    }).join('')}</div>` : emptyHTML('還沒有房間', '先新增一個放書的房間，例如「書房一」。');
+    body += addRow('add-room', '新增房間');
+    return { body };
+  },
+  room(v) {
+    const r = B().cache.rooms[v.id]; if (!r) return gone();
+    const st = bookStats(), cabs = roomCabs(r.id);
+    const n = cabs.reduce((s, c) => s + (st.byCab[c.id] || 0), 0), p = cabs.reduce((s, c) => s + (st.pendByCab[c.id] || 0), 0);
+    let body = head({ back: true, title: esc(r.name), sub: `${cabs.length} 座書櫃 · ${nfmt(n)} 本${p ? ` · ${p} 本待補資料` : ''}`, actions: `<button type="button" class="icon-btn" data-action="room-menu" data-id="${r.id}" aria-label="房間選項">${ICON.more}</button>` });
+    body += cabs.length ? `<div class="stack">${cabs.map(c => {
+      const cn = st.byCab[c.id] || 0, cp = st.pendByCab[c.id] || 0;
+      return `<button type="button" class="card cab" data-action="open-cab" data-id="${c.id}"><span class="cabthumb">${miniHTML(c, st.byCell[c.id] || {}, miniSize(c, 92, 84, 16))}</span><span class="cabinfo"><span class="t"><b>${c.code} 號櫃</b>${c.name ? `<span class="small muted">${esc(c.name)}</span>` : ''}</span><span class="chips"><span class="chip">${c.rows} × ${c.cols} 格</span><span class="chip">深 ${c.defaultDepth} 層</span></span><span class="n"><b>${nfmt(cn)}</b><span class="small muted">本${cp ? ` · ${cp} 本待補` : ''}</span></span></span>${ICON.chev}</button>`;
+    }).join('')}</div>` : emptyHTML('這個房間還沒有書櫃', '新增書櫃時，可以像劃電影院座位一樣設定它的格子。');
+    body += addRow('add-cab', '新增書櫃', `data-room="${r.id}"`);
+    return { body };
+  },
+  cabinet(v) {
+    const c = B().cache.cabinets[v.id]; if (!c) return gone();
+    const room = B().cache.rooms[c.roomId] || { name: '?' };
+    const st = bookStats(), counts = st.byCell[c.id] || {}, n = st.byCab[c.id] || 0, p = st.pendByCab[c.id] || 0;
+    let body = head({ back: true, title: `${c.code} 號櫃`, nick: esc(c.name), sub: esc(room.name), actions: `<button type="button" class="btn small soft" data-action="edit-cab" data-id="${c.id}">${ICON.pencil}編輯書櫃</button>` });
+    body += `<div class="chips" style="padding:0 4px"><span class="chip code">${esc(room.name)}-${c.code}</span><span class="chip">${activeCount(c)} 格 · 深 ${c.defaultDepth} 層</span><span class="chip">${nfmt(n)} 本</span>${p ? `<span class="chip">${p} 本待補</span>` : ''}${c.numbering === 'bottom' ? '<span class="chip">A 在最下面</span>' : ''}</div>`;
+    body += `<div class="board-wrap">${boardHTML(c, { counts })}</div>`;
+    body += `<p class="legend"><span class="sp" aria-hidden="true"><i style="height:14px;background:#905333"></i><i style="height:18px;background:#ff8d22"></i><i style="height:11px;background:#7a5642"></i></span>一條線是一本書，右上角是本數。點格子可以看裡面每一層深度的書。</p>`;
+    return { body };
+  },
+  editor(v) {
+    const d = app.draft; if (!d) return gone();
+    const room = B().cache.rooms[d.roomId] || { name: '?' };
+    const hints = {
+      toggle: '點一下讓格子消失或恢復，像電影院的走道。手指拖過去可以一次改很多格，點旁邊的字母或數字可以整排切換。',
+      tall: '把特別高的格子標成高格，書櫃圖上會畫得比較高。',
+      depth: '先選要設成幾層，再點或拖過格子。有底色的數字代表這一格另外設定過深度。'
+    };
+    const tallN = d.tall.filter(k => !isOff(d, k)).length, depthN = Object.keys(d.depth || {}).filter(k => !isOff(d, k)).length;
+    const body = `<header class="page-head"><div class="toprow"><button type="button" class="icon-btn" data-action="back" aria-label="取消編輯">${ICON.close}</button><span class="mid">${v.id ? '編輯書櫃' : '新增書櫃'}</span><button type="button" class="btn small primary" data-action="save-cab">儲存</button></div>
+        <h1 class="title" style="font-size:30px">${esc(d.name || (d.code + ' 號櫃'))}</h1><p class="sub">${esc(room.name)} · ${esc(d.code)} 號櫃</p></header>
+      <section class="card form">
+        <div class="grid-code">
+          <label class="field">編號<input id="ed-code" type="number" inputmode="numeric" min="1" value="${esc(d.code)}"></label>
+          <label class="field">名稱（選填）<input id="ed-name" type="text" maxlength="20" placeholder="例如：靠窗、階梯書架" value="${esc(d.name)}"></label>
+        </div>
+        <div class="grid2">${stepper('列數', 'rows', d.rows)}${stepper('欄數', 'cols', d.cols)}</div>
+        <div class="field">預設深度（一格前後能放幾層書）${seg('ed-depth', [[1, '1 層'], [2, '2 層'], [3, '3 層']], d.defaultDepth)}</div>
+        <div class="field">列的編號方向${seg('ed-numbering', [['top', 'A 在最上面'], ['bottom', 'A 在最下面']], d.numbering)}</div>
+      </section>
+      <section class="tools" aria-label="編輯工具">
+        ${seg('ed-tool', [['toggle', ICON.toggle + '開關格子'], ['tall', ICON.tall + '標記高格'], ['depth', ICON.layers + '設定深度']], app.edTool, 'big')}
+        ${app.edTool === 'depth' ? seg('ed-depthval', [['default', '用預設'], [1, '1 層'], [2, '2 層'], [3, '3 層']], app.edDepth, 'small') : ''}
+        <p>${hints[app.edTool]}</p>
+      </section>
+      <div class="board-wrap">${boardHTML(d, { editor: true })}</div>
+      <p class="summary">${activeCount(d)} 格可用 · ${tallN} 格高格 · ${depthN} 格另設深度</p>
+      <p class="summary">第一格的編號：<span class="chip code">${esc(room.name)}-${esc(d.code)}-A1-1</span></p>
+      ${v.id ? '<button type="button" class="btn danger wide" data-action="del-cab">刪除這座書櫃</button>' : ''}`;
+    return { body, noTabs: true, after: bindEditor };
+  },
+  books() {
+    const st = bookStats();
+    const steps = [['done', '完成', '第一階段', '地基、書櫃編輯器、匯出備份'], ['next', '下一步', '第二階段', '掃描條碼、拍照登記、連續登記模式'], ['', '之後', '第三階段', '封面牆、搜尋、篩選、排序'], ['', '之後', '第四階段', '補資料、照片回收桶、匯入舊資料'], ['', '之後', '第五階段', '借閱、願望清單、統計、AI 書脊辨識']];
+    let body = head({ title: '書籍', sub: `收藏 ${nfmt(st.owned)} 本` });
+    body += `<section class="card"><div class="stats"><span><b>${nfmt(st.owned)}</b><span class="small muted">本收藏</span></span><span><b style="font-size:28px">${nfmt(st.pending)}</b><span class="small muted">本待補資料</span></span></div><p class="hint">封面牆、搜尋和篩選會在第三階段加入。目前的數字來自${app.mode === 'demo' ? '示範資料' : '你的資料庫'}。</p></section>`;
+    body += `<section class="card"><h2>開發進度</h2><ul class="roadmap">${steps.map(([s, label, a, b]) => `<li><span class="st ${s}">${label}</span><span><b>${a}</b> <span class="muted">${b}</span></span></li>`).join('')}</ul></section>`;
+    return { body };
+  },
+  scan() {
+    let body = head({ title: '掃描登記' });
+    body += `<section class="card soon"><span class="badge">${ICON.scan}</span><h2>第二階段開放</h2><p class="hint">掃 ISBN 條碼自動帶入書目、拍版權頁和藏書章，還有連續登記到同一格，都會在下一個階段加入。</p></section>`;
+    return { body };
+  },
+  loans() {
+    let body = head({ title: '借閱' });
+    body += `<section class="card soon"><span class="badge">${ICON.loan}</span><h2>第五階段開放</h2><p class="hint">記錄書借給誰、什麼時候借出、還回來了沒，會在第五階段加入。</p></section>`;
+    return { body };
+  },
+  settings() {
+    const b = B(), m = b.meta, days = daysSince(m.lastBackupAt);
+    const src = b.kind === 'demo'
+      ? `<div class="row"><span class="ic">${ICON.device}</span><span class="tx"><b>${app.preview ? '預覽中' : '示範模式'}</b><span>資料只存在這台裝置的瀏覽器裡</span></span><span class="status demo">範例資料</span></div>
+         <button type="button" class="row" data-action="to-firebase"><span class="ic">${ICON.cloud}</span><span class="tx"><b>改用 Firebase</b><span>正式使用，手機和電腦同步</span></span>${ICON.chev}</button>
+         <button type="button" class="row" data-action="reset-demo"><span class="tx"><b>重設示範資料</b></span>${ICON.chev}</button>`
+      : `<div class="row"><span class="ic">${ICON.cloud}</span><span class="tx"><b>Firebase 專案</b><span class="mono">${esc(b.cfg.projectId)}</span></span><span class="status">${navigator.onLine === false ? '離線中' : '已連線'}</span></div>
+         <div class="row"><span class="ic">${ICON.user}</span><span class="tx"><b>登入帳號</b><span>${esc(b.user && b.user.email)}</span></span><button type="button" class="btn small soft" data-action="sign-out">登出</button></div>
+         <button type="button" class="row" data-action="change-config"><span class="tx"><b>更換 Firebase 設定</b></span>${ICON.chev}</button>`;
+    let body = head({ title: '設定' });
+    body += `<section class="group"><h2>資料</h2><div class="list">${src}</div></section>
+      <section class="group"><h2>所有者</h2><div class="card"><p class="hint">登記書籍時可以選的所有者。</p>
+        <div class="owners chips">${(m.owners || []).map(o => `<span class="owner">${esc(o)}<button type="button" data-action="del-owner" data-name="${esc(o)}" aria-label="移除 ${esc(o)}">×</button></span>`).join('')}<button type="button" class="add-chip" data-action="add-owner">＋ 新增</button></div></div></section>
+      <section class="group"><h2>備份與還原</h2><div class="card">
+        <div class="backup-status"><span style="flex:1"><span class="small muted">上次備份</span><b>${m.lastBackupAt ? (days <= 0 ? '今天' : `${days} 天前`) : '還沒有備份'}</b></span><span class="small muted" style="text-align:right">房間、書櫃、書籍、<br>照片和設定都在裡面</span></div>
+        <button type="button" class="btn primary wide" data-action="export-json">${ICON.download}匯出完整備份</button>
+        <div class="grid2" style="margin-top:8px"><button type="button" class="btn" data-action="export-csv">匯出書目 CSV</button><button type="button" class="btn" data-action="import">從備份還原</button></div>
+        <input type="file" id="import-file" accept=".json,application/json" hidden></div></section>
+      <section class="group"><h2>關於</h2><div class="card about"><b>吋讀 Tsundoku</b><span class="small muted">版本 ${VERSION} · 第一階段 · 資料格式 v${SCHEMA_VERSION}</span></div></section>`;
+    return { body };
+  }
+};
+function gone() { return { body: head({ back: true, title: '找不到' }) + emptyHTML('這個項目已經不存在', '可能在其他裝置上被刪除了。') }; }
+
+/* ---------- 全螢幕畫面 ---------- */
+const HERO = (tag) => `<div class="hero"><img src="logo-mark.png" alt=""><h1>吋讀</h1><p>${tag}</p></div>`;
+const SCREENS = {
+  setup: () => `<div class="center-screen"><div class="setup">
+    ${HERO('Tsundoku · 家裡的書，一格一格記下來')}
+    <section class="card form"><div class="card-head"><span class="stepnum">1</span><h2>連接你的 Firebase</h2></div>
+      <p class="hint">到 Firebase 主控台 › 專案設定 › 你的應用程式，複製整段 firebaseConfig 貼在下面。設定只會存在這台裝置。</p>
+      <label class="field"><span class="sr">Firebase 設定</span><textarea id="fb-config" rows="5" spellcheck="false" placeholder="const firebaseConfig = {&#10;  apiKey: &quot;…&quot;,&#10;  projectId: &quot;tsundoku-…&quot;,&#10;  appId: &quot;…&quot;&#10;};"></textarea></label>
+      <button type="button" class="btn primary wide" data-action="fb-connect">連接並用 Google 登入${ICON.arrow}</button>
+      ${app.inFrame ? '<p class="hint">在 Claude 的預覽頁裡無法連線 Firebase，請部署到 GitHub Pages 後再使用。</p>' : ''}
+    </section>
+    <section class="dashed"><span class="tx"><b>先看看示範</b><span class="small muted">用範例書櫃試玩，資料只存在這台裝置。</span></span><button type="button" class="btn soft" data-action="use-demo">試用</button></section>
+    <p class="footnote">買了不讀的書，也值得一個好位置。</p>
+  </div></div>`,
+  login: () => `<div class="center-screen"><div class="setup">
+    ${HERO(`已連接 Firebase 專案：${esc(B().cfg.projectId)}`)}
+    <section class="card form"><div class="card-head"><span class="stepnum">2</span><h2>登入</h2></div><p class="hint">請用 firestore.rules 裡設定的那個 Google 帳號登入。</p>
+      ${app.loginError ? `<div class="banner err"><p>${esc(app.loginError)}</p></div>` : ''}
+      <button type="button" class="btn primary wide" data-action="sign-in">${ICON.user}用 Google 帳號登入</button></section>
+    <button type="button" class="btn ghost" data-action="change-config">更換 Firebase 設定</button>
+  </div></div>`,
+  loading: () => `<div class="center-screen"><div class="setup" style="justify-content:center">${HERO(esc(app.loadingMsg || '載入中…'))}<div class="spinner" role="status" aria-label="載入中"></div></div></div>`,
+  error: () => `<div class="center-screen"><div class="setup">${HERO('無法啟動')}<section class="card form"><div class="banner err"><p>${esc(app.error)}</p></div><div class="grid2"><button type="button" class="btn primary" data-action="reload">重新整理</button><button type="button" class="btn" data-action="change-config">更換 Firebase 設定</button></div></section></div></div>`
+};
+
+/* ---------- 繪製 ---------- */
+function render() {
+  const root = $('#app');
+  if (app.screen !== 'main') { root.innerHTML = SCREENS[app.screen](); app.lastKey = ''; return; }
+  const v = cur(), out = V[v.name](v);
+  const main = $('#main'), same = app.lastKey === viewKey(v), st = same && main ? main.scrollTop : 0;
+  const tab = (id, label, icon, fab) => `<button type="button" class="${fab ? 'fab ' : ''}${app.tab === id ? 'on' : ''}" data-action="tab" data-tab="${id}" ${app.tab === id ? 'aria-current="page"' : ''}><span class="ico">${icon}</span>${label}</button>`;
+  root.innerHTML = `<main id="main"><div class="page${out.noTabs ? ' no-tabs' : ''}">${out.body}</div></main>` +
+    (out.noTabs ? '' : `<nav class="tabbar" aria-label="主選單">${tab('shelf', '書架', ICON.shelf)}${tab('books', '書籍', ICON.books)}${tab('scan', '掃描', ICON.scan, true)}${tab('loans', '借閱', ICON.loan)}${tab('settings', '設定', ICON.gear)}</nav>`);
+  $('#main').scrollTop = st;
+  app.lastKey = viewKey(v);
+  if (out.after) out.after();
+}
+
+/* ---------- 書櫃編輯器 ---------- */
+const edDirty = () => !!app.draft && JSON.stringify(app.draft) !== app.draftOrig;
+function openEditor(cab, isNew) {
+  app.draft = clone(cab); app.draftOrig = JSON.stringify(app.draft);
+  app.edTool = 'toggle'; app.edDepth = 'default';
+  go({ name: 'editor', id: isNew ? null : cab.id });
+}
+function setCell(d, k, tool, val) {
+  if (tool === 'toggle') {
+    const i = d.off.indexOf(k);
+    if (val && i < 0) d.off.push(k);
+    if (!val && i >= 0) d.off.splice(i, 1);
+    return;
+  }
+  if (isOff(d, k)) return;
+  if (tool === 'tall') {
+    const i = d.tall.indexOf(k);
+    if (val && i < 0) d.tall.push(k);
+    if (!val && i >= 0) d.tall.splice(i, 1);
+  } else {
+    if (val === 'default') delete d.depth[k]; else d.depth[k] = +val;
+  }
+}
+function paintValue(k) {
+  const d = app.draft;
+  if (app.edTool === 'toggle') return !isOff(d, k);
+  if (app.edTool === 'tall') return !d.tall.includes(k);
+  return app.edDepth;
+}
+function bindEditor() {
+  const board = $('[data-board]'); if (!board) return;
+  let paint = null;
+  const apply = k => {
+    if (!paint || paint.seen.has(k)) return;
+    paint.seen.add(k);
+    setCell(app.draft, k, app.edTool, paint.val);
+    const el = board.querySelector(`.cell[data-key="${k}"]`);
+    if (el) { const [r, c] = splitKey(k); el.outerHTML = editorCellHTML(app.draft, r, c); }
+  };
+  board.addEventListener('pointerdown', e => {
+    const cell = e.target.closest('.cell[data-key]'); if (!cell) return;
+    e.preventDefault();
+    paint = { val: paintValue(cell.dataset.key), seen: new Set() };
+    apply(cell.dataset.key);
+    try { board.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  board.addEventListener('pointermove', e => {
+    if (!paint) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const cell = el && el.closest('.cell[data-key]');
+    if (cell && board.contains(cell)) apply(cell.dataset.key);
+  });
+  const end = () => { if (!paint) return; paint = null; render(); };
+  board.addEventListener('pointerup', end);
+  board.addEventListener('pointercancel', end);
+  board.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const cell = e.target.closest('.cell[data-key]'); if (!cell) return;
+    e.preventDefault();
+    const k = cell.dataset.key;
+    setCell(app.draft, k, app.edTool, paintValue(k));
+    render();
+    const again = $(`.cell[data-key="${k}"]`); if (again) again.focus();
+  });
+}
+function hdrPaint(axis, i) {
+  const d = app.draft, keys = [];
+  if (axis === 'r') for (let c = 0; c < d.cols; c++) keys.push(cellKey(i, c));
+  else for (let r = 0; r < d.rows; r++) keys.push(cellKey(r, i));
+  let val;
+  if (app.edTool === 'toggle') val = !keys.every(k => isOff(d, k));
+  else if (app.edTool === 'tall') { const act = keys.filter(k => !isOff(d, k)); val = !act.every(k => d.tall.includes(k)); }
+  else val = app.edDepth;
+  keys.forEach(k => setCell(d, k, app.edTool, val));
+  render();
+}
+function pruneCab(d) {
+  const inRange = k => { const [r, c] = splitKey(k); return r < d.rows && c < d.cols; };
+  d.off = [...new Set(d.off.filter(inRange))];
+  d.tall = [...new Set(d.tall.filter(k => inRange(k) && !d.off.includes(k)))];
+  const dep = {}; Object.entries(d.depth || {}).forEach(([k, v]) => { if (inRange(k) && !d.off.includes(k)) dep[k] = v; }); d.depth = dep;
+}
+async function saveCab() {
+  const d = clone(app.draft);
+  pruneCab(d);
+  const code = parseInt(d.code, 10);
+  if (!(code >= 1)) { toast('請填寫書櫃編號（1 以上的數字）', 'err'); return; }
+  d.code = code; d.name = String(d.name || '').trim();
+  if (!activeCount(d)) { toast('至少要留下一格', 'err'); return; }
+  const dup = Object.values(B().cache.cabinets).find(c => c.roomId === d.roomId && c.code === code && c.id !== d.id);
+  if (dup && !(await confirmBox('編號重複', `這個房間已經有 ${code} 號櫃了，確定要用同一個編號嗎？`, '仍要儲存'))) return;
+  const lost = Object.values(B().cache.books).filter(b => b.location && b.location.cabinetId === d.id && !locValid(d, b.location));
+  if (lost.length) {
+    infoBox('有書會失去位置', `<p>有 ${lost.length} 本書放在你移除的格子或深度裡：</p><ul class="booklist">${lost.slice(0, 8).map(b => `<li><b>${esc(b.title)}</b><span class="muted">${esc(locCode(b))}</span></li>`).join('')}</ul><p style="margin-top:10px">請先把這些書移到別的格子，再修改書櫃。</p>`);
+    return;
+  }
+  const isNew = !cur().id;
+  B().put('cabinets', d);
+  app.draft = null; toast('書櫃已儲存');
+  if (isNew) { app.stack[app.stack.length - 1] = { name: 'cabinet', id: d.id }; render(); }
+  else popLevels(1);
+}
+async function deleteCab() {
+  const d = app.draft, room = B().cache.rooms[d.roomId] || { name: '' };
+  const n = Object.values(B().cache.books).filter(b => b.location && b.location.cabinetId === d.id).length;
+  if (n) { infoBox('無法刪除', `<p>這座書櫃裡還有 ${n} 本書，請先把書移走。</p>`); return; }
+  if (!(await confirmBox('刪除書櫃？', `確定要刪除「${room.name} ${d.code} 號櫃」嗎？`, '刪除', true))) return;
+  B().remove('cabinets', d.id);
+  app.draft = null; toast('書櫃已刪除');
+  popLevels(2);
+}
+
+/* ---------- 房間 ---------- */
+async function addRoom() {
+  const name = await promptBox('新增房間', '房間名稱', '', '例如：書房一');
+  if (!name) return;
+  const order = Math.max(0, ...Object.values(B().cache.rooms).map(r => r.order || 0)) + 1;
+  B().put('rooms', newRoom(name, order));
+  toast('已新增房間');
+}
+async function roomMenu(id) {
+  const r = B().cache.rooms[id]; if (!r) return;
+  const choice = await dialog({ title: r.name, sheet: true, vertical: true, actions: [{ label: '改名', value: 'rename' }, { label: '往前移', value: 'up' }, { label: '往後移', value: 'down' }, { label: '刪除房間', value: 'del', kind: 'danger' }, { label: '取消', kind: 'ghost', value: null }] });
+  if (choice === 'rename') {
+    const name = await promptBox('房間改名', '房間名稱', r.name);
+    if (name && name !== r.name) { B().put('rooms', { ...r, name }); toast('已改名'); }
+  } else if (choice === 'up' || choice === 'down') {
+    const list = sortedRooms(), i = list.findIndex(x => x.id === id), j = choice === 'up' ? i - 1 : i + 1;
+    if (j < 0 || j >= list.length) { toast(choice === 'up' ? '已經是第一個了' : '已經是最後一個了'); return; }
+    list.forEach((x, k) => { x._o = k + 1; });
+    [list[i]._o, list[j]._o] = [list[j]._o, list[i]._o];
+    list.forEach(x => { const o = x._o; delete x._o; if (x.order !== o) B().put('rooms', { ...x, order: o }); });
+    toast('已調整順序');
+  } else if (choice === 'del') {
+    if (roomCabs(id).length) { infoBox('無法刪除', '<p>這個房間裡還有書櫃，請先刪除書櫃。</p>'); return; }
+    if (!(await confirmBox('刪除房間？', `確定要刪除「${r.name}」嗎？`, '刪除', true))) return;
+    B().remove('rooms', id); toast('房間已刪除');
+    if (cur().name === 'room') popLevels(1);
+  }
+}
+
+/* ---------- 書櫃格子內容 ---------- */
+const COVER_COLORS = [['#905333', '#fff9f6'], ['#7a5642', '#fff9f6'], ['#ff8d22', '#ffffff'], ['#fad3c0', '#34241c'], ['#fff9f6', '#34241c']];
+function coverStyle(seed) {
+  const [bg, fg] = COVER_COLORS[Math.floor(rng(seed)() * COVER_COLORS.length)];
+  return `background:${bg};color:${fg}${bg === '#fff9f6' ? ';box-shadow:inset 3px 0 0 rgba(0,0,0,.08),inset 0 0 0 1px #f0cdb9' : ''}`;
+}
+function openCell(cabId, k) {
+  const c = B().cache.cabinets[cabId]; if (!c) return;
+  const room = B().cache.rooms[c.roomId] || { name: '?' };
+  const [r, col] = splitKey(k), d = cellDepth(c, k), label = cellLabel(c, r, col);
+  const books = Object.values(B().cache.books).filter(b => b.ownership !== 'wishlist' && b.location && b.location.cabinetId === cabId && b.location.r === r && b.location.c === col)
+    .sort((a, b) => String(a.title).localeCompare(String(b.title), 'zh-Hant'));
+  const layerName = i => d === 1 ? '這一格' : i === 1 ? '外層' : i === d ? '內層' : '中間';
+  const layerNote = i => d === 1 ? '只有一層' : `第 ${i} 層${i === 1 ? '，靠近你' : i === d ? '，在最後面' : ''}`;
+  let tabs = '';
+  if (d > 1) tabs = `<div class="seg depth-tabs" role="tablist" aria-label="深度">${Array.from({ length: d }, (_, j) => { const i = j + 1, n = books.filter(b => b.location.depth === i).length; return `<button type="button" role="tab" aria-selected="${i === 1}" data-layer="${i}">${layerName(i)} · ${n} 本<small>${layerNote(i)}</small></button>`; }).join('')}</div>`;
+  let panels = '';
+  for (let i = 1; i <= d; i++) {
+    const bs = books.filter(b => b.location.depth === i);
+    const list = bs.length
+      ? `<ul class="booklist">${bs.map(b => `<li><span class="mcover" style="${coverStyle(b.id)}" aria-hidden="true">${esc(String(b.title).slice(0, 2))}</span><span class="binfo"><b>${esc(b.title)}</b><span>${esc(authorsText(b))}</span></span><span class="chips" style="flex:none">${b.owner ? `<span class="chip">${esc(b.owner)}</span>` : ''}${b.verified ? '' : '<span class="chip line">待補</span>'}</span></li>`).join('')}</ul>`
+      : '<p class="emptylayer">這一層還沒有登記書</p>';
+    panels += `<div data-panel="${i}"${i > 1 ? ' hidden' : ''}><p class="summary" style="margin-top:14px"><span class="chip code">${esc(room.name)}-${c.code}-${label}-${i}</span>這一層的位置編號</p>${list}</div>`;
+  }
+  const body = `<div class="sheet-head"><div><h2>${label} 格</h2><p class="sub">${esc(room.name)} · ${c.code} 號櫃 · 共 ${books.length} 本</p></div><button type="button" class="round-btn" data-close aria-label="關閉">${ICON.close}</button></div>
+    ${tabs}${panels}
+    <button type="button" class="btn primary wide" style="margin-top:16px" data-soon>${ICON.scan}在這一格登記新書</button>`;
+  dialog({
+    title: `${room.name} ${c.code} 號櫃 ${label} 格`, hideTitle: true, body, sheet: true,
+    onOpen: (el, close) => {
+      el.querySelector('[data-close]').addEventListener('click', () => close(null));
+      el.querySelector('[data-soon]').addEventListener('click', () => toast('掃描登記會在第二階段加入'));
+      el.querySelectorAll('[data-layer]').forEach(btn => btn.addEventListener('click', () => {
+        el.querySelectorAll('[data-layer]').forEach(b => b.setAttribute('aria-selected', String(b === btn)));
+        el.querySelectorAll('[data-panel]').forEach(p => { p.hidden = p.dataset.panel !== btn.dataset.layer; });
+      }));
+    }
+  });
+}
+
+/* ---------- 匯出與還原 ---------- */
+function offerFile(name, text, mime) {
+  const kb = Math.max(1, Math.round(new Blob([text]).size / 1024));
+  dialog({
+    title: '匯出檔案',
+    body: `<p><span class="code">${esc(name)}</span></p><p class="muted small">大小約 ${kb} KB。下載後建議存一份到雲端硬碟。如果按了下載沒有反應，可以改按「複製內容」，貼到記事本存檔。</p>`,
+    actions: [
+      { label: '複製內容', kind: 'ghost', get: () => {
+        navigator.clipboard.writeText(text).then(() => { toast('已複製'); B().putMeta({ lastBackupAt: nowISO() }); }).catch(() => toast('這個環境不允許複製，請改用下載', 'err'));
+        return 'copy';
+      } },
+      { label: '下載檔案', kind: 'primary', get: () => {
+        try {
+          const url = URL.createObjectURL(new Blob([text], { type: mime }));
+          const a = document.createElement('a'); a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 5000);
+          B().putMeta({ lastBackupAt: nowISO() });
+        } catch (e) { toast('下載失敗，請改用複製內容', 'err'); }
+        return 'download';
+      } }
+    ]
+  });
+}
+async function exportJSON() {
+  try {
+    const data = await B().exportAll();
+    const out = { app: 'tsundoku', appVersion: VERSION, exportedAt: nowISO(), ...data };
+    offerFile(`tsundoku-backup-${stamp()}.json`, JSON.stringify(out, null, 1), 'application/json');
+  } catch (e) { toast('匯出失敗：' + errMsg(e), 'err'); }
+}
+function exportCSV() {
+  const cols = [['title', '書名'], ['subtitle', '副標題'], ['authors', '作者'], ['publisher', '出版商'], ['publishedDate', '出版日期'], ['isbn', 'ISBN'], ['format', '格式'], ['language', '語言'], ['pages', '頁數'], ['owner', '所有者'], ['location', '位置'], ['locationNote', '位置補充'], ['price', '價格'], ['currency', '幣別'], ['purchaseDate', '購買日期'], ['tags', '標籤'], ['readStatus', '閱讀狀態'], ['rating', '評分'], ['ownership', '擁有狀態'], ['verified', '資料已確認'], ['addedAt', '加入日期'], ['id', 'ID']];
+  const val = (b, k) => {
+    switch (k) {
+      case 'authors': return authorsText(b);
+      case 'language': return langLabel(b);
+      case 'location': return locCode(b);
+      case 'tags': return (b.tags || []).join('#');
+      case 'readStatus': return READ_STATUS[b.readStatus] || '';
+      case 'ownership': return b.ownership === 'wishlist' ? '願望清單' : '已收藏';
+      case 'verified': return b.verified ? '是' : '否';
+      case 'addedAt': return fmtDate(b.addedAt);
+      default: return b[k] ?? '';
+    }
+  };
+  const cell = v => { const s = String(v ?? ''); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const books = Object.values(B().cache.books).sort((a, b) => String(a.title).localeCompare(String(b.title), 'zh-Hant'));
+  const lines = [cols.map(c => c[1]), ...books.map(b => cols.map(([k]) => val(b, k)))].map(r => r.map(cell).join(','));
+  offerFile(`tsundoku-books-${stamp()}.csv`, '\uFEFF' + lines.join('\r\n'), 'text/csv;charset=utf-8');
+}
+async function importFile(file) {
+  let data;
+  try { data = JSON.parse(await file.text()); } catch (e) { toast('這不是有效的備份檔（JSON 格式錯誤）', 'err'); return; }
+  if (!data || data.app !== 'tsundoku' || !Array.isArray(data.books)) { toast('這不是吋讀的備份檔', 'err'); return; }
+  if ((data.schemaVersion || 1) > SCHEMA_VERSION) { toast('這份備份來自較新的版本，請先更新網站', 'err'); return; }
+  const n = a => (Array.isArray(a) ? a.length : 0);
+  const mode = await dialog({
+    title: '從備份還原',
+    body: `<p>備份時間：${esc(fmtDate(data.exportedAt) || '不明')}</p><p>內容：房間 ${n(data.rooms)}、書櫃 ${n(data.cabinets)}、書籍 ${n(data.books)}、照片 ${n(data.photos)}</p><p class="muted small">「合併」會保留現有資料，相同的項目以備份為準；「全部取代」會先清空現有資料。</p>`,
+    actions: [{ label: '取消', kind: 'ghost', value: null }, { label: '全部取代', kind: 'danger', value: 'replace' }, { label: '合併', kind: 'primary', value: 'merge' }]
+  });
+  if (!mode) return;
+  if (mode === 'replace' && !(await confirmBox('確定全部取代？', '目前的所有資料都會被刪除，換成備份檔的內容。', '全部取代', true))) return;
+  toast('還原中…');
+  try { await B().importAll(data, mode); toast('還原完成'); render(); }
+  catch (e) { toast('還原失敗：' + errMsg(e), 'err'); }
+}
+
+/* ---------- Firebase 設定 ---------- */
+function parseConfig(text) {
+  const keys = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId', 'measurementId'];
+  const cfg = {};
+  for (const k of keys) { const m = text.match(new RegExp(k + '\\s*["\']?\\s*:\\s*["\']([^"\']+)["\']')); if (m) cfg[k] = m[1].trim(); }
+  if (!cfg.apiKey || !cfg.projectId || !cfg.appId) return null;
+  if (!cfg.authDomain) cfg.authDomain = cfg.projectId + '.firebaseapp.com';
+  return cfg;
+}
+
+/* ---------- 啟動 ---------- */
+function attach(b) {
+  app.B = b;
+  b.onChange(() => { if (app.screen === 'main' && !(cur() && cur().name === 'editor')) render(); });
+  b.onWriteError = e => toast(errMsg(e), 'err');
+}
+function enterMain() { app.screen = 'main'; app.tab = 'shelf'; app.stack = [{ name: 'rooms' }]; render(); }
+async function startDemo(preview) {
+  const b = new LocalBackend(); await b.init(); attach(b);
+  app.mode = 'demo'; app.preview = !!preview;
+  if (!preview) LS.set('tsundoku-mode', 'demo');
+  enterMain();
+}
+async function startFirebase(cfg) {
+  app.screen = 'loading'; app.loadingMsg = '正在連線 Firebase…'; render();
+  const b = new FirebaseBackend(cfg);
+  try { await b.init(); }
+  catch (e) { app.screen = 'error'; app.error = '無法載入 Firebase：' + errMsg(e); render(); return; }
+  attach(b); app.mode = 'firebase';
+  if (b.redirectError) app.loginError = errMsg(b.redirectError);
+  if (!b.user) { app.screen = 'login'; render(); return; }
+  await afterLogin();
+}
+async function afterLogin() {
+  app.screen = 'loading'; app.loadingMsg = '正在同步資料…'; app.syncError = ''; render();
+  await B().startSync(e => { app.syncError = errMsg(e); toast(app.syncError, 'err'); });
+  enterMain();
+}
+function registerSW() {
+  if (app.inFrame || !('serviceWorker' in navigator)) return;
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost') return;
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+async function boot() {
+  app.inFrame = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+  registerSW();
+  try { history.replaceState({ tsundoku: true }, ''); } catch (e) {}
+  const mode = LS.get('tsundoku-mode');
+  if (mode === 'firebase') { const cfg = LS.get('tsundoku-firebase-config'); if (cfg) return startFirebase(cfg); }
+  if (mode === 'demo') return startDemo(false);
+  if (app.inFrame) return startDemo(true);
+  app.screen = 'setup'; render();
+}
+
+/* ---------- 事件 ---------- */
+document.addEventListener('click', async e => {
+  const el = e.target.closest('[data-action]');
+  if (!el || el.closest('.layer')) return;
+  const a = el.dataset.action, d = app.draft;
+  switch (a) {
+    case 'back': requestBack(); break;
+    case 'tab': switchTab(el.dataset.tab); break;
+    case 'open-room': go({ name: 'room', id: el.dataset.id }); break;
+    case 'open-cab': go({ name: 'cabinet', id: el.dataset.id }); break;
+    case 'add-room': addRoom(); break;
+    case 'room-menu': roomMenu(el.dataset.id); break;
+    case 'add-cab': {
+      const roomId = el.dataset.room, next = Math.max(0, ...roomCabs(roomId).map(c => c.code)) + 1;
+      openEditor(newCabinet(roomId, next), true); break;
+    }
+    case 'edit-cab': openEditor(B().cache.cabinets[el.dataset.id], false); break;
+    case 'open-cell': openCell(el.dataset.cab, el.dataset.key); break;
+    case 'step': {
+      const k = el.dataset.k, max = k === 'rows' ? MAX_ROWS : MAX_COLS;
+      const nv = clamp(d[k] + Number(el.dataset.d), 1, max);
+      if (nv === d[k]) toast(k === 'rows' ? `列數最多 ${MAX_ROWS}（A 到 Z）` : `欄數最多 ${MAX_COLS}`);
+      d[k] = nv; render(); break;
+    }
+    case 'seg': {
+      const s = el.dataset.seg, v = el.dataset.v;
+      if (s === 'ed-depth') d.defaultDepth = +v;
+      else if (s === 'ed-numbering') d.numbering = v;
+      else if (s === 'ed-tool') app.edTool = v;
+      else if (s === 'ed-depthval') app.edDepth = v === 'default' ? 'default' : +v;
+      render(); break;
+    }
+    case 'hdr': hdrPaint(el.dataset.axis, +el.dataset.i); break;
+    case 'save-cab': saveCab(); break;
+    case 'del-cab': deleteCab(); break;
+    case 'use-demo': startDemo(false); break;
+    case 'fb-connect': {
+      const cfg = parseConfig($('#fb-config').value || '');
+      if (!cfg) { toast('看不懂這段設定：請確認裡面有 apiKey、projectId 和 appId', 'err'); return; }
+      LS.set('tsundoku-firebase-config', cfg); LS.set('tsundoku-mode', 'firebase');
+      startFirebase(cfg); break;
+    }
+    case 'sign-in': {
+      app.loginError = '';
+      try { await B().signIn(); if (B().user) await afterLogin(); }
+      catch (err) { if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') { app.loginError = errMsg(err); render(); } }
+      break;
+    }
+    case 'sign-out':
+      if (await confirmBox('登出？', '登出後要再用 Google 帳號登入才能看到資料。', '登出')) { await B().signOut(); app.screen = 'login'; render(); }
+      break;
+    case 'change-config':
+      if (await confirmBox('更換 Firebase 設定？', '這台裝置會忘記目前的 Firebase 設定，資料仍然留在 Firebase 裡。', '更換')) { LS.del('tsundoku-firebase-config'); LS.del('tsundoku-mode'); location.reload(); }
+      break;
+    case 'to-firebase':
+      if (await confirmBox('改用 Firebase？', '示範資料不會自動搬過去。想保留的話，可以先匯出完整備份，連上 Firebase 後再匯入。', '繼續')) { LS.del('tsundoku-mode'); app.screen = 'setup'; render(); }
+      break;
+    case 'reset-demo':
+      if (await confirmBox('重設示範資料？', '目前示範模式裡的修改都會被清掉，換回原本的範例。', '重設', true)) { B().resetDemo(); toast('已重設示範資料'); }
+      break;
+    case 'reload': location.reload(); break;
+    case 'add-owner': {
+      const name = await promptBox('新增所有者', '名字', '', '例如：媽媽');
+      if (!name) return;
+      const owners = B().meta.owners || [];
+      if (owners.includes(name)) { toast('已經有這個選項了'); return; }
+      B().putMeta({ owners: [...owners, name] }); toast('已新增'); break;
+    }
+    case 'del-owner': B().putMeta({ owners: (B().meta.owners || []).filter(o => o !== el.dataset.name) }); break;
+    case 'export-json': exportJSON(); break;
+    case 'export-csv': exportCSV(); break;
+    case 'import': $('#import-file').click(); break;
+  }
+});
+document.addEventListener('input', e => {
+  if (!app.draft) return;
+  if (e.target.id === 'ed-code') app.draft.code = e.target.value;
+  if (e.target.id === 'ed-name') app.draft.name = e.target.value;
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'import-file' && e.target.files[0]) { importFile(e.target.files[0]); e.target.value = ''; }
+});
+
+boot();
+</script>
+</body>
+</html>

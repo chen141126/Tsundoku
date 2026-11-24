@@ -1,0 +1,15 @@
+rules_version = '2';
+
+// 吋讀 Tsundoku 的 Firestore 安全規則
+// 只有下面這個 Google 帳號能讀寫自己的資料，其他人就算拿到設定也無法使用。
+// 使用前請把 YOUR_EMAIL@gmail.com 換成你自己的 Gmail。
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == uid
+        && request.auth.token.email == "YOUR_EMAIL@gmail.com"
+        && request.auth.token.email_verified == true;
+    }
+  }
+}
