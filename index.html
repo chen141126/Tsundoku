@@ -373,6 +373,38 @@ button.star{width:34px;height:34px}
 .loaninfo{display:flex;align-items:center;gap:12px}
 .loaninfo .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .status.warn{color:var(--orange)}
+.slots.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.slots.four .slot{font-size:12px;text-align:center;padding:0 4px}
+.layer.full{padding:0;background:var(--bg)}
+.layer.full .dlg{max-width:none;width:100%;height:100%;max-height:none;border-radius:0;box-shadow:none;padding:0;display:flex;flex-direction:column;overflow:hidden}
+.layer.full .dlg-body{flex:1;min-height:0;display:flex;flex-direction:column}
+.layer.full .dlg-actions{margin:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line-2);justify-content:space-between}
+.layer.full .dlg-actions .btn{flex:1}
+.pv-top{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 10px}
+.pv-top b{flex:1;font-size:17px}
+.pv-zoom{display:flex;align-items:center;gap:6px}
+.pv-pct{min-width:44px;text-align:center;font-size:13px;color:var(--wood);font-variant-numeric:tabular-nums}
+.pv-stage{flex:1;min-height:0;overflow:auto;background:var(--soft);touch-action:pan-x pan-y}
+.pv-stage img{display:block;width:100%;max-width:none;height:auto;margin:0 auto}
+.pv-tip{margin:6px 16px 0;text-align:center}
+.pinned{position:sticky;top:0;z-index:3;margin:0 -16px;background:var(--bg);box-shadow:0 8px 16px rgba(52,36,28,.08)}
+.pin-stage{height:34vh;overflow:auto;background:var(--soft)}
+.pin-stage img{display:block;max-width:none;height:auto}
+.pin-bar{display:flex;align-items:center;gap:6px;padding:6px 16px}
+.pin-bar b{flex:1;font-size:13px;color:var(--wood)}
+.assist{display:flex;flex-wrap:wrap;gap:8px}
+.field-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.wc-preview{display:grid;place-items:center;height:180px;margin:14px 0 10px;border-radius:14px;border:1.5px dashed #d9a387;background:var(--white);overflow:hidden}
+.wc-preview.has{border-style:solid;border-color:var(--line)}
+.wc-preview img{max-width:100%;max-height:100%;object-fit:contain}
+.ailist{margin-top:6px}
+.airow{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line-2)}
+.airow:last-child{border-bottom:0}
+.airow input{width:20px;height:20px;margin-top:2px;accent-color:var(--orange);flex:none}
+.airow .tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.airow .k{font-size:12px;color:var(--wood);font-weight:700}
+.airow b{font-size:15px;word-break:break-all}
+.airow small{font-size:12px;color:var(--wood);word-break:break-all}
 .bookpane{display:flex;flex-direction:column;gap:14px}
 .bookpane.slide-n{animation:slideN .22s ease-out}
 .bookpane.slide-p{animation:slideP .22s ease-out}
@@ -520,13 +552,15 @@ button.star{width:34px;height:34px}
 <div id="toasts" aria-live="polite"></div>
 <script type="module">
 /* ========= 吋讀 Tsundoku · 第一階段：地基、書櫃編輯器、匯出備份 ========= */
-const VERSION = '0.2.4';
+const VERSION = '0.4.0';
 const SCHEMA_VERSION = 1;
 const FB_VERSION = '10.12.2';
 const COLS = ['rooms', 'cabinets', 'categories', 'books'];
 // 以下常數是書籍資料規格的一部分，第二階段登記功能會用到
 const FORMATS = ['平裝', '精裝', '軟精裝', '線裝', '其他'];
-const ROLES = ['著', '譯', '編', '繪'];
+const ROLES = ['著', '譯', '編', '繪', '校訂', '審訂', '導讀', '攝影'];
+const ROLE_ALIAS = { 作: '著', 撰: '著', 原著: '著', 著者: '著', 作者: '著', 翻譯: '譯', 譯者: '譯', 主編: '編', 編著: '編', 編者: '編', 編輯: '編', 插畫: '繪', 繪圖: '繪', 圖: '繪', 繪者: '繪', 校注: '校訂', 校註: '校訂', 校對: '校訂', 校: '校訂', 審定: '審訂', 監修: '審訂', 攝: '攝影' };
+const normRole = r => { r = String(r || '').trim(); return ROLES.includes(r) ? r : ROLE_ALIAS[r] || '著'; };
 const READ_STATUS = { unread: '未閱讀', reading: '閱讀中', done: '閱畢', dropped: '棄讀' };
 const LANGS = { eng: '英語', jpn: '日語', kor: '韓語', fra: '法語', deu: '德語', spa: '西班牙語' };
 const EDITIONS = ['初版', '再版', '三版', '四版', '五版', '六版', '七版', '八版', '九版', '十版'];
@@ -792,6 +826,12 @@ const ICON = {
   tall: svg('<rect x="7" y="3" width="10" height="18" rx="1.5"/><path d="M12 7v10M10 9l2-2 2 2M10 15l2 2 2-2"/>'),
   check: svg('<path d="M5 12l5 5 9-10"/>', 2.6),
   camera: svg('<path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>', 1.8),
+  minus: svg('<path d="M5 12h14"/>', 2.2),
+  expand: svg('<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>', 1.9),
+  paste: svg('<rect x="5" y="4.5" width="14" height="16" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h4"/>', 1.8),
+  image: svg('<rect x="4" y="4.5" width="16" height="15" rx="2"/><circle cx="9" cy="9.5" r="1.6"/><path d="M5 18l5-5 3 3 2.5-2.5L20 18"/>', 1.8),
+  globe: svg('<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.3 3.6 5 3.6 8s-1.1 5.7-3.6 8c-2.5-2.3-3.6-5-3.6-8S9.5 6.3 12 4z"/>', 1.7),
+  ai: svg('<path d="M12 3.5l1.9 5.1L19 10.5l-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>', 1.6),
   search: svg('<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>', 1.8),
   layers: svg('<path d="M4 9l8-4 8 4-8 4z"/><path d="M4 13l8 4 8-4"/><path d="M4 17l8 4 8-4" opacity=".6"/>')
 };
@@ -799,10 +839,10 @@ const LOGO_IMG = '<img src="logo-mark.png" alt="" width="30" height="40">';
 
 /* ---------- 對話框與提示 ---------- */
 const openDialogs = [];
-function dialog({ title, body = '', actions = [], sheet = false, vertical = false, hideTitle = false, focus = true, cls = '', titleHTML = '', onOpen }) {
+function dialog({ title, body = '', actions = [], sheet = false, vertical = false, hideTitle = false, focus = true, cls = '', titleHTML = '', layerCls = '', onOpen }) {
   return new Promise(resolve => {
     const el = document.createElement('div');
-    el.className = 'layer' + (sheet ? ' as-sheet' : '');
+    el.className = 'layer' + (sheet ? ' as-sheet' : '') + (layerCls ? ' ' + layerCls : '');
     el.innerHTML = `<div class="dlg${cls ? ' ' + cls : ''}" role="dialog" aria-modal="true" aria-label="${esc(title)}">${hideTitle ? '' : titleHTML ? `<div class="dlg-head"><h2>${esc(title)}</h2>${titleHTML}</div>` : `<h2>${esc(title)}</h2>`}<div class="dlg-body">${body}</div>${actions.length ? `<div class="dlg-actions${vertical ? ' vertical' : ''}">${actions.map((a, i) => `<button type="button" class="btn ${a.kind || ''}" data-i="${i}">${esc(a.label)}</button>`).join('')}</div>` : ''}</div>`;
     const entry = { el, close: v => { el.remove(); const i = openDialogs.indexOf(entry); if (i >= 0) openDialogs.splice(i, 1); resolve(v); } };
     el.addEventListener('click', ev => {
@@ -1089,12 +1129,15 @@ const V = {
       <section class="group"><h2>書目查詢</h2><div class="list">
         <button type="button" class="row" data-action="gbooks-setup"><span class="tx"><b>Google Books</b><span>${esc(gbSourceText())}</span></span>${gbStatusHTML()}${ICON.chev}</button>
       </div></section>
+      <section class="group"><h2>AI 讀圖</h2><div class="list">
+        <button type="button" class="row" data-action="ai-setup"><span class="tx"><b>Gemini 金鑰</b><span>${LS.get(AI_KEY) ? esc('已設定' + (LS.get(AI_MODEL) ? '・' + LS.get(AI_MODEL) : '')) : '還沒設定，讀封底文案和版權頁要用'}</span></span>${LS.get(AI_KEY) ? '<span class="status">可以用</span>' : ''}${ICON.chev}</button>
+      </div></section>
       <section class="group"><h2>備份與還原</h2><div class="card">
         <div class="backup-status"><span style="flex:1"><span class="small muted">上次備份</span><b>${m.lastBackupAt ? (days <= 0 ? '今天' : `${days} 天前`) : '還沒有備份'}</b></span><span class="small muted" style="text-align:right">房間、書櫃、書籍、照片、<br>出版商和類型都在裡面</span></div>
         <button type="button" class="btn primary wide" data-action="export-json">${ICON.download}匯出完整備份</button>
         <div class="grid2" style="margin-top:8px"><button type="button" class="btn" data-action="export-csv">匯出書目 CSV</button><button type="button" class="btn" data-action="import">從備份還原</button></div>
         <input type="file" id="import-file" accept=".json,application/json" hidden></div></section>
-      <section class="group"><h2>關於</h2><div class="card about"><b>吋讀 Tsundoku</b><span class="small muted">版本 ${VERSION} · 第二階段 · 資料格式 v${SCHEMA_VERSION}</span></div></section>`;
+      <section class="group"><h2>關於</h2><div class="card about"><b>吋讀 Tsundoku</b><span class="small muted">版本 ${VERSION} · 第四階段 · 資料格式 v${SCHEMA_VERSION}</span></div></section>`;
     return { body };
   }
 };
@@ -1665,7 +1708,7 @@ function finishCrop(src, quad, kind) {
     : (warped.width >= warped.height ? scaleTo(warped, Math.min(DOC_LONG, warped.width), null) : scaleTo(warped, null, Math.min(DOC_LONG, warped.height)));
   return encodeCanvas(final, kind);
 }
-const KIND_LABEL = { cover: '封面', copyright: '版權頁', stamp: '藏書章' };
+const KIND_LABEL = { cover: '封面', copyright: '版權頁', stamp: '藏書章', blurb: '封底文案' };
 // 全螢幕裁切校正；回傳 { data, w, h } 或 null（取消）
 function cropEditor(srcCanvas, kind) {
   return new Promise(resolve => {
@@ -1969,7 +2012,7 @@ function scanSheetHTML() {
     return `<div class="sheet-row"><b class="small">${b.isbn ? '剛剛掃到' : '沒有條碼的書'}</b><span class="small muted">這一格已登記 ${n} 本</span></div>${dupBox}
       <div class="result">${coverThumb(b, 'rcover')}<div class="rinfo"><b>${esc(b.title || '書名待補')}</b><span>${esc(meta || (b.isbn ? 'ISBN ' + b.isbn : '可以之後再補資料'))}</span>${draftChip(d)}</div></div>
       ${d.lookup === 'nobarcode' ? `<label class="field">書名（可以之後再補）<input type="text" data-field="title" value="${esc(b.title)}" placeholder="先拍照也可以"></label>` : ''}
-      <div class="slots">${slotHTML('cover')}${slotHTML('copyright')}${slotHTML('stamp')}</div>
+      <div class="slots four">${slotHTML('cover')}${slotHTML('copyright')}${slotHTML('stamp')}${slotHTML('blurb')}</div>
       <div class="save-row"><button type="button" class="btn" data-action="draft-edit">修改資料</button><button type="button" class="btn accent" data-action="draft-save">儲存，掃下一本</button></div>
       <button type="button" class="btn ghost small wide" data-action="draft-discard">不要這本</button>`;
   }
@@ -2078,9 +2121,10 @@ Object.assign(V, {
     const catLines = catRows(b.categories);
     const sel = (field, opts, val) => `<select data-field="${field}">${opts.map(([ov, ol]) => `<option value="${esc(ov)}"${String(ov) === String(val ?? '') ? ' selected' : ''}>${esc(ol)}</option>`).join('')}</select>`;
     const photos = d.photos;
-    let body = `<header class="page-head"><div class="toprow"><button type="button" class="icon-btn" data-action="back" aria-label="返回">${d.origin === 'scan' ? ICON.back : ICON.close}</button><span class="mid">${d.isNew ? '新增書籍' : '編輯書籍'}</span><button type="button" class="btn small primary" data-action="save-book">儲存</button></div></header>
+    let body = `<header class="page-head"><div class="toprow"><button type="button" class="icon-btn" data-action="back" aria-label="返回">${d.origin === 'scan' ? ICON.back : ICON.close}</button><span class="mid">${d.isNew ? '新增書籍' : '編輯書籍'}</span><button type="button" class="btn small primary" data-action="save-book">儲存</button></div></header>${pinnedHTML(d)}
       <section class="card form">
-        <div class="cover-edit">${coverThumb(b, 'bigcover')}<div class="stack" style="gap:8px"><button type="button" class="btn small" data-action="draft-photo" data-kind="cover">${ICON.camera}${b.cover || b.coverUrl ? '重拍封面' : '拍封面'}</button>${b.cover || b.coverUrl ? '<button type="button" class="btn small ghost" data-action="cover-remove">移除封面</button>' : ''}${b.isbn ? '<button type="button" class="btn small ghost" data-action="relookup">用 ISBN 補查</button>' : ''}</div></div>
+        <div class="cover-edit">${coverThumb(b, 'bigcover')}<div class="stack" style="gap:8px"><button type="button" class="btn small" data-action="draft-photo" data-kind="cover">${ICON.camera}${b.cover || b.coverUrl ? '重拍封面' : '拍封面'}</button><button type="button" class="btn small" data-action="web-cover">${ICON.globe}上網找封面</button>${b.cover || b.coverUrl ? '<button type="button" class="btn small ghost" data-action="cover-remove">移除封面</button>' : ''}</div></div>
+        <div class="assist">${b.isbn ? `<button type="button" class="btn small soft" data-action="relookup">${ICON.search}用 ISBN 補查</button>` : ''}<button type="button" class="btn small soft" data-action="ai-copyright">${ICON.ai}AI 讀版權頁</button></div>
         <label class="field">書名<input type="text" data-field="title" value="${esc(b.title)}"></label>
         <label class="field">副標題<input type="text" data-field="subtitle" value="${esc(b.subtitle)}"></label>
         <label class="field">原著名<input type="text" data-field="originalTitle" value="${esc(b.originalTitle || '')}" placeholder="翻譯書的原文書名"></label>
@@ -2094,7 +2138,7 @@ Object.assign(V, {
         <label class="field">ISBN<input type="text" inputmode="numeric" data-field="isbn" value="${esc(b.isbn)}" placeholder="13 碼，可以留空"></label>
         <div class="grid2"><label class="field">格式${sel('format', [['', '未填'], ...FORMATS.map(x => [x, x])], b.format)}</label><label class="field">語言${sel('lang', langOpts, langVal)}</label></div>
         <div class="field">類型${catLines.map((r, i) => `<div class="cat-row"><button type="button" class="pickfield" data-action="pick-categories" data-parent="${r.parentId || ''}"><span>${esc(r.text)}</span>${ICON.chev}</button><button type="button" class="round-btn" data-action="del-cat-row" data-i="${i}" aria-label="移除這個類型">${ICON.close}</button></div>`).join('')}${catLines.length ? `<button type="button" class="btn small ghost" data-action="pick-categories" style="align-self:flex-start">${ICON.plus}再加一個類型</button>` : `<button type="button" class="pickfield" data-action="pick-categories"><span class="ph">選擇類型</span>${ICON.chev}</button>`}${(b.refSubjects || []).length ? `<span class="small muted">書目庫的主題：${esc(b.refSubjects.join('、'))}</span>` : ''}</div>
-        <label class="field">摘要<textarea rows="4" data-field="summary">${esc(b.summary)}</textarea></label>
+        <div class="field"><span class="field-head">摘要<button type="button" class="btn small soft" data-action="ai-blurb">${ICON.ai}AI 讀封底文案</button></span><textarea rows="5" data-field="summary" aria-label="摘要">${esc(b.summary)}</textarea></div>
       </section>
       <section class="card form">
         <div class="field">擁有狀態${seg('bk-ownership', [['owned', '已收藏'], ['wishlist', '願望清單'], ['loan', '借閱']], tabV)}</div>
@@ -2118,13 +2162,13 @@ Object.assign(V, {
       </section>
       <section class="card form">
         <h2 style="margin:0">整理用的照片</h2>
-        ${photos.length ? `<div class="photos">${photos.map(p => `<span class="pthumb"><img src="${p.data}" alt="${KIND_LABEL[p.kind] || '照片'}"><span>${KIND_LABEL[p.kind] || '照片'}</span><button type="button" class="round-btn" data-action="photo-del" data-id="${p.id}" aria-label="刪除這張照片">${ICON.close}</button></span>`).join('')}</div>` : '<p class="hint">還沒有照片。</p>'}
-        <div class="grid2"><button type="button" class="btn small" data-action="draft-photo" data-kind="copyright">${ICON.camera}拍版權頁</button><button type="button" class="btn small" data-action="draft-photo" data-kind="stamp">${ICON.camera}拍藏書章</button></div>
+        ${photos.length ? `<div class="photos">${photos.map(p => `<button type="button" class="pthumb" data-action="view-draft-photo" data-id="${p.id}"><img src="${p.data}" alt="${KIND_LABEL[p.kind] || '照片'}"><span>${KIND_LABEL[p.kind] || '照片'}${d.pin && d.pin.id === p.id ? '・釘在上方' : ''}</span></button>`).join('')}</div><p class="hint" style="margin:0">點照片可以放大、刪除，或釘在畫面上方邊看邊填。</p>` : '<p class="hint">還沒有照片。</p>'}
+        <div class="slots">${['copyright', 'stamp', 'blurb'].map(k => `<button type="button" class="slot" data-action="draft-photo" data-kind="${k}">${ICON.camera}<span>拍${KIND_LABEL[k]}</span></button>`).join('')}</div>
         <div class="switch-row"><span><b>資料已確認</b><span class="small muted">補完資料後打開。</span></span><button type="button" class="switch" role="switch" aria-checked="${!!b.verified}" aria-label="資料已確認" data-action="bk-toggle" data-f="verified"></button></div>
       </section>
       ${(() => { const nid = !d.isNew && d.origin === 'detail' ? neighborId(b.id, 1) : null, nb = nid && B().cache.books[nid]; return nb ? `<button type="button" class="btn soft wide savenext" data-action="save-next"><span>儲存並編輯下一本</span><small>${esc(nb.title || '書名待補')}</small></button>` : ''; })()}
       ${d.isNew ? '' : '<button type="button" class="btn danger wide" data-action="del-book">刪除這本書</button>'}`;
-    return { body, noTabs: true };
+    return { body, noTabs: true, after: restorePin };
   },
   picker(v) {
     const p = app.pick, rooms = sortedRooms();
@@ -2225,14 +2269,22 @@ async function moreAction(a, el) {
     case 'manage-categories': manageCategories(); break;
     case 'manage-languages': manageLanguages(); break;
     case 'gbooks-setup': gbooksSetup(); break;
+    case 'ai-setup': aiSetup(); break;
     case 'open-book': { app.bookNav = el.closest('#book-list') ? { ids: filteredBooks().map(b => b.id) } : null; go({ name: 'book', id: el.dataset.id }); break; }
     case 'edit-book': openEditBook(el.dataset.id); break;
     case 'toggle-verified': { const b = B().cache.books[el.dataset.id]; if (b) { B().put('books', { ...b, verified: !b.verified }); toast(b.verified ? '已改回待補資料' : '已標記為資料已確認'); } break; }
     case 'view-photo': {
       const p = (app.photoCache[el.dataset.book] || []).find(x => x.id === el.dataset.id); if (!p) return;
-      dialog({ title: KIND_LABEL[p.kind] || '照片', body: `<img src="${p.data}" alt="" style="width:100%;border-radius:12px;display:block">`, actions: [{ label: '關閉', kind: 'ghost' }] });
+      photoViewer(p, 'view');
       break;
     }
+    case 'view-draft-photo': openDraftPhoto(el.dataset.id); break;
+    case 'pin-zoom': if (d && d.pin) { d.pin.z = clamp(d.pin.z + Number(el.dataset.z) * 0.5, 1, 3); render(); } break;
+    case 'pin-open': if (d && d.pin) openDraftPhoto(d.pin.id); break;
+    case 'unpin': if (d) { d.pin = null; render(); } break;
+    case 'web-cover': webCover(); break;
+    case 'ai-copyright': aiFromKind('copyright'); break;
+    case 'ai-blurb': aiFromKind('blurb'); break;
     case 'scan-close': {
       if (app.scan.status === 'draft' && app.bookDraft && !(await confirmBox('不要這本嗎？', '剛掃到的這本還沒儲存。', '不要了', true))) return;
       if (app.scan.status === 'draft') { app.bookDraft = null; app.scan.status = 'idle'; }
@@ -3000,6 +3052,341 @@ function moneyOf(list) {
   const m = {};
   list.forEach(b => { if (!hasPrice(b)) return; const c = b.currency || 'TWD'; m[c] = (m[c] || 0) + Number(b.price) * (b.quantity || 1); });
   return m;
+}
+
+/* ---------- 照片大圖：放大、刪除、邊看邊填、AI 讀 ---------- */
+// mode：'view'（詳細頁，只看）或 'edit'（編輯頁，可以刪除、釘住、AI 讀）
+function photoViewer(p, mode = 'view') {
+  const label = KIND_LABEL[p.kind] || '照片';
+  const canAI = mode === 'edit' && (p.kind === 'copyright' || p.kind === 'blurb');
+  const actions = mode === 'edit'
+    ? [{ label: '刪除', kind: 'danger ghost', value: 'del' }, ...(canAI ? [{ label: p.kind === 'blurb' ? 'AI 讀文案' : 'AI 讀資料', kind: 'soft', value: 'ai' }] : []), { label: '邊看邊填', kind: 'primary', value: 'pin' }]
+    : [{ label: '關閉', kind: 'primary', value: null }];
+  return dialog({
+    title: label, hideTitle: true, layerCls: 'full', focus: false,
+    body: `<div class="pv-top"><b>${esc(label)}</b><span class="pv-zoom"><button type="button" class="round-btn sm" data-z="-1" aria-label="縮小">${ICON.minus}</button><span class="pv-pct">100%</span><button type="button" class="round-btn sm" data-z="1" aria-label="放大">${ICON.plus}</button></span><button type="button" class="round-btn" data-pvclose aria-label="關閉">${ICON.close}</button></div>
+      <div class="pv-stage"><img src="${p.data}" alt="${esc(label)}"></div><p class="pv-tip small muted">點兩下放大，放大後可以拖著看</p>`,
+    actions,
+    onOpen: (el, close) => {
+      const stage = el.querySelector('.pv-stage'), img = el.querySelector('img'), pct = el.querySelector('.pv-pct');
+      const ZS = [1, 1.5, 2, 3]; let zi = 0;
+      const setZ = (nz, cx = 0.5, cy = 0.5) => {
+        const fx = (stage.scrollLeft + stage.clientWidth * cx) / stage.scrollWidth, fy = (stage.scrollTop + stage.clientHeight * cy) / stage.scrollHeight;
+        zi = clamp(nz, 0, ZS.length - 1); img.style.width = (ZS[zi] * 100) + '%'; pct.textContent = Math.round(ZS[zi] * 100) + '%';
+        stage.scrollLeft = fx * stage.scrollWidth - stage.clientWidth * cx; stage.scrollTop = fy * stage.scrollHeight - stage.clientHeight * cy;
+      };
+      el.querySelector('[data-pvclose]').addEventListener('click', () => close(null));
+      el.querySelectorAll('[data-z]').forEach(b => b.addEventListener('click', () => setZ(zi + Number(b.dataset.z))));
+      let lastTap = 0;
+      stage.addEventListener('click', e => {
+        const now = Date.now();
+        if (now - lastTap < 320) { const r = stage.getBoundingClientRect(); setZ(zi ? 0 : 2, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height); lastTap = 0; }
+        else lastTap = now;
+      });
+    }
+  });
+}
+async function openDraftPhoto(id) {
+  const d = app.bookDraft; if (!d) return;
+  const p = d.photos.find(x => x.id === id); if (!p) return;
+  const r = await photoViewer(p, 'edit');
+  if (!app.bookDraft) return;
+  if (r === 'del') {
+    if (!(await confirmBox(`刪除這張${KIND_LABEL[p.kind] || '照片'}？`, '儲存之後才會真的刪掉。', '刪除', true))) return;
+    const i = d.photos.indexOf(p); if (i >= 0) { d.photos.splice(i, 1); if (!p.isNew) d.removed.push(p.id); }
+    if (d.pin && d.pin.id === p.id) d.pin = null;
+    render();
+  } else if (r === 'pin') { d.pin = { id: p.id, z: 1 }; app.pinScroll = [0, 0]; render(); $('#main').scrollTop = 0; }
+  else if (r === 'ai') aiFromPhoto(p);
+}
+// 編輯頁上方釘住的照片
+function pinnedHTML(d) {
+  const p = d.pin && d.photos.find(x => x.id === d.pin.id); if (!p) return '';
+  return `<div class="pinned"><div class="pin-stage" id="pin-stage"><img src="${p.data}" alt="${esc(KIND_LABEL[p.kind] || '照片')}" style="width:${d.pin.z * 100}%"></div>
+    <div class="pin-bar"><b>${esc(KIND_LABEL[p.kind] || '照片')}</b><button type="button" class="round-btn sm" data-action="pin-zoom" data-z="-1" aria-label="縮小">${ICON.minus}</button><button type="button" class="round-btn sm" data-action="pin-zoom" data-z="1" aria-label="放大">${ICON.plus}</button><button type="button" class="round-btn sm" data-action="pin-open" aria-label="開大圖">${ICON.expand}</button><button type="button" class="round-btn sm" data-action="unpin" aria-label="收起照片">${ICON.close}</button></div></div>`;
+}
+function restorePin() {
+  const s = $('#pin-stage'); if (!s) return;
+  const [x, y] = app.pinScroll || [0, 0]; s.scrollLeft = x; s.scrollTop = y;
+  s.addEventListener('scroll', () => { app.pinScroll = [s.scrollLeft, s.scrollTop]; }, { passive: true });
+}
+
+/* ---------- 上網找封面 ---------- */
+function pickImageFile() {
+  return new Promise(resolve => {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*'; inp.hidden = true; inp.id = 'gallery-input';
+    document.body.append(inp);
+    let settled = false;
+    inp.addEventListener('change', () => { settled = true; const f = inp.files[0]; inp.remove(); resolve(f || null); });
+    inp.addEventListener('cancel', () => { if (!settled) { settled = true; inp.remove(); resolve(null); } });
+    inp.click();
+  });
+}
+async function clipboardImage() {
+  if (!navigator.clipboard || !navigator.clipboard.read) return { err: 'unsupported' };
+  let items;
+  try { items = await navigator.clipboard.read(); } catch (e) { return { err: e && e.name === 'NotAllowedError' ? 'denied' : 'empty' }; }
+  for (const it of items) { const t = it.types.find(x => x.startsWith('image/')); if (t) return { blob: await it.getType(t) }; }
+  for (const it of items) if (it.types.includes('text/plain')) { const s = (await (await it.getType('text/plain')).text()).trim(); if (/^https?:\/\//.test(s)) return { url: s }; }
+  return { err: 'empty' };
+}
+async function webCover() {
+  const d = app.bookDraft; if (!d) return;
+  const b = d.book, firstAuthor = ((b.authors || []).find(a => a.name) || {}).name || '';
+  const q0 = [b.title, firstAuthor].filter(Boolean).join(' ');
+  let picked = null;
+  const res = await dialog({
+    title: '上網找封面', sheet: true, focus: false,
+    body: `<label class="field"><span>搜尋字</span><input id="wc-q" type="search" value="${esc(q0)}" placeholder="書名 作者"></label>
+      <div class="grid2"><button type="button" class="btn soft" data-site="google">${ICON.search}Google 圖片</button><button type="button" class="btn soft" data-site="books">${ICON.search}博客來</button></div>
+      <ol class="gb-steps" style="margin-top:12px"><li>按上面的按鈕，會開新分頁搜尋。</li><li>找到對的封面，<b>長按圖片 →「複製圖片」</b>。</li><li>回到吋讀，按「貼上圖片」，第一次會問能不能讀剪貼簿，選允許。</li></ol>
+      <div class="wc-preview" id="wc-prev"><span class="small muted">複製的圖片會出現在這裡</span></div>
+      <div class="grid2"><button type="button" class="btn" id="wc-paste">${ICON.paste}貼上圖片</button><button type="button" class="btn" id="wc-file">${ICON.image}從相簿選</button></div>`,
+    actions: [{ label: '取消', kind: 'ghost', value: null }, { label: '確定', kind: 'primary', get: () => ({ ok: true }), validate: () => { if (!picked) toast('還沒有圖片', 'err'); return !!picked; } }],
+    onOpen: el => {
+      const prev = el.querySelector('#wc-prev');
+      const show = async blob => {
+        try {
+          picked = await loadImageFile(blob);
+          prev.innerHTML = `<img src="${picked.toDataURL('image/jpeg', 0.85)}" alt="準備用的封面">`;
+          prev.classList.add('has');
+        } catch (e) { toast('這張圖片打不開，換一張試試', 'err'); }
+      };
+      el.querySelectorAll('[data-site]').forEach(btn => btn.addEventListener('click', () => {
+        const q = el.querySelector('#wc-q').value.trim() || q0; if (!q) { toast('請先輸入搜尋字', 'err'); return; }
+        const url = btn.dataset.site === 'google' ? `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(q)}` : `https://search.books.com.tw/search/query/key/${encodeURIComponent(q)}/cat/all`;
+        window.open(url, '_blank', 'noopener');
+      }));
+      el.querySelector('#wc-paste').addEventListener('click', async () => {
+        const r = await clipboardImage();
+        if (r.blob) return show(r.blob);
+        if (r.url) {
+          try { const resp = await fetch(r.url); if (!resp.ok) throw 0; const bl = await resp.blob(); if (!bl.type.startsWith('image/')) throw 0; return show(bl); }
+          catch (e) { infoBox('這個網址抓不到圖片', '<p>剪貼簿裡是圖片的網址，但那個網站不讓別的網頁直接下載。請改成長按圖片 →「複製圖片」，或「下載圖片」後按「從相簿選」。</p>'); return; }
+        }
+        if (r.err === 'denied') infoBox('沒有剪貼簿權限', '<p>瀏覽器擋住了讀剪貼簿。可以到網址列左邊的網站設定，把「剪貼簿」改成允許；或是長按圖片選「下載圖片」，再按「從相簿選」。</p>');
+        else if (r.err === 'unsupported') toast('這個瀏覽器不能讀剪貼簿，請改用「從相簿選」', 'err');
+        else toast('剪貼簿裡沒有圖片，記得長按圖片選「複製圖片」', 'err');
+      });
+      el.querySelector('#wc-file').addEventListener('click', async () => { const f = await pickImageFile(); if (f) show(f); });
+      // 電腦上可以直接 Ctrl+V
+      el.addEventListener('paste', e => {
+        const f = [...(e.clipboardData ? e.clipboardData.files : [])].find(x => x.type.startsWith('image/'));
+        if (f) { e.preventDefault(); show(f); }
+      });
+    }
+  });
+  if (!res || !picked || !app.bookDraft) return;
+  const r = await cropEditor(picked, 'cover');
+  if (!r || !app.bookDraft) return;
+  d.book.cover = r.data; d.book.coverUrl = '';
+  toast('封面已換好，記得儲存'); render();
+}
+
+/* ---------- AI 讀圖（Gemini，自己的金鑰） ---------- */
+const AI_KEY = 'tsundoku-ai-key', AI_MODEL = 'tsundoku-ai-model', AI_MODELS = 'tsundoku-ai-models';
+const AI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+const AI_PROMPTS = {
+  blurb: `這是一本書的封底、書腰或摺口照片，上面有介紹這本書的文案。請把文案轉成文字：
+- 照原文用字，不要翻譯、改寫或摘要；繁體就用繁體，簡體就用簡體。
+- 直排文字依照由右到左、由上到下的順序讀。
+- 不要收錄價格、ISBN、條碼數字、出版社地址電話、網址、分類號這類資訊。
+- 段落之間用一個空行分開。看不清楚的字用「□」代替。
+只回傳 JSON：{"text": "文案內容"}。照片裡沒有文案的話，text 回傳空字串。`,
+  copyright: `這是一本書的版權頁照片。請讀出書目資料，只回傳一個 JSON 物件，找不到的欄位填 null，不要猜：
+{"title": 書名, "subtitle": 副標題, "originalTitle": 原文書名（翻譯書才有）, "series": 叢書或系列名稱, "volume": 第幾卷（數字）,
+ "authors": [{"name": 姓名, "role": "著"、"譯"、"編"、"繪"、"校訂"、"審訂"、"導讀"、"攝影" 其中之一}],
+ "publisher": 出版社名稱（照版權頁寫的）,
+ "publishedDate": 這個版次第一刷的日期，格式 YYYY-MM-DD、YYYY-MM 或 YYYY；民國年請加 1911 換成西元,
+ "edition": 版次，例如 "初版"、"二版"、"修訂版"（只寫「版」，不含「刷」）,
+ "printing": 這一本是第幾刷（數字；列了好幾刷時取最新的那一刷）,
+ "isbn": ISBN（只要數字，有 13 碼就給 13 碼）, "price": 定價（數字）,
+ "currency": 幣別代碼，新台幣 TWD、港幣 HKD、人民幣 CNY、日圓 JPY、美金 USD, "pages": 頁數（數字）}
+照片上的字照原文用字，不要翻譯。`
+};
+function aiModelOK(n) { return /gemini/.test(n) && /flash/.test(n) && !/(tts|image|audio|live|embed|thinking|native|computer|robotics)/.test(n); }
+function aiPickModel(list) {
+  const ver = n => { const m = n.match(/gemini-(\d+(?:\.\d+)?)/); return m ? parseFloat(m[1]) : 0; };
+  const score = n => (/lite/.test(n) ? 100 : 0) + ver(n) - (/(preview|exp)/.test(n) ? 50 : 0) + (/latest/.test(n) ? 0.5 : 0);
+  return [...list].sort((a, b) => score(b) - score(a))[0] || '';
+}
+async function aiFetch(path, opts = {}, ms = 60000) {
+  const key = LS.get(AI_KEY); if (!key) { const e = new Error('nokey'); e.code = 'nokey'; throw e; }
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms);
+  let r;
+  try { r = await fetch(AI_BASE + path, { ...opts, signal: ctl.signal, headers: { 'content-type': 'application/json', 'x-goog-api-key': key, ...(opts.headers || {}) } }); }
+  catch (e) { const er = new Error('offline'); er.code = 'offline'; throw er; }
+  finally { clearTimeout(t); }
+  if (!r.ok) {
+    const txt = await r.text().catch(() => '');
+    const er = new Error('HTTP ' + r.status); er.status = r.status;
+    er.code = r.status === 429 ? 'quota' : /API_KEY|API key/i.test(txt) || r.status === 401 || r.status === 403 ? 'badkey' : r.status === 404 ? 'nomodel' : 'error';
+    throw er;
+  }
+  return r.json();
+}
+async function aiListModels() {
+  const j = await aiFetch('/models?pageSize=1000', { method: 'GET' }, 20000);
+  const list = (j.models || []).filter(m => (m.supportedGenerationMethods || []).includes('generateContent')).map(m => String(m.name).replace(/^models\//, '')).filter(aiModelOK);
+  LS.set(AI_MODELS, list);
+  return list;
+}
+function parseLooseJSON(s) {
+  s = String(s || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+  try { return JSON.parse(s); } catch (e) {}
+  const a = s.indexOf('{'), b = s.lastIndexOf('}');
+  if (a >= 0 && b > a) { try { return JSON.parse(s.slice(a, b + 1)); } catch (e) {} }
+  return null;
+}
+async function aiReadPhoto(p, kind) {
+  let model = LS.get(AI_MODEL);
+  if (!model) { model = aiPickModel(await aiListModels()); if (!model) { const e = new Error('nomodel'); e.code = 'nomodel'; throw e; } LS.set(AI_MODEL, model); }
+  const m = String(p.data).match(/^data:([^;]+);base64,(.*)$/); if (!m) { const e = new Error('badimage'); e.code = 'error'; throw e; }
+  const body = { contents: [{ role: 'user', parts: [{ text: AI_PROMPTS[kind] }, { inline_data: { mime_type: m[1], data: m[2] } }] }], generationConfig: { temperature: 0, responseMimeType: 'application/json' } };
+  let j;
+  try { j = await aiFetch(`/models/${encodeURIComponent(model)}:generateContent`, { method: 'POST', body: JSON.stringify(body) }); }
+  catch (e) { if (e.code === 'nomodel') LS.del(AI_MODEL); throw e; }
+  const c = (j.candidates || [])[0] || {};
+  if (c.finishReason === 'RECITATION' || c.finishReason === 'SAFETY' || (j.promptFeedback && j.promptFeedback.blockReason)) { const e = new Error('blocked'); e.code = 'blocked'; throw e; }
+  const out = parseLooseJSON(((c.content || {}).parts || []).map(x => x.text || '').join(''));
+  if (!out) { const e = new Error('format'); e.code = 'format'; throw e; }
+  return out;
+}
+function aiErrorBox(e) {
+  const msg = {
+    nokey: ['還沒設定 AI 金鑰', '<p>到「設定 › AI 讀圖」貼上 Gemini 的免費金鑰就能用。</p>'],
+    badkey: ['金鑰不能用', '<p>Gemini 金鑰不對，或沒有權限。到「設定 › AI 讀圖」重新貼一次。</p>'],
+    quota: ['次數用完了', '<p>免費額度有每分鐘和每天的上限。等一下再試；如果是今天的次數用完了，台灣時間下午 3、4 點（美國太平洋時間半夜）會重新計算。</p>'],
+    offline: [app.inFrame ? '預覽頁不能連網' : '連不上 Gemini', app.inFrame ? '<p>部署到 GitHub 之後才能用 AI 讀圖。</p>' : '<p>請確認網路，再試一次。</p>'],
+    nomodel: ['找不到可用的模型', '<p>到「設定 › AI 讀圖」重新儲存一次，會自動選一個可以用的模型。</p>'],
+    blocked: ['Google 擋下了這段文字', '<p>AI 判斷這段文字可能受版權保護，不肯整段輸出。這本請改用手機的智慧鏡頭複製文字。</p>'],
+    format: ['AI 回的格式看不懂', '<p>再試一次通常就好了。</p>']
+  }[e && e.code] || ['讀取失敗', '<p>再試一次看看。</p>'];
+  return infoBox(msg[0], msg[1]);
+}
+function busyBox(text) {
+  let closer = null;
+  dialog({ title: text, hideTitle: true, focus: false, body: `<div class="looking"><div class="spinner"></div><p class="hint" style="margin:0">${esc(text)}</p></div>`, onOpen: (el, close) => { closer = close; } });
+  return () => closer && closer(null);
+}
+// 依種類找照片：沒有就先拍一張
+async function aiFromKind(kind) {
+  const d = app.bookDraft; if (!d) return;
+  if (!LS.get(AI_KEY)) return aiErrorBox({ code: 'nokey' });
+  let p = [...d.photos].reverse().find(x => x.kind === kind);
+  if (!p) {
+    if (!(await confirmBox(`還沒有${KIND_LABEL[kind]}照片`, `先拍一張${KIND_LABEL[kind]}，拍好就讓 AI 讀。`, '拍照'))) return;
+    const r = await capturePhoto(kind); if (!r || !app.bookDraft) return;
+    p = { id: newId(), kind, data: r.data, w: r.w, h: r.h, isNew: true };
+    d.photos.push(p); render();
+  }
+  aiFromPhoto(p);
+}
+async function aiFromPhoto(p) {
+  const d = app.bookDraft; if (!d) return;
+  const kind = p.kind === 'blurb' ? 'blurb' : 'copyright';
+  const done = busyBox(kind === 'blurb' ? 'AI 正在讀封底文案…' : 'AI 正在讀版權頁…');
+  let out;
+  try { out = await aiReadPhoto(p, kind); }
+  catch (e) { done(); return aiErrorBox(e); }
+  done();
+  if (!app.bookDraft) return;
+  if (kind === 'blurb') return applyBlurb(String(out.text || '').trim());
+  return applyCopyright(out);
+}
+async function applyBlurb(text) {
+  const d = app.bookDraft; if (!d) return;
+  if (!text) return infoBox('沒讀到文案', '<p>這張照片裡好像沒有介紹文字。換一張比較清楚的照片試試。</p>');
+  const has = !!String(d.book.summary || '').trim();
+  const r = await dialog({
+    title: 'AI 讀到的文案',
+    body: `<p class="small muted">可以先在這裡修改，確定了再放進摘要。</p><label class="field"><span class="sr">文案</span><textarea id="ai-text" rows="10">${esc(text)}</textarea></label>`,
+    actions: [{ label: '取消', kind: 'ghost', value: null }, ...(has ? [{ label: '接在摘要後面', kind: 'soft', get: el => ({ mode: 'append', text: el.querySelector('#ai-text').value.trim() }) }] : []), { label: has ? '取代摘要' : '放進摘要', kind: 'primary', get: el => ({ mode: 'replace', text: el.querySelector('#ai-text').value.trim() }) }]
+  });
+  if (!r || !app.bookDraft) return;
+  d.book.summary = r.mode === 'append' ? `${String(d.book.summary).trim()}\n\n${r.text}` : r.text;
+  toast('已放進摘要，記得儲存'); render();
+}
+const ZH_NUM = { 一: 1, 二: 2, 兩: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10 };
+function zhToNum(s) {
+  s = String(s ?? '').trim(); if (!s) return null;
+  if (/^\d+(\.\d+)?$/.test(s)) return Number(s);
+  const m = s.match(/(\d+)/); if (m) return Number(m[1]);
+  let t = s.replace(/[第刷版次卷冊]/g, '');
+  if (/^十[一二三四五六七八九]?$/.test(t)) return 10 + (ZH_NUM[t[1]] || 0);
+  if (/^[一二三四五六七八九]十[一二三四五六七八九]?$/.test(t)) return ZH_NUM[t[0]] * 10 + (ZH_NUM[t[2]] || 0);
+  return ZH_NUM[t] || null;
+}
+function normEdition(s) {
+  s = String(s ?? '').trim(); if (!s) return '';
+  const t = s.replace(/^第/, '').replace(/[一二三四五六七八九十\d]+刷.*$/, '').trim();
+  const n = zhToNum(t.replace(/版$/, ''));
+  if (/^(第?[一二三四五六七八九十\d]+)版$/.test(t) && n) return n === 1 ? '初版' : n === 2 ? '再版' : n <= 10 ? EDITIONS[n - 1] : t;
+  if (t === '初版' || t === '再版') return t;
+  return t;
+}
+function normAI(o) {
+  const str = v => (v === null || v === undefined) ? '' : String(v).trim();
+  const num = v => { const n = zhToNum(v); return n && isFinite(n) ? n : null; };
+  const out = {};
+  ['title', 'subtitle', 'originalTitle', 'series', 'publisher'].forEach(k => { const v = str(o[k]); if (v && v !== 'null') out[k] = v; });
+  const vol = num(o.volume); if (vol) out.volume = vol;
+  const pr = num(o.printing); if (pr) out.printing = pr;
+  const pg = num(o.pages); if (pg) out.pages = pg;
+  const ed = normEdition(o.edition); if (ed) out.edition = ed;
+  const dt = normDate(str(o.publishedDate)); if (dt) out.publishedDate = dt;
+  const isbn = normalizeISBN(str(o.isbn)); if (isbn) out.isbn = isbn;
+  const price = o.price !== null && o.price !== undefined && o.price !== '' && isFinite(Number(String(o.price).replace(/[^\d.]/g, ''))) ? Number(String(o.price).replace(/[^\d.]/g, '')) : null;
+  if (price) { out.price = price; out.currency = CURRENCIES.includes(str(o.currency).toUpperCase()) ? str(o.currency).toUpperCase() : 'TWD'; }
+  const authors = (Array.isArray(o.authors) ? o.authors : []).map(a => ({ name: str(a && a.name), role: normRole(a && a.role) })).filter(a => a.name);
+  if (authors.length) out.authors = authors;
+  return out;
+}
+async function applyCopyright(raw) {
+  const d = app.bookDraft; if (!d) return;
+  const ai = normAI(raw || {}), b = d.book;
+  const FIELDS = [['title', '書名'], ['subtitle', '副標題'], ['originalTitle', '原著名'], ['series', '系列'], ['volume', '卷'], ['authors', '作者'], ['publisher', '出版商'], ['publishedDate', '出版日期'], ['edition', '版次'], ['printing', '刷次'], ['isbn', 'ISBN'], ['price', '價格'], ['pages', '頁數']];
+  const show = (k, v) => k === 'authors' ? (v || []).filter(a => a.name).map(a => `${a.name}（${a.role}）`).join('、') : k === 'price' ? `${ai.currency || 'TWD'} ${v}` : String(v ?? '');
+  const rows = FIELDS.filter(([k]) => k in ai).map(([k, l]) => {
+    const now = k === 'price' ? (b.price === null || b.price === undefined || b.price === '' ? '' : `${b.currency || 'TWD'} ${b.price}`) : show(k, b[k]);
+    const nv = show(k, ai[k]);
+    return { k, l, now, nv, same: now === nv };
+  }).filter(r => !r.same);
+  if (!rows.length) return infoBox(Object.keys(ai).length ? '資料都一樣' : '沒讀到資料', Object.keys(ai).length ? '<p>AI 讀到的內容跟現在填的一樣，不用改。</p>' : '<p>這張照片裡好像沒有版權頁資料。換一張比較清楚的照片試試。</p>');
+  const r = await dialog({
+    title: 'AI 從版權頁讀到的資料',
+    body: `<p class="small muted">勾選要填進去的欄位。原本空著的已經先勾好；原本有填的，下面會寫目前的內容給你比對。</p><div class="list ailist">${rows.map(x => `<label class="airow"><input type="checkbox" data-k="${x.k}"${x.now ? '' : ' checked'}><span class="tx"><span class="k">${x.l}</span><b>${esc(x.nv)}</b>${x.now ? `<small>目前：${esc(x.now)}</small>` : ''}</span></label>`).join('')}</div>`,
+    actions: [{ label: '取消', kind: 'ghost', value: null }, { label: '填進去', kind: 'primary', get: el => [...el.querySelectorAll('input[data-k]:checked')].map(i => i.dataset.k) }]
+  });
+  if (!r || !app.bookDraft) return;
+  r.forEach(k => { if (k === 'price') { b.price = ai.price; b.currency = ai.currency; } else b[k] = clone(ai[k]); });
+  if (r.length) toast(`已填入 ${r.length} 個欄位，記得檢查後儲存`);
+  render();
+}
+async function aiSetup() {
+  const key = LS.get(AI_KEY) || '', models = LS.get(AI_MODELS) || [], model = LS.get(AI_MODEL) || '';
+  const r = await dialog({
+    title: 'AI 讀圖（Gemini）', focus: false,
+    body: `<p class="small">用 Google 的 Gemini 讀封底文案和版權頁。金鑰免費申請，只存在這台裝置；手機和電腦要各貼一次。</p>
+      <ol class="gb-steps"><li>打開 <b>aistudio.google.com</b>，用 Google 帳號登入。</li><li>按「Get API key」→「Create API key」建立金鑰（專案選 Tsundoku 也可以）。</li><li>複製金鑰，貼到下面，按「儲存並測試」。</li></ol>
+      <p class="small muted">免費版有每分鐘和每天的次數上限，額度以 AI Studio 上顯示的為準。免費版送出的照片可能會被 Google 拿去改善產品，吋讀只會送出你按「AI 讀」的那一張照片。</p>
+      <label class="field"><span>Gemini 金鑰</span><input type="text" id="ai-key" maxlength="120" value="${esc(key)}" placeholder="AIza…" autocomplete="off" spellcheck="false"></label>
+      ${models.length ? `<label class="field"><span>模型</span><select id="ai-model">${models.map(m => `<option value="${esc(m)}"${m === model ? ' selected' : ''}>${esc(m)}${m === aiPickModel(models) ? '（建議）' : ''}</option>`).join('')}</select></label><p class="small muted" style="margin-top:4px">名字有 lite 的每天可以用比較多次；不帶 lite 的比較聰明，但次數少很多。</p>` : ''}`,
+    actions: [...(key ? [{ label: '清除金鑰', kind: 'ghost danger', value: { clear: true } }] : []), { label: '關閉', kind: 'ghost', value: null }, { label: '儲存並測試', kind: 'primary', get: el => ({ key: el.querySelector('#ai-key').value.trim(), model: el.querySelector('#ai-model') ? el.querySelector('#ai-model').value : '' }) }]
+  });
+  if (!r) return;
+  if (r.clear) { LS.del(AI_KEY); LS.del(AI_MODEL); LS.del(AI_MODELS); toast('已清除金鑰'); render(); return; }
+  if (!r.key) { toast('請貼上金鑰', 'err'); return; }
+  LS.set(AI_KEY, r.key);
+  const done = busyBox('測試金鑰中…');
+  try {
+    const list = await aiListModels(); done();
+    const pick = r.model && list.includes(r.model) ? r.model : aiPickModel(list);
+    if (!pick) { infoBox('找不到可用的模型', '<p>金鑰可以用，但沒有找到能讀圖的 Gemini Flash 模型。</p>'); return; }
+    LS.set(AI_MODEL, pick); toast(`可以用了：${pick}`);
+  } catch (e) { done(); aiErrorBox(e); }
+  render();
 }
 
 /* ---------- 匯出與還原 ---------- */
