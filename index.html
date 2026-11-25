@@ -349,6 +349,33 @@ button.star{width:34px;height:34px}
 .field select{width:100%;height:46px;background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:0 10px;color:var(--ink);font-size:16px}
 .field select:focus{outline:none;border-color:var(--orange)}
 .grid-wide{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:10px}
+.tabbar .tab-empty{width:62px;flex:none}
+.pickfield{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:46px;padding:0 10px 0 12px;background:var(--bg);border:1.5px solid var(--line);border-radius:12px;color:var(--ink);font-size:16px;text-align:left}
+.pickfield>span:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.pickfield .ph{color:#b89a8a}
+.pickfield svg{width:18px;height:18px;flex:none;color:var(--wood)}
+.pickfield.multi{padding:8px 10px 8px 8px}
+.pickfield .chips .chip{white-space:normal}
+.loanbox{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:14px;background:var(--cell);border:1.5px solid var(--line)}
+.loanbox .seg{background:var(--white)}
+.loanbox .seg button[aria-checked="true"]{background:var(--peach);box-shadow:none}
+.optlist .row{padding:12px 14px}
+.optlist .row svg{width:18px;height:18px;flex:none;color:var(--orange)}
+.optlist .row.on b{color:var(--brown)}
+.optlist .row.sub{padding-left:calc(14px + var(--d,0) * 18px)}
+.optlist .check{flex:none;width:22px;height:22px;border-radius:7px;border:1.5px solid var(--line);display:grid;place-items:center;background:var(--bg)}
+.optlist .row.on .check{background:var(--orange);border-color:var(--orange)}
+.optlist .row.on .check svg{color:#ffffff;width:15px;height:15px}
+.opt-add{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:10px;height:46px;border-radius:14px;border:1.5px dashed #d9a387;background:transparent;color:var(--brown);font-size:15px;font-weight:700}
+.opt-add svg{width:18px;height:18px}
+.dlg .search{box-shadow:none;border:1.5px solid var(--line);height:46px;margin-bottom:10px}
+.mgr .row{gap:8px}
+.mgr .row .btn{flex:none}
+.loaninfo{display:flex;align-items:center;gap:12px}
+.loaninfo .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.status.warn{color:var(--orange)}
+.gb-steps{margin:0 0 10px;padding-left:20px;font-size:14px;line-height:1.7}
+.gb-steps li{margin-bottom:4px}
 .author-row{display:grid;grid-template-columns:minmax(0,1fr) 72px 40px;gap:8px;align-items:center}
 .author-row input,.author-row select{height:46px;background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:0 10px;color:var(--ink);font-size:16px;width:100%}
 .cover-edit{display:flex;gap:16px;align-items:center}
@@ -374,7 +401,7 @@ button.star{width:34px;height:34px}
 <div id="toasts" aria-live="polite"></div>
 <script type="module">
 /* ========= 吋讀 Tsundoku · 第一階段：地基、書櫃編輯器、匯出備份 ========= */
-const VERSION = '0.2.0';
+const VERSION = '0.2.1';
 const SCHEMA_VERSION = 1;
 const FB_VERSION = '10.12.2';
 const COLS = ['rooms', 'cabinets', 'categories', 'books'];
@@ -383,6 +410,8 @@ const FORMATS = ['平裝', '精裝', '軟精裝', '線裝', '其他'];
 const ROLES = ['著', '譯', '編', '繪'];
 const READ_STATUS = { unread: '未閱讀', reading: '閱讀中', done: '閱畢', dropped: '棄讀' };
 const LANGS = { eng: '英語', jpn: '日語', kor: '韓語', fra: '法語', deu: '德語', spa: '西班牙語' };
+const EDITIONS = ['初版', '再版', '三版', '四版', '五版', '六版', '七版', '八版', '九版', '十版'];
+const CUSTOM = '__custom';
 const MAX_ROWS = 26, MAX_COLS = 30;
 
 /* ---------- 小工具 ---------- */
@@ -405,7 +434,7 @@ const LS = {
 };
 
 /* ---------- 資料規格 v1 ---------- */
-function defaultMeta() { return { owners: ['爸爸', '我'], lastBackupAt: null }; }
+function defaultMeta() { return { owners: ['爸爸', '我'], publishers: [], languages: [], lastBackupAt: null }; }
 function newRoom(name, order) { return { id: newId(), name, order, createdAt: nowISO() }; }
 function newCabinet(roomId, code) {
   const t = nowISO();
@@ -416,17 +445,18 @@ function newBook(p = {}) {
   const t = nowISO();
   return Object.assign({
     id: newId(), schemaVersion: SCHEMA_VERSION,
-    title: '', subtitle: '', series: '', volume: null, edition: '',
+    title: '', subtitle: '', originalTitle: '', series: '', volume: null, edition: '', printing: null, // printing = 第幾刷
     authors: [],               // [{ name: '唐德剛', role: '著' }]
     publisher: '', publishedDate: '',   // YYYY、YYYY-MM 或 YYYY-MM-DD
     isbn: '',                  // 13 碼，不含連字號
     format: '', language: '', script: '', // language: ISO 639-2（zho、eng…）；script: Hant / Hans
     pages: null, categories: [], summary: '', cover: '',
-    ownership: 'owned',        // owned 已收藏 / wishlist 願望清單
-    owner: '', location: null, // { cabinetId, r, c, depth }
+    ownership: 'owned',        // owned 已收藏 / wishlist 願望清單 / borrowed 借來的
+    owner: '', quantity: 1, location: null, // { cabinetId, r, c, depth }
     locationNote: '', price: null, currency: 'TWD', purchaseDate: '', tags: [],
     rating: null, readStatus: 'unread', currentPage: null, startDate: '', finishDate: '', favorite: false, review: '',
-    loan: null, loanHistory: [], verified: false, addedAt: t, updatedAt: t
+    loan: null,                // { dir: 'out' 借出 / 'in' 借入, person, date }
+    loanHistory: [], verified: false, addedAt: t, updatedAt: t
   }, p);
 }
 
@@ -602,7 +632,8 @@ class FirebaseBackend {
 /* ---------- App 狀態 ---------- */
 const app = { screen: 'loading', mode: null, B: null, tab: 'shelf', stack: [], draft: null, draftOrig: '', edTool: 'toggle', edDepth: 'default', histOK: false, ignorePop: false, preview: false, inFrame: false, loginError: '', syncError: '', loadingMsg: '',
   session: LS.get('tsundoku-session') || { location: null, owner: '' }, scan: { status: 'idle', camera: 'off', lastCode: '', lastAt: 0, lastSaved: '', looking: '' },
-  bookDraft: null, bookDraftOrig: '', photoCache: {}, bookQuery: '', bookFilter: 'all', pick: null, prevTab: 'shelf' };
+  bookDraft: null, bookDraftOrig: '', photoCache: {}, bookQuery: '', bookFilter: 'all', pick: null, prevTab: 'shelf',
+  gb: { status: '', keyBad: false } };
 const B = () => app.B;
 const cur = () => app.stack[app.stack.length - 1];
 const viewKey = v => v ? v.name + ':' + (v.id || '') : '';
@@ -637,7 +668,7 @@ const LOGO_IMG = '<img src="logo-mark.png" alt="" width="30" height="40">';
 
 /* ---------- 對話框與提示 ---------- */
 const openDialogs = [];
-function dialog({ title, body = '', actions = [], sheet = false, vertical = false, hideTitle = false, onOpen }) {
+function dialog({ title, body = '', actions = [], sheet = false, vertical = false, hideTitle = false, focus = true, onOpen }) {
   return new Promise(resolve => {
     const el = document.createElement('div');
     el.className = 'layer' + (sheet ? ' as-sheet' : '');
@@ -657,15 +688,15 @@ function dialog({ title, body = '', actions = [], sheet = false, vertical = fals
     });
     $('#layer').append(el); openDialogs.push(entry);
     if (onOpen) onOpen(el, entry.close);
-    const f = el.querySelector('input,textarea') || el.querySelector('.dlg-actions .primary') || el.querySelector('.dlg-actions button');
+    const f = focus ? (el.querySelector('input,textarea') || el.querySelector('.dlg-actions .primary') || el.querySelector('.dlg-actions button')) : null;
     if (f) setTimeout(() => f.focus(), 30);
   });
 }
 const confirmBox = (title, msg, ok = '確定', danger = false) => dialog({ title, body: `<p>${esc(msg)}</p>`, actions: [{ label: '取消', kind: 'ghost', value: false }, { label: ok, kind: danger ? 'danger' : 'primary', value: true }] });
 const infoBox = (title, html) => dialog({ title, body: html, actions: [{ label: '知道了', kind: 'primary' }] });
-function promptBox(title, label, value = '', placeholder = '') {
+function promptBox(title, label, value = '', placeholder = '', max = 30) {
   return dialog({
-    title, body: `<label class="field"><span>${esc(label)}</span><input type="text" id="prompt-input" maxlength="30" value="${esc(value)}" placeholder="${esc(placeholder)}"></label>`,
+    title, body: `<label class="field"><span>${esc(label)}</span><input type="text" id="prompt-input" maxlength="${max}" value="${esc(value)}" placeholder="${esc(placeholder)}"></label>`,
     actions: [{ label: '取消', kind: 'ghost', value: null }, { label: '確定', kind: 'primary', get: el => el.querySelector('input').value.trim(), validate: el => { const ok = !!el.querySelector('input').value.trim(); if (!ok) toast('請輸入名稱', 'err'); return ok; } }]
   });
 }
@@ -727,10 +758,12 @@ function switchTab(t) {
 /* ---------- 計數 ---------- */
 function bookStats() {
   const byCab = {}, byCell = {}, pendByCab = {};
-  let owned = 0, pending = 0, wish = 0;
+  let owned = 0, pending = 0, wish = 0, borrowed = 0, loans = 0;
   for (const b of Object.values(B().cache.books)) {
     if (b.ownership === 'wishlist') { wish++; continue; }
-    owned++; if (!b.verified) pending++;
+    if (b.loan) loans++;
+    if (b.ownership === 'borrowed') borrowed++; else owned++;
+    if (!b.verified) pending++;
     const loc = b.location; if (!loc) continue;
     byCab[loc.cabinetId] = (byCab[loc.cabinetId] || 0) + 1;
     if (!b.verified) pendByCab[loc.cabinetId] = (pendByCab[loc.cabinetId] || 0) + 1;
@@ -738,7 +771,7 @@ function bookStats() {
     const k = cellKey(loc.r, loc.c);
     m[k] = (m[k] || 0) + 1;
   }
-  return { byCab, byCell, pendByCab, owned, pending, wish };
+  return { byCab, byCell, pendByCab, owned, pending, wish, borrowed, loans };
 }
 const sortedRooms = () => Object.values(B().cache.rooms).sort((a, b) => (a.order - b.order) || String(a.createdAt).localeCompare(String(b.createdAt)));
 const roomCabs = roomId => Object.values(B().cache.cabinets).filter(c => c.roomId === roomId).sort((a, b) => a.code - b.code || String(a.createdAt).localeCompare(String(b.createdAt)));
@@ -903,11 +936,6 @@ const V = {
     body += `<section class="card soon"><span class="badge">${ICON.scan}</span><h2>第二階段開放</h2><p class="hint">掃 ISBN 條碼自動帶入書目、拍版權頁和藏書章，還有連續登記到同一格，都會在下一個階段加入。</p></section>`;
     return { body };
   },
-  loans() {
-    let body = head({ title: '借閱' });
-    body += `<section class="card soon"><span class="badge">${ICON.loan}</span><h2>第五階段開放</h2><p class="hint">記錄書借給誰、什麼時候借出、還回來了沒，會在第五階段加入。</p></section>`;
-    return { body };
-  },
   settings() {
     const b = B(), m = b.meta, days = daysSince(m.lastBackupAt);
     const src = b.kind === 'demo'
@@ -921,8 +949,16 @@ const V = {
     body += `<section class="group"><h2>資料</h2><div class="list">${src}</div></section>
       <section class="group"><h2>所有者</h2><div class="card"><p class="hint">登記書籍時可以選的所有者。</p>
         <div class="owners chips">${(m.owners || []).map(o => `<span class="owner">${esc(o)}<button type="button" data-action="del-owner" data-name="${esc(o)}" aria-label="移除 ${esc(o)}">×</button></span>`).join('')}<button type="button" class="add-chip" data-action="add-owner">＋ 新增</button></div></div></section>
+      <section class="group"><h2>選單項目</h2><div class="list">
+        <button type="button" class="row" data-action="manage-publishers"><span class="tx"><b>出版商</b><span>${publisherList().length} 個</span></span>${ICON.chev}</button>
+        <button type="button" class="row" data-action="manage-categories"><span class="tx"><b>類型</b><span>${Object.keys(b.cache.categories || {}).length} 個</span></span>${ICON.chev}</button>
+        <button type="button" class="row" data-action="manage-languages"><span class="tx"><b>自訂語言</b><span>${(m.languages || []).length ? esc(m.languages.join('、')) : '還沒有'}</span></span>${ICON.chev}</button>
+      </div></section>
+      <section class="group"><h2>書目查詢</h2><div class="list">
+        <button type="button" class="row" data-action="gbooks-setup"><span class="tx"><b>Google Books</b><span>${esc(gbSourceText())}</span></span>${gbStatusHTML()}${ICON.chev}</button>
+      </div></section>
       <section class="group"><h2>備份與還原</h2><div class="card">
-        <div class="backup-status"><span style="flex:1"><span class="small muted">上次備份</span><b>${m.lastBackupAt ? (days <= 0 ? '今天' : `${days} 天前`) : '還沒有備份'}</b></span><span class="small muted" style="text-align:right">房間、書櫃、書籍、<br>照片和設定都在裡面</span></div>
+        <div class="backup-status"><span style="flex:1"><span class="small muted">上次備份</span><b>${m.lastBackupAt ? (days <= 0 ? '今天' : `${days} 天前`) : '還沒有備份'}</b></span><span class="small muted" style="text-align:right">房間、書櫃、書籍、照片、<br>出版商和類型都在裡面</span></div>
         <button type="button" class="btn primary wide" data-action="export-json">${ICON.download}匯出完整備份</button>
         <div class="grid2" style="margin-top:8px"><button type="button" class="btn" data-action="export-csv">匯出書目 CSV</button><button type="button" class="btn" data-action="import">從備份還原</button></div>
         <input type="file" id="import-file" accept=".json,application/json" hidden></div></section>
@@ -967,7 +1003,7 @@ function render() {
   if (v.name !== 'scan') stopCamera();
   if (out.full) { root.innerHTML = `<main id="main" class="full">${out.body}</main>`; app.lastKey = viewKey(v); if (out.after) out.after(); return; }
   root.innerHTML = `<main id="main"><div class="page${out.noTabs ? ' no-tabs' : ''}">${out.body}</div></main>` +
-    (out.noTabs ? '' : `<nav class="tabbar" aria-label="主選單">${tab('shelf', '書架', ICON.shelf)}${tab('books', '書籍', ICON.books)}${tab('scan', '掃描', ICON.scan, true)}${tab('loans', '借閱', ICON.loan)}${tab('settings', '設定', ICON.gear)}</nav>`);
+    (out.noTabs ? '' : `<nav class="tabbar" aria-label="主選單">${tab('shelf', '書架', ICON.shelf)}${tab('books', '書籍', ICON.books)}${tab('scan', '掃描', ICON.scan, true)}<span class="tab-empty" aria-hidden="true"></span>${tab('settings', '設定', ICON.gear)}</nav>`);
   $('#main').scrollTop = st;
   app.lastKey = viewKey(v);
   if (out.after) out.after();
@@ -1218,8 +1254,31 @@ function normFormat(s) {
 const httpsURL = u => u ? String(u).replace(/^http:/, 'https:') : '';
 async function fetchJSON(url, ms = 9000) {
   const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), ms);
-  try { const r = await fetch(url, { signal: ctl.signal }); if (!r.ok) throw new Error('HTTP ' + r.status); return await r.json(); }
+  try { const r = await fetch(url, { signal: ctl.signal }); if (!r.ok) { const e = new Error('HTTP ' + r.status); e.status = r.status; throw e; } return await r.json(); }
   finally { clearTimeout(t); }
+}
+// Google Books：有金鑰就用自己的每日額度；沒有金鑰時大家共用一份，常常一早就用完
+const GB_KEY = 'tsundoku-gbooks-key';
+function gbSource() { return LS.get(GB_KEY) ? 'own' : (B() && B().kind === 'firebase' && B().cfg && B().cfg.apiKey ? 'firebase' : 'none'); }
+function googleKey() {
+  if (app.gb.keyBad) return '';
+  const src = gbSource();
+  return src === 'own' ? LS.get(GB_KEY) : src === 'firebase' ? B().cfg.apiKey : '';
+}
+async function gFetch(params) {
+  const base = 'https://www.googleapis.com/books/v1/volumes?' + params;
+  let key = googleKey();
+  for (;;) {
+    try {
+      const r = await fetchJSON(base + (key ? '&key=' + encodeURIComponent(key) : ''));
+      app.gb.status = key ? 'ok' : 'shared'; return r;
+    } catch (e) {
+      // 金鑰沒開通 Books API（400／403）：這次開啟期間改用共用額度
+      if (key && (e.status === 400 || e.status === 403)) { app.gb.keyBad = true; key = ''; continue; }
+      app.gb.status = e.status === 429 ? 'quota' : e.status ? 'error' : 'offline';
+      throw e;
+    }
+  }
 }
 function fromGoogle(v) {
   const out = {};
@@ -1256,7 +1315,7 @@ function fromOpenLibrary(d, isbn) {
 async function lookupISBN(isbn) {
   let g = {}, o = {}, reached = false;
   try {
-    const r = await fetchJSON(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+    const r = await gFetch(`q=isbn:${isbn}`);
     reached = true;
     if (r.items && r.items[0]) g = fromGoogle(r.items[0].volumeInfo || {});
   } catch (e) {}
@@ -1271,19 +1330,44 @@ async function lookupISBN(isbn) {
   if (!g.coverUrl && o.coverUrl) merged.coverUrl = o.coverUrl;
   if (!reached && app.mode === 'demo' && DEMO_LOOKUP[isbn]) return { ok: true, offline: false, demo: true, data: clone(DEMO_LOOKUP[isbn]) };
   if (!reached) return { ok: false, offline: true, data: {} };
-  return { ok: Object.keys(merged).length > 0, offline: false, data: merged };
+  return { ok: Object.keys(merged).length > 0, offline: false, quota: app.gb.status === 'quota', data: merged };
 }
+function fromOLSearch(d) {
+  const out = {};
+  if (d.title) out.title = d.title;
+  if (d.subtitle) out.subtitle = d.subtitle;
+  if (d.author_name && d.author_name.length) out.authors = d.author_name.slice(0, 4).map(n => ({ name: n, role: '著' }));
+  if (d.publisher && d.publisher[0]) out.publisher = d.publisher[0];
+  if (d.first_publish_year) out.publishedDate = String(d.first_publish_year);
+  if (d.number_of_pages_median) out.pages = d.number_of_pages_median;
+  if (d.language && d.language[0]) Object.assign(out, normLang(d.language[0]));
+  if (d.cover_i) out.coverUrl = `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg`;
+  const isbn = (d.isbn || []).map(normalizeISBN).find(Boolean); if (isbn) out.isbn = isbn;
+  return out;
+}
+// 用書名搜尋：先找 Google Books，找不到或被拒絕再找 Open Library
 async function searchBooks(q) {
-  const r = await fetchJSON(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=12`);
-  return (r.items || []).map(it => {
-    const v = it.volumeInfo || {};
-    const ids = v.industryIdentifiers || [];
-    const i13 = ids.find(x => x.type === 'ISBN_13'), i10 = ids.find(x => x.type === 'ISBN_10');
-    const data = fromGoogle(v);
-    const isbn = normalizeISBN((i13 || i10 || {}).identifier || '');
-    if (isbn) data.isbn = isbn;
-    return data;
-  }).filter(x => x.title);
+  let results = [], gErr = null, oErr = null, source = 'google';
+  try {
+    const r = await gFetch(`q=${encodeURIComponent(q)}&maxResults=15`);
+    results = (r.items || []).map(it => {
+      const v = it.volumeInfo || {};
+      const ids = v.industryIdentifiers || [];
+      const i13 = ids.find(x => x.type === 'ISBN_13'), i10 = ids.find(x => x.type === 'ISBN_10');
+      const data = fromGoogle(v);
+      const isbn = normalizeISBN((i13 || i10 || {}).identifier || '');
+      if (isbn) data.isbn = isbn;
+      return data;
+    }).filter(x => x.title);
+  } catch (e) { gErr = e; }
+  if (!results.length) {
+    source = 'openlibrary';
+    try {
+      const r = await fetchJSON(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=12&fields=title,subtitle,author_name,publisher,first_publish_year,isbn,cover_i,language,number_of_pages_median`);
+      results = (r.docs || []).map(fromOLSearch).filter(x => x.title);
+    } catch (e) { oErr = e; }
+  }
+  return { results, source, quota: !!gErr && gErr.status === 429, offline: !!gErr && !gErr.status && !!oErr && !oErr.status };
 }
 const FILL_KEYS = ['title', 'subtitle', 'series', 'volume', 'edition', 'authors', 'publisher', 'publishedDate', 'format', 'language', 'pages', 'summary', 'coverUrl'];
 function countFilled(data) { return FILL_KEYS.filter(k => { const v = data[k]; return Array.isArray(v) ? v.length : v !== undefined && v !== null && v !== ''; }).length; }
@@ -1486,7 +1570,7 @@ function locWords(loc) {
   const layer = d === 1 ? '' : loc.depth === 1 ? ' · 外層' : loc.depth === d ? ' · 內層' : ` · 第 ${loc.depth} 層`;
   return `${room.name} · ${cab.code} 號櫃 · ${cellLabel(cab, loc.r, loc.c)} 格${layer}`;
 }
-const cellBookCount = loc => loc ? Object.values(B().cache.books).filter(b => b.location && b.location.cabinetId === loc.cabinetId && b.location.r === loc.r && b.location.c === loc.c && b.location.depth === loc.depth).length : 0;
+const cellBookCount = loc => loc ? Object.values(B().cache.books).filter(b => b.ownership !== 'wishlist' && b.location && b.location.cabinetId === loc.cabinetId && b.location.r === loc.r && b.location.c === loc.c && b.location.depth === loc.depth).length : 0;
 const firstOwner = () => (B().meta.owners || [])[0] || '';
 
 /* ---------- 第二階段：草稿（掃到但還沒存的書） ---------- */
@@ -1512,8 +1596,8 @@ async function handleISBN(isbn, origin) {
   const res = await lookupISBN(isbn);
   const d = draftFromData(res.data, origin, extra);
   d.book.isbn = isbn; d.dup = dup;
-  d.lookup = res.ok ? (res.demo ? 'demo' : 'ok') : res.offline ? 'offline' : 'none';
-  if (res.offline) d.book.needsLookup = true;
+  d.lookup = res.ok ? (res.demo ? 'demo' : 'ok') : res.offline ? 'offline' : res.quota ? 'quota' : 'none';
+  if (res.offline || res.quota) d.book.needsLookup = true;
   await attachCover(d.book);
   if (origin === 'scan' && (app.screen !== 'main' || cur().name !== 'scan')) return;
   setDraft(d);
@@ -1529,6 +1613,9 @@ function commitDraft() {
   const d = app.bookDraft, b = d.book;
   b.title = String(b.title || '').trim();
   b.authors = (b.authors || []).filter(a => a.name && a.name.trim());
+  b.publisher = String(b.publisher || '').trim();
+  if (!(b.quantity >= 1)) b.quantity = 1;
+  rememberPublisher(b.publisher);
   B().put('books', b);
   d.photos.filter(p => p.isNew).forEach(p => B().putPhoto({ id: p.id, bookId: b.id, kind: p.kind, data: p.data, w: p.w, h: p.h, createdAt: nowISO(), trashedAt: null }));
   d.removed.forEach(id => B().removePhoto(id));
@@ -1616,13 +1703,16 @@ async function manualISBN(origin) {
 }
 async function searchByText(q, origin) {
   toast('搜尋中…');
-  let results;
-  try { results = await searchBooks(q); }
-  catch (e) { toast(app.inFrame ? '預覽頁不能連網查書目，部署後就能用' : '查詢失敗，請確認網路', 'err'); return; }
-  if (!results.length) { toast('找不到符合的書，可以改用手動新增', 'err'); return; }
+  const { results, source, quota, offline } = await searchBooks(q);
+  if (!results.length) {
+    if (offline) toast(app.inFrame ? '預覽頁不能連網查書目，部署後就能用' : '查詢失敗，請確認網路', 'err');
+    else if (quota) infoBox('Google 書目暫時不能用', `<p>沒有金鑰的查詢是大家共用一份每日額度，現在已經用完了；備用的 Open Library 也找不到「${esc(q)}」。</p><p>到「設定 › 書目查詢」照步驟開通 Google Books，就會改用你自己的額度。</p>`);
+    else toast('找不到符合的書，可以改用手動新增', 'err');
+    return;
+  }
   const pick = await dialog({
     title: `「${q}」的搜尋結果`,
-    body: `<div class="list picklist">${results.map((r, i) => `<button type="button" class="row" data-r="${i}">${coverThumb(r, 'thumb')}<span class="tx"><b>${esc(r.title)}</b><span>${esc(authorsText(r))}${r.publisher ? ' · ' + esc(r.publisher) : ''}${r.publishedDate ? ' · ' + esc(r.publishedDate.slice(0, 4)) : ''}</span></span></button>`).join('')}</div>`,
+    body: `${source === 'openlibrary' ? `<p class="hint">${quota ? 'Google 額度用完了，' : ''}以下結果來自 Open Library。</p>` : ''}<div class="list picklist">${results.map((r, i) => `<button type="button" class="row" data-r="${i}">${coverThumb(r, 'thumb')}<span class="tx"><b>${esc(r.title)}</b><span>${esc(authorsText(r))}${r.publisher ? ' · ' + esc(r.publisher) : ''}${r.publishedDate ? ' · ' + esc(r.publishedDate.slice(0, 4)) : ''}</span></span></button>`).join('')}</div>`,
     actions: [{ label: '取消', kind: 'ghost', value: null }],
     onOpen: (el, close) => el.querySelectorAll('[data-r]').forEach(b => b.addEventListener('click', () => close(+b.dataset.r)))
   });
@@ -1655,6 +1745,7 @@ function draftChip(d) {
   if (d.lookup === 'demo') return `<span class="chip peach">${ICON.check}示範資料：帶入 ${d.filled} 個欄位</span>`;
   if (d.lookup === 'offline') return '<span class="chip line">目前離線，之後可以補查書目</span>';
   if (d.lookup === 'none') return '<span class="chip line">查不到書目，先存著待補</span>';
+  if (d.lookup === 'quota') return '<span class="chip line">Google 額度用完，先存著待補</span>';
   return '';
 }
 function slotHTML(kind) {
@@ -1701,23 +1792,25 @@ function filteredBooks() {
   return Object.values(B().cache.books).filter(b => {
     if (f === 'pending' && b.verified) return false;
     if (f === 'wish' && b.ownership !== 'wishlist') return false;
-    if (f !== 'wish' && f !== 'all' && f !== 'pending' && b.owner !== f) return false;
+    if (f === 'loan' && !b.loan) return false;
+    if (!['all', 'pending', 'wish', 'loan'].includes(f) && b.owner !== f) return false;
     if (f === 'all' && b.ownership === 'wishlist') return false;
     if (!q) return true;
-    return [b.title, b.subtitle, b.series, authorsText(b), b.isbn, b.publisher].some(x => String(x || '').toLowerCase().includes(q));
+    return [b.title, b.subtitle, b.originalTitle, b.series, authorsText(b), b.isbn, b.publisher, b.loan && b.loan.person].some(x => String(x || '').toLowerCase().includes(q));
   }).sort((a, b) => String(b.addedAt).localeCompare(String(a.addedAt)));
 }
 function bookListHTML() {
   const list = filteredBooks(), shown = list.slice(0, 300);
-  if (!list.length) return emptyHTML(app.bookQuery ? '找不到符合的書' : '這裡還沒有書', app.bookQuery ? '換個關鍵字試試，或檢查篩選條件。' : '按右上角的「新增」，或用中間的掃描鈕開始登記。');
-  return `<p class="small muted" style="margin:0 6px">${list.length} 本</p><div class="list booklist2">${shown.map(b => `<button type="button" class="row brow" data-action="open-book" data-id="${b.id}">${coverThumb(b, 'thumb')}<span class="tx"><b>${esc(b.title || '書名待補')}</b><span>${esc(authorsText(b) || (b.isbn ? 'ISBN ' + b.isbn : '作者待補'))}</span>${b.location ? `<span class="mono loc">${esc(locLabel(b.location))}</span>` : ''}</span><span class="chips" style="flex:none">${b.verified ? '' : '<span class="chip line">待補</span>'}</span></button>`).join('')}</div>${list.length > shown.length ? `<p class="hint" style="text-align:center">還有 ${list.length - shown.length} 本，請用搜尋縮小範圍。封面牆會在第三階段加入。</p>` : ''}`;
+  const q = String(app.bookQuery || '').trim();
+  if (!list.length) return emptyHTML(q ? '找不到符合的書' : '這裡還沒有書', q ? '你的書裡沒有這本。要新增的話，可以上網查書目。' : '按右上角的「新增」，或用中間的掃描鈕開始登記。') + (q ? `<button type="button" class="btn soft wide" data-action="web-search">${ICON.search}上網搜尋「${esc(q)}」</button>` : '');
+  return `<p class="small muted" style="margin:0 6px">${list.length} 本</p><div class="list booklist2">${shown.map(b => `<button type="button" class="row brow" data-action="open-book" data-id="${b.id}">${coverThumb(b, 'thumb')}<span class="tx"><b>${esc(b.title || '書名待補')}</b><span>${esc(authorsText(b) || (b.isbn ? 'ISBN ' + b.isbn : '作者待補'))}</span>${b.location ? `<span class="mono loc">${esc(locLabel(b.location))}</span>` : ''}</span><span class="chips" style="flex:none;flex-direction:column;align-items:flex-end">${b.loan ? `<span class="chip peach">${b.loan.dir === 'in' ? '借入' : '借出'}</span>` : ''}${b.verified ? '' : '<span class="chip line">待補</span>'}</span></button>`).join('')}</div>${list.length > shown.length ? `<p class="hint" style="text-align:center">還有 ${list.length - shown.length} 本，請用搜尋縮小範圍。封面牆會在第三階段加入。</p>` : ''}`;
 }
 
 /* ---------- 第二階段：頁面 ---------- */
 Object.assign(V, {
   books() {
     const st = bookStats(), owners = B().meta.owners || [], f = app.bookFilter || 'all';
-    const filters = [['all', '全部'], ['pending', '待補資料'], ...owners.map(o => [o, o]), ...(st.wish ? [['wish', '願望清單']] : [])];
+    const filters = [['all', '全部'], ['pending', '待補資料'], ...owners.map(o => [o, o]), ['wish', '願望清單'], ['loan', '借閱']];
     let body = head({ title: '書籍', sub: `收藏 ${nfmt(st.owned)} 本 · ${nfmt(st.pending)} 本待補資料`, actions: `<button type="button" class="btn small primary" data-action="add-book">${ICON.plus}新增</button>` });
     body += `<label class="search">${ICON.search}<span class="sr">搜尋書籍</span><input id="book-q" type="search" placeholder="書名、作者、ISBN" value="${esc(app.bookQuery || '')}"></label>`;
     body += `<div class="filters">${filters.map(([v, l]) => `<button type="button" class="fchip${f === v ? ' on' : ''}" data-action="book-filter" data-f="${esc(v)}">${esc(l)}</button>`).join('')}</div>`;
@@ -1743,14 +1836,18 @@ Object.assign(V, {
     }
     const photos = (app.photoCache[v.id] || []).filter(p => !p.trashedAt);
     const loc = b.location, cab = loc && B().cache.cabinets[loc.cabinetId];
-    const rows = [['出版社', b.publisher], ['出版日期', b.publishedDate], ['ISBN', b.isbn], ['版次', b.edition], ['格式', b.format], ['語言', langLabel(b)], ['頁數', b.pages], ['所有者', b.owner],
-      ['價格', b.price != null && b.price !== '' ? `${b.currency || 'TWD'} ${b.price}` : ''], ['購買日期', b.purchaseDate], ['標籤', (b.tags || []).map(t => '#' + t).join(' ')], ['加入日期', fmtDate(b.addedAt)]].filter(r => r[1] !== undefined && r[1] !== null && r[1] !== '');
+    const isWish = b.ownership === 'wishlist', loanIn = b.loan && b.loan.dir === 'in';
+    const ed = [b.edition, b.printing ? `${b.printing} 刷` : ''].filter(Boolean).join(' ');
+    const cats = (b.categories || []).map(catPath).filter(Boolean).join('、');
+    const rows = [['出版商', b.publisher], ['出版日期', b.publishedDate], ['ISBN', b.isbn], ['版次', ed], ['格式', b.format], ['語言', langLabel(b)], ['頁數', b.pages], ['類型', cats], ['所有者', b.owner], ['數量', b.quantity > 1 ? `${b.quantity} 本` : ''],
+      ['價格', !loanIn && b.price != null && b.price !== '' ? `${b.currency || 'TWD'} ${b.price}` : ''], ['購買日期', isWish || loanIn ? '' : b.purchaseDate], ['標籤', (b.tags || []).map(t => '#' + t).join(' ')], ['加入日期', fmtDate(b.addedAt)]].filter(r => r[1] !== undefined && r[1] !== null && r[1] !== '');
     const status = seg('bk-quick-status', Object.entries(READ_STATUS), b.readStatus || 'unread');
     let body = `<header class="page-head"><div class="toprow"><button type="button" class="icon-btn" data-action="back" aria-label="返回">${ICON.back}</button><span class="acts"><button type="button" class="btn small soft" data-action="edit-book" data-id="${b.id}">${ICON.pencil}編輯</button></span></div></header>
-      <div class="bhero">${coverThumb(b, 'bigcover')}<h1 class="title">${esc(b.title || '書名待補')}</h1>${b.subtitle ? `<p class="sub">${esc(b.subtitle)}</p>` : ''}${b.series ? `<p class="sub">${esc(b.series)}${b.volume ? ` · 卷 ${esc(b.volume)}` : ''}</p>` : ''}<p class="bauthor">${esc(authorsText(b) || '作者待補')}</p>${b.rating ? starsHTML(b.rating) : ''}${b.verified ? '' : '<span class="chip line">待補資料</span>'}</div>
+      <div class="bhero">${coverThumb(b, 'bigcover')}<h1 class="title">${esc(b.title || '書名待補')}</h1>${b.subtitle ? `<p class="sub">${esc(b.subtitle)}</p>` : ''}${b.originalTitle ? `<p class="sub">原著名：${esc(b.originalTitle)}</p>` : ''}${b.series ? `<p class="sub">${esc(b.series)}${b.volume ? ` · 卷 ${esc(b.volume)}` : ''}</p>` : ''}<p class="bauthor">${esc(authorsText(b) || '作者待補')}</p>${b.rating ? starsHTML(b.rating) : ''}${b.verified ? '' : '<span class="chip line">待補資料</span>'}</div>
       <section class="card">${status}${b.readStatus === 'reading' && b.pages ? `<div class="progress"><div class="sub2"><span>讀到</span><b>${b.currentPage || 0} / ${b.pages} 頁</b></div><div class="bar"><i style="width:${clamp(Math.round((b.currentPage || 0) / b.pages * 100), 0, 100)}%"></i></div></div>` : ''}</section>`;
-    body += cab ? `<section class="loccard"><span class="small">放在哪裡</span><b class="mono">${esc(locLabel(loc))}</b><span class="small">${esc(locWords(loc))}</span><button type="button" class="btn small accent" data-action="open-cab" data-id="${cab.id}">在書櫃上看</button></section>`
-      : `<section class="card"><p class="hint">${b.ownership === 'wishlist' ? '這本在願望清單裡，還沒買。' : '還沒放到書櫃上。'}</p></section>`;
+    if (b.loan) body += `<section class="card loaninfo"><span class="chip peach">${loanIn ? '借入' : '借出'}</span><span class="tx"><b>${loanIn ? `跟 ${esc(b.loan.person || '（沒填）')} 借的` : `借給 ${esc(b.loan.person || '（沒填）')}`}</b><span class="small muted">${b.loan.date ? '借閱日期 ' + esc(b.loan.date) : '沒填借閱日期'}</span></span></section>`;
+    body += cab && !isWish ? `<section class="loccard"><span class="small">${b.loan && !loanIn ? '借出前放在' : '放在哪裡'}</span><b class="mono">${esc(locLabel(loc))}</b><span class="small">${esc(locWords(loc))}</span><button type="button" class="btn small accent" data-action="open-cab" data-id="${cab.id}">在書櫃上看</button></section>`
+      : `<section class="card"><p class="hint">${isWish ? '這本在願望清單裡，還沒買。' : '還沒放到書櫃上。'}</p></section>`;
     body += rows.length ? `<section class="card infolist"><dl>${rows.map(([k, val]) => `<div><dt>${k}</dt><dd>${esc(val)}</dd></div>`).join('')}</dl>${(b.refSubjects || []).length ? `<p class="hint" style="margin-top:8px">書目庫的主題：${esc(b.refSubjects.join('、'))}</p>` : ''}</section>` : '';
     if (b.summary) body += `<section class="group"><h2>摘要</h2><p class="prose">${esc(b.summary)}</p></section>`;
     body += `<section class="group"><h2>心得</h2><div class="card"><p class="${b.review ? 'prose' : 'hint'}" style="margin:0">${b.review ? esc(b.review) : '還沒寫心得。'}</p></div></section>`;
@@ -1762,7 +1859,14 @@ Object.assign(V, {
     const d = app.bookDraft; if (!d) return gone();
     const b = d.book, owners = B().meta.owners || [];
     const langVal = b.language === 'zho' ? 'zho-' + (b.script || 'Hant') : (b.language || '');
+    const langOpts = [...LANG_OPTIONS, ...(B().meta.languages || []).map(l => [l, l])];
+    if (langVal && !langOpts.some(o => o[0] === langVal)) langOpts.push([langVal, langLabel(b)]);
+    langOpts.push([CUSTOM, '自訂…']);
+    const edOpts = [['', '未填'], ...EDITIONS.map(e => [e, e]), ...(b.edition && !EDITIONS.includes(b.edition) ? [[b.edition, b.edition]] : []), [CUSTOM, '自訂…']];
     const ownerOpts = [...new Set([...(owners || []), b.owner].filter(Boolean))];
+    const tabV = b.loan ? 'loan' : b.ownership === 'wishlist' ? 'wishlist' : 'owned';
+    const isWish = tabV === 'wishlist', loanIn = tabV === 'loan' && b.loan.dir === 'in';
+    const catIds = (b.categories || []).filter(id => B().cache.categories[id]);
     const sel = (field, opts, val) => `<select data-field="${field}">${opts.map(([ov, ol]) => `<option value="${esc(ov)}"${String(ov) === String(val ?? '') ? ' selected' : ''}>${esc(ol)}</option>`).join('')}</select>`;
     const photos = d.photos;
     let body = `<header class="page-head"><div class="toprow"><button type="button" class="icon-btn" data-action="back" aria-label="返回">${d.origin === 'scan' ? ICON.back : ICON.close}</button><span class="mid">${d.isNew ? '新增書籍' : '編輯書籍'}</span><button type="button" class="btn small primary" data-action="save-book">儲存</button></div></header>
@@ -1770,24 +1874,29 @@ Object.assign(V, {
         <div class="cover-edit">${coverThumb(b, 'bigcover')}<div class="stack" style="gap:8px"><button type="button" class="btn small" data-action="draft-photo" data-kind="cover">${ICON.camera}${b.cover || b.coverUrl ? '重拍封面' : '拍封面'}</button>${b.cover || b.coverUrl ? '<button type="button" class="btn small ghost" data-action="cover-remove">移除封面</button>' : ''}${b.isbn ? '<button type="button" class="btn small ghost" data-action="relookup">用 ISBN 補查</button>' : ''}</div></div>
         <label class="field">書名<input type="text" data-field="title" value="${esc(b.title)}"></label>
         <label class="field">副標題<input type="text" data-field="subtitle" value="${esc(b.subtitle)}"></label>
+        <label class="field">原著名<input type="text" data-field="originalTitle" value="${esc(b.originalTitle || '')}" placeholder="翻譯書的原文書名"></label>
         <div class="grid-wide"><label class="field">系列<input type="text" data-field="series" value="${esc(b.series)}"></label><label class="field">卷<input type="number" inputmode="numeric" data-field="volume" value="${esc(b.volume ?? '')}"></label></div>
-        <label class="field">版次<input type="text" data-field="edition" value="${esc(b.edition)}" placeholder="例如：二版"></label>
+        <div class="grid-wide"><label class="field">版次${sel('edition', edOpts, b.edition || '')}</label><label class="field">刷次<input type="number" inputmode="numeric" data-field="printing" value="${esc(b.printing ?? '')}"></label></div>
         <div class="field">作者${(b.authors.length ? b.authors : [{ name: '', role: '著' }]).map((a, i) => `<div class="author-row"><input type="text" data-field="author-name" data-i="${i}" value="${esc(a.name)}" placeholder="姓名" aria-label="作者姓名"><select data-field="author-role" data-i="${i}" aria-label="角色">${ROLES.map(r => `<option${r === a.role ? ' selected' : ''}>${r}</option>`).join('')}</select><button type="button" class="round-btn" data-action="del-author" data-i="${i}" aria-label="移除這位作者">${ICON.close}</button></div>`).join('')}<button type="button" class="btn small ghost" data-action="add-author" style="align-self:flex-start">${ICON.plus}再加一位</button></div>
       </section>
       <section class="card form">
-        <label class="field">出版商<input type="text" data-field="publisher" value="${esc(b.publisher)}"></label>
+        <div class="field">出版商<button type="button" class="pickfield" data-action="pick-publisher"><span class="${b.publisher ? '' : 'ph'}">${esc(b.publisher || '選擇出版商')}</span>${ICON.chev}</button></div>
         <div class="grid2"><label class="field">出版日期<input type="text" data-field="publishedDate" value="${esc(b.publishedDate)}" placeholder="YYYY-MM-DD"></label><label class="field">頁數<input type="number" inputmode="numeric" data-field="pages" value="${esc(b.pages ?? '')}"></label></div>
         <label class="field">ISBN<input type="text" inputmode="numeric" data-field="isbn" value="${esc(b.isbn)}" placeholder="13 碼，可以留空"></label>
-        <div class="grid2"><label class="field">格式${sel('format', [['', '未填'], ...FORMATS.map(x => [x, x])], b.format)}</label><label class="field">語言${sel('lang', LANG_OPTIONS, langVal)}</label></div>
+        <div class="grid2"><label class="field">格式${sel('format', [['', '未填'], ...FORMATS.map(x => [x, x])], b.format)}</label><label class="field">語言${sel('lang', langOpts, langVal)}</label></div>
+        <div class="field">類型<button type="button" class="pickfield${catIds.length ? ' multi' : ''}" data-action="pick-categories">${catIds.length ? `<span class="chips">${catIds.map(id => `<span class="chip peach">${esc(catPath(id))}</span>`).join('')}</span>` : '<span class="ph">選擇類型（可以多選）</span>'}${ICON.chev}</button>${(b.refSubjects || []).length ? `<span class="small muted">書目庫的主題：${esc(b.refSubjects.join('、'))}</span>` : ''}</div>
         <label class="field">摘要<textarea rows="4" data-field="summary">${esc(b.summary)}</textarea></label>
       </section>
       <section class="card form">
-        <div class="field">擁有狀態${seg('bk-ownership', [['owned', '已收藏'], ['wishlist', '願望清單']], b.ownership)}</div>
-        <label class="field">所有者${sel('owner', [['', '未填'], ...ownerOpts.map(o => [o, o])], b.owner)}</label>
-        <div class="field">位置<div class="locpick">${b.location ? `<span class="chip code">${esc(locLabel(b.location))}</span>` : '<span class="small muted">還沒選</span>'}<button type="button" class="btn small soft" data-action="pick-book-loc">${b.location ? '更換' : '選擇位置'}</button>${b.location ? '<button type="button" class="btn small ghost" data-action="clear-book-loc">清除</button>' : ''}</div></div>
-        <label class="field">位置補充<input type="text" data-field="locationNote" value="${esc(b.locationNote)}" placeholder="例如：第二排靠後面"></label>
-        <div class="grid-wide"><label class="field">價格<input type="number" inputmode="decimal" data-field="price" value="${esc(b.price ?? '')}"></label><label class="field">幣別${sel('currency', CURRENCIES.map(c => [c, c]), b.currency || 'TWD')}</label></div>
-        <label class="field">購買日期<input type="date" data-field="purchaseDate" value="${esc(b.purchaseDate)}"></label>
+        <div class="field">擁有狀態${seg('bk-ownership', [['owned', '已收藏'], ['wishlist', '願望清單'], ['loan', '借閱']], tabV)}</div>
+        ${tabV === 'loan' ? `<div class="loanbox">${seg('bk-loan-dir', [['out', '借出'], ['in', '借入']], b.loan.dir)}
+          <div class="grid2"><label class="field">${loanIn ? '跟誰借的' : '借給誰'}<input type="text" data-field="loan-person" list="loan-people" value="${esc(b.loan.person || '')}" placeholder="名字"></label><label class="field">借閱日期<input type="date" data-field="loan-date" value="${esc(b.loan.date || '')}"></label></div>
+          <datalist id="loan-people">${loanPeople().map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist></div>` : ''}
+        <div class="grid-wide"><label class="field">所有者${sel('owner', [['', '未填'], ...ownerOpts.map(o => [o, o])], b.owner)}</label><label class="field">數量<input type="number" inputmode="numeric" min="1" data-field="quantity" value="${esc(b.quantity ?? 1)}"></label></div>
+        ${isWish ? '' : `<div class="field">位置<div class="locpick">${b.location ? `<span class="chip code">${esc(locLabel(b.location))}</span>` : '<span class="small muted">還沒選</span>'}<button type="button" class="btn small soft" data-action="pick-book-loc">${b.location ? '更換' : '選擇位置'}</button>${b.location ? '<button type="button" class="btn small ghost" data-action="clear-book-loc">清除</button>' : ''}</div></div>
+        <label class="field">位置補充<input type="text" data-field="locationNote" value="${esc(b.locationNote)}" placeholder="例如：第二排靠後面"></label>`}
+        ${loanIn ? '' : `<div class="grid-wide"><label class="field">價格<input type="number" inputmode="decimal" data-field="price" value="${esc(b.price ?? '')}"></label><label class="field">幣別${sel('currency', CURRENCIES.map(c => [c, c]), b.currency || 'TWD')}</label></div>`}
+        ${isWish || loanIn ? '' : `<label class="field">購買日期<input type="date" data-field="purchaseDate" value="${esc(b.purchaseDate)}"></label>`}
         <label class="field">標籤<input type="text" data-field="tagsText" value="${esc((b.tags || []).map(t => '#' + t).join(' '))}" placeholder="#簽名本 #絕版"></label>
       </section>
       <section class="card form">
@@ -1865,9 +1974,13 @@ function setDraftField(el) {
       if (!b.authors.length) b.authors.push({ name: '', role: '著' });
       const a = b.authors[+el.dataset.i]; if (a) a[f === 'author-name' ? 'name' : 'role'] = v; break;
     }
-    case 'lang': { if (!v) { b.language = ''; b.script = ''; } else if (v.startsWith('zho-')) { b.language = 'zho'; b.script = v.slice(4); } else { b.language = v; b.script = ''; } break; }
+    case 'lang': { if (v === CUSTOM) { customLanguage(); break; } if (!v) { b.language = ''; b.script = ''; } else if (v.startsWith('zho-')) { b.language = 'zho'; b.script = v.slice(4); } else { b.language = v; b.script = ''; } break; }
+    case 'edition': if (v === CUSTOM) customEdition(); else b.edition = v; break;
+    case 'loan-person': if (b.loan) b.loan.person = v; break;
+    case 'loan-date': if (b.loan) b.loan.date = v; break;
+    case 'quantity': b.quantity = v === '' ? null : Math.max(1, Math.round(Number(v)) || 1); break;
     case 'tagsText': b.tags = v.split(/[#\s,，]+/).map(t => t.trim()).filter(Boolean); break;
-    case 'volume': case 'pages': case 'price': case 'currentPage': b[f] = num(v); break;
+    case 'volume': case 'pages': case 'price': case 'currentPage': case 'printing': b[f] = num(v); break;
     case 'isbn': b.isbn = isbnDigits(v); break;
     default: b[f] = v;
   }
@@ -1884,6 +1997,13 @@ async function moreAction(a, el) {
       break;
     }
     case 'book-filter': app.bookFilter = el.dataset.f; render(); break;
+    case 'web-search': { const q = String(app.bookQuery || '').trim(); if (q) searchByText(q, 'list'); break; }
+    case 'pick-publisher': pickPublisher(); break;
+    case 'pick-categories': pickCategories(); break;
+    case 'manage-publishers': managePublishers(); break;
+    case 'manage-categories': manageCategories(); break;
+    case 'manage-languages': manageLanguages(); break;
+    case 'gbooks-setup': gbooksSetup(); break;
     case 'open-book': go({ name: 'book', id: el.dataset.id }); break;
     case 'edit-book': openEditBook(el.dataset.id); break;
     case 'toggle-verified': { const b = B().cache.books[el.dataset.id]; if (b) { B().put('books', { ...b, verified: !b.verified }); toast(b.verified ? '已改回待補資料' : '已標記為資料已確認'); } break; }
@@ -1917,7 +2037,7 @@ async function moreAction(a, el) {
       if (!d || !normalizeISBN(d.book.isbn)) { toast('ISBN 不正確，沒辦法查', 'err'); return; }
       toast('查詢書目中…');
       const res = await lookupISBN(normalizeISBN(d.book.isbn));
-      if (!res.ok) { toast(res.offline ? (app.inFrame ? '預覽頁不能連網查書目' : '目前離線，請連上網路再試') : '書目庫裡查不到這本', 'err'); return; }
+      if (!res.ok) { toast(res.offline ? (app.inFrame ? '預覽頁不能連網查書目' : '目前離線，請連上網路再試') : res.quota ? 'Google 書目額度用完了，請到設定開通 Google Books' : '書目庫裡查不到這本', 'err'); return; }
       fillEmpty(d.book, res.data); delete d.book.needsLookup; await attachCover(d.book);
       toast(`補上了空白的欄位`); render(); break;
     }
@@ -1965,11 +2085,252 @@ async function moreAction(a, el) {
 }
 function segExtra(s, v) {
   const d = app.bookDraft;
-  if (s === 'bk-ownership' && d) d.book.ownership = v;
-  else if (s === 'bk-status' && d) { d.book.readStatus = v; if (v === 'reading' && !d.book.startDate) d.book.startDate = new Date().toISOString().slice(0, 10); if (v === 'done' && !d.book.finishDate) d.book.finishDate = new Date().toISOString().slice(0, 10); }
-  else if (s === 'bk-quick-status') { const b = B().cache.books[cur().id]; if (b) { const nb = { ...b, readStatus: v }; if (v === 'reading' && !nb.startDate) nb.startDate = new Date().toISOString().slice(0, 10); if (v === 'done' && !nb.finishDate) nb.finishDate = new Date().toISOString().slice(0, 10); B().put('books', nb); } return; }
+  if (s === 'bk-ownership' && d) {
+    const b = d.book;
+    if (v === 'loan') { if (!b.loan) b.loan = d.loanStash || { dir: 'out', person: '', date: todayStr() }; b.ownership = b.loan.dir === 'in' ? 'borrowed' : 'owned'; }
+    else { if (b.loan) d.loanStash = b.loan; b.loan = null; b.ownership = v; }
+  }
+  else if (s === 'bk-loan-dir' && d && d.book.loan) { d.book.loan.dir = v; d.book.ownership = v === 'in' ? 'borrowed' : 'owned'; }
+  else if (s === 'bk-status' && d) { d.book.readStatus = v; if (v === 'reading' && !d.book.startDate) d.book.startDate = todayStr(); if (v === 'done' && !d.book.finishDate) d.book.finishDate = todayStr(); }
+  else if (s === 'bk-quick-status') { const b = B().cache.books[cur().id]; if (b) { const nb = { ...b, readStatus: v }; if (v === 'reading' && !nb.startDate) nb.startDate = todayStr(); if (v === 'done' && !nb.finishDate) nb.finishDate = todayStr(); B().put('books', nb); } return; }
   else if (s === 'pick-depth') app.pick.depth = +v;
   else if (s === 'pick-owner') app.pick.owner = v;
+  render();
+}
+
+/* ---------- 選單：出版商、類型、語言、版次 ---------- */
+function todayStr() { const t = new Date(), p = n => String(n).padStart(2, '0'); return `${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}`; }
+function catPath(id) {
+  const cats = B().cache.categories || {}, parts = [];
+  let c = cats[id], guard = 0;
+  while (c && guard++ < 10) { parts.unshift(c.name); c = c.parentId ? cats[c.parentId] : null; }
+  return parts.join(' › ');
+}
+// 依樹狀順序排好的類型：[{ c, depth }]
+function catTree() {
+  const all = Object.values(B().cache.categories || {});
+  const kids = pid => all.filter(c => (c.parentId || null) === pid).sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name, 'zh-Hant'));
+  const out = [], seen = new Set();
+  const walk = (pid, depth) => kids(pid).forEach(c => { if (seen.has(c.id)) return; seen.add(c.id); out.push({ c, depth }); if (depth < 6) walk(c.id, depth + 1); });
+  walk(null, 0);
+  all.forEach(c => { if (!seen.has(c.id)) { seen.add(c.id); out.push({ c, depth: 0 }); } });
+  return out;
+}
+function loanPeople() {
+  const s = new Set();
+  Object.values(B().cache.books).forEach(b => { if (b.loan && b.loan.person) s.add(b.loan.person); (b.loanHistory || []).forEach(h => { if (h && h.person) s.add(h.person); }); });
+  return [...s].sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+}
+// 出版商清單＝設定裡記住的＋書上用到的，常用的排前面
+function publisherList() {
+  const count = {};
+  Object.values(B().cache.books).forEach(b => { const p = String(b.publisher || '').trim(); if (p) count[p] = (count[p] || 0) + 1; });
+  (B().meta.publishers || []).forEach(p => { if (!(p in count)) count[p] = 0; });
+  return Object.entries(count).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-Hant')).map(([name, n]) => ({ name, n }));
+}
+function rememberPublisher(name) {
+  name = String(name || '').trim(); if (!name) return;
+  const list = B().meta.publishers || [];
+  if (!list.includes(name)) B().putMeta({ publishers: [...list, name] });
+}
+async function pickPublisher() {
+  const d = app.bookDraft; if (!d) return;
+  const curP = d.book.publisher || '';
+  const res = await dialog({
+    title: '出版商', sheet: true, focus: false,
+    body: `<label class="search">${ICON.search}<span class="sr">搜尋出版商</span><input id="opt-q" type="search" placeholder="搜尋出版商" autocomplete="off"></label><div class="list picklist optlist" id="opt-list"></div><button type="button" class="opt-add" id="opt-add">${ICON.plus}<span>新增出版商</span></button>`,
+    actions: [...(curP ? [{ label: '清除', kind: 'ghost', value: { clear: true } }] : []), { label: '取消', kind: 'ghost', value: null }],
+    onOpen: (el, close) => {
+      const q = el.querySelector('#opt-q'), box = el.querySelector('#opt-list'), add = el.querySelector('#opt-add');
+      const draw = () => {
+        const s = q.value.trim(), sl = s.toLowerCase();
+        const all = publisherList(); if (curP && !all.some(p => p.name === curP)) all.unshift({ name: curP, n: 0 });
+        const items = all.filter(p => !sl || p.name.toLowerCase().includes(sl));
+        box.innerHTML = items.length ? items.map(p => `<button type="button" class="row${p.name === curP ? ' on' : ''}" data-v="${esc(p.name)}"><span class="tx"><b>${esc(p.name)}</b>${p.n ? `<span>${p.n} 本</span>` : ''}</span>${p.name === curP ? ICON.check : ''}</button>`).join('')
+          : `<p class="hint" style="padding:14px;margin:0">${s ? '清單裡沒有這個出版商，可以按下面新增。' : '還沒有出版商，按下面新增。'}</p>`;
+        box.hidden = false;
+        add.querySelector('span').textContent = s && !items.some(p => p.name === s) ? `新增「${s}」` : '新增出版商';
+      };
+      draw(); q.addEventListener('input', draw);
+      box.addEventListener('click', ev => { const b = ev.target.closest('button[data-v]'); if (b) close({ pick: b.dataset.v }); });
+      add.addEventListener('click', () => close({ add: q.value.trim() }));
+    }
+  });
+  if (!res || !app.bookDraft) return;
+  if (res.clear) d.book.publisher = '';
+  else if (res.pick) d.book.publisher = res.pick;
+  else if ('add' in res) {
+    const name = await promptBox('新增出版商', '出版商名稱', res.add, '例如：遠流出版', 60);
+    if (!name) return;
+    rememberPublisher(name); d.book.publisher = name;
+  }
+  render();
+}
+async function newCategoryDialog(name = '', parentId = '') {
+  const tree = catTree();
+  const r = await dialog({
+    title: '新增類型',
+    body: `<label class="field"><span>類型名稱</span><input type="text" id="cat-name" maxlength="30" value="${esc(name)}" placeholder="例如：小說"></label>
+      <label class="field"><span>放在哪個類型底下</span><select id="cat-parent"><option value="">（最上層）</option>${tree.map(({ c, depth }) => `<option value="${c.id}"${c.id === parentId ? ' selected' : ''}>${'　'.repeat(depth)}${esc(c.name)}</option>`).join('')}</select></label>`,
+    actions: [{ label: '取消', kind: 'ghost', value: null }, { label: '新增', kind: 'primary', get: el => ({ name: el.querySelector('#cat-name').value.trim(), parentId: el.querySelector('#cat-parent').value || null }), validate: el => { const ok = !!el.querySelector('#cat-name').value.trim(); if (!ok) toast('請輸入類型名稱', 'err'); return ok; } }]
+  });
+  if (!r) return null;
+  const all = Object.values(B().cache.categories || {});
+  const dup = all.find(c => c.name === r.name && (c.parentId || null) === r.parentId);
+  if (dup) return dup;
+  const cat = { id: newId(), name: r.name, parentId: r.parentId, order: all.filter(c => (c.parentId || null) === r.parentId).length, createdAt: nowISO() };
+  B().put('categories', cat);
+  return cat;
+}
+async function pickCategories() {
+  const d = app.bookDraft; if (!d) return;
+  const sel = new Set((d.book.categories || []).filter(id => B().cache.categories[id]));
+  const res = await dialog({
+    title: '類型（可以多選）', sheet: true, focus: false,
+    body: `<label class="search">${ICON.search}<span class="sr">搜尋類型</span><input id="opt-q" type="search" placeholder="搜尋類型" autocomplete="off"></label><div class="list picklist optlist" id="opt-list"></div><button type="button" class="opt-add" id="opt-add">${ICON.plus}<span>新增類型</span></button>`,
+    actions: [{ label: '取消', kind: 'ghost', value: null }, { label: '完成', kind: 'primary', get: () => ({ done: [...sel] }) }],
+    onOpen: (el) => {
+      const q = el.querySelector('#opt-q'), box = el.querySelector('#opt-list'), add = el.querySelector('#opt-add');
+      const draw = () => {
+        const sl = q.value.trim().toLowerCase();
+        const items = catTree().filter(({ c }) => !sl || catPath(c.id).toLowerCase().includes(sl));
+        box.innerHTML = items.length ? items.map(({ c, depth }) => `<button type="button" class="row sub${sel.has(c.id) ? ' on' : ''}" style="--d:${sl ? 0 : depth}" data-id="${c.id}" aria-pressed="${sel.has(c.id)}"><span class="check">${sel.has(c.id) ? ICON.check : ''}</span><span class="tx"><b>${esc(sl ? catPath(c.id) : c.name)}</b></span></button>`).join('')
+          : `<p class="hint" style="padding:14px;margin:0">${sl ? '沒有符合的類型。' : '還沒有類型，按下面新增，例如「小說」、「歷史」。'}</p>`;
+        add.querySelector('span').textContent = q.value.trim() && !items.length ? `新增「${q.value.trim()}」` : '新增類型';
+      };
+      draw(); q.addEventListener('input', draw);
+      box.addEventListener('click', ev => { const b = ev.target.closest('button[data-id]'); if (!b) return; const id = b.dataset.id; if (sel.has(id)) sel.delete(id); else sel.add(id); draw(); });
+      add.addEventListener('click', async () => { const c = await newCategoryDialog(q.value.trim()); if (c) { sel.add(c.id); q.value = ''; draw(); } });
+    }
+  });
+  if (!res || !app.bookDraft) return;
+  d.book.categories = res.done;
+  render();
+}
+async function customEdition() {
+  const d = app.bookDraft; if (!d) return;
+  const v = await promptBox('自訂版次', '版次', EDITIONS.includes(d.book.edition) ? '' : d.book.edition, '例如：十一版、修訂版');
+  if (v && app.bookDraft) d.book.edition = v;
+  render();
+}
+async function customLanguage() {
+  const d = app.bookDraft; if (!d) return;
+  const v = await promptBox('自訂語言', '語言名稱', '', '例如：台語、拉丁文');
+  if (v && app.bookDraft) {
+    const known = LANG_OPTIONS.find(o => o[0] && o[1] === v);
+    if (known) { if (known[0].startsWith('zho-')) { d.book.language = 'zho'; d.book.script = known[0].slice(4); } else { d.book.language = known[0]; d.book.script = ''; } }
+    else {
+      d.book.language = v; d.book.script = '';
+      const l = B().meta.languages || []; if (!l.includes(v)) B().putMeta({ languages: [...l, v] });
+    }
+  }
+  render();
+}
+
+/* ---------- 設定：管理選單項目 ---------- */
+async function managePublishers() {
+  for (;;) {
+    const list = publisherList();
+    const r = await dialog({
+      title: '出版商', sheet: true, focus: false,
+      body: `<p class="hint">改名會一起更新用到這個名稱的書，也可以用來合併重複的出版商。沒有書在用的才能刪除。</p><div class="list picklist mgr">${list.length ? list.map(p => `<div class="row"><span class="tx"><b>${esc(p.name)}</b><span>${p.n ? p.n + ' 本' : '沒有書在用'}</span></span><button type="button" class="btn small soft" data-ren="${esc(p.name)}">改名</button>${p.n ? '' : `<button type="button" class="btn small ghost" data-del="${esc(p.name)}">刪除</button>`}</div>`).join('') : '<p class="hint" style="padding:14px;margin:0">還沒有出版商。</p>'}</div>`,
+      actions: [{ label: '新增', value: { add: true } }, { label: '完成', kind: 'primary', value: null }],
+      onOpen: (el, close) => el.querySelector('.mgr').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b) close(b.dataset.ren ? { ren: b.dataset.ren } : { del: b.dataset.del }); })
+    });
+    if (!r) { render(); return; }
+    if (r.add) { const n = await promptBox('新增出版商', '出版商名稱', '', '例如：遠流出版', 60); if (n) rememberPublisher(n); }
+    else if (r.del) B().putMeta({ publishers: (B().meta.publishers || []).filter(p => p !== r.del) });
+    else if (r.ren) {
+      const n = await promptBox('出版商改名', '新的名稱', r.ren, '', 60); if (!n || n === r.ren) continue;
+      const books = Object.values(B().cache.books).filter(b => b.publisher === r.ren);
+      books.forEach(b => B().put('books', { ...b, publisher: n }));
+      const lst = (B().meta.publishers || []).filter(p => p !== r.ren); if (!lst.includes(n)) lst.push(n);
+      B().putMeta({ publishers: lst }); toast(books.length ? `已改名，更新了 ${books.length} 本書` : '已改名');
+    }
+  }
+}
+async function manageCategories() {
+  for (;;) {
+    const tree = catTree(), used = {};
+    Object.values(B().cache.books).forEach(b => (b.categories || []).forEach(id => { used[id] = (used[id] || 0) + 1; }));
+    const r = await dialog({
+      title: '類型', sheet: true, focus: false,
+      body: `<p class="hint">類型可以分層，例如「文學 › 小說」。刪除時，底下的類型會往上移一層。</p><div class="list picklist optlist mgr">${tree.length ? tree.map(({ c, depth }) => `<div class="row sub" style="--d:${depth}"><span class="tx"><b>${esc(c.name)}</b><span>${used[c.id] ? used[c.id] + ' 本' : '沒有書在用'}</span></span><button type="button" class="btn small soft" data-ren="${c.id}">改名</button><button type="button" class="btn small ghost" data-del="${c.id}">刪除</button></div>`).join('') : '<p class="hint" style="padding:14px;margin:0">還沒有類型。</p>'}</div>`,
+      actions: [{ label: '新增', value: { add: true } }, { label: '完成', kind: 'primary', value: null }],
+      onOpen: (el, close) => el.querySelector('.mgr').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b) close(b.dataset.ren ? { ren: b.dataset.ren } : { del: b.dataset.del }); })
+    });
+    if (!r) { render(); return; }
+    if (r.add) await newCategoryDialog();
+    else if (r.ren) {
+      const c = B().cache.categories[r.ren]; if (!c) continue;
+      const n = await promptBox('類型改名', '新的名稱', c.name); if (n && n !== c.name) B().put('categories', { ...c, name: n });
+    } else if (r.del) {
+      const c = B().cache.categories[r.del]; if (!c) continue;
+      const nBooks = used[c.id] || 0;
+      if (!(await confirmBox(`刪除「${c.name}」？`, `${nBooks ? `${nBooks} 本書會拿掉這個類型。` : ''}底下的類型會往上移一層。`, '刪除', true))) continue;
+      Object.values(B().cache.categories).filter(x => x.parentId === c.id).forEach(x => B().put('categories', { ...x, parentId: c.parentId || null }));
+      Object.values(B().cache.books).filter(b => (b.categories || []).includes(c.id)).forEach(b => B().put('books', { ...b, categories: b.categories.filter(id => id !== c.id) }));
+      B().remove('categories', c.id); toast('已刪除');
+    }
+  }
+}
+async function manageLanguages() {
+  for (;;) {
+    const list = B().meta.languages || [];
+    const r = await dialog({
+      title: '自訂語言', sheet: true, focus: false,
+      body: `<p class="hint">在編輯頁的語言選單選「自訂…」新增的語言會記在這裡。刪除不會影響已經登記的書。</p><div class="list picklist mgr">${list.length ? list.map(l => `<div class="row"><span class="tx"><b>${esc(l)}</b></span><button type="button" class="btn small ghost" data-del="${esc(l)}">刪除</button></div>`).join('') : '<p class="hint" style="padding:14px;margin:0">還沒有自訂語言。</p>'}</div>`,
+      actions: [{ label: '新增', value: { add: true } }, { label: '完成', kind: 'primary', value: null }],
+      onOpen: (el, close) => el.querySelector('.mgr').addEventListener('click', ev => { const b = ev.target.closest('button[data-del]'); if (b) close({ del: b.dataset.del }); })
+    });
+    if (!r) { render(); return; }
+    if (r.add) { const n = await promptBox('新增語言', '語言名稱', '', '例如：台語'); if (n && !list.includes(n)) B().putMeta({ languages: [...list, n] }); }
+    else if (r.del) B().putMeta({ languages: list.filter(l => l !== r.del) });
+  }
+}
+
+/* ---------- 設定：Google Books 書目查詢 ---------- */
+function gbSourceText() {
+  const src = gbSource();
+  if (src === 'own') return app.gb.keyBad ? '你填的金鑰不能查書目，暫用共用額度' : '使用你自己的金鑰';
+  if (src === 'firebase') return app.gb.keyBad ? 'Firebase 金鑰還不能查書目，暫用共用額度' : '使用 Firebase 專案的金鑰';
+  return '沒有金鑰，使用共用額度';
+}
+function gbStatusHTML() {
+  const st = app.gb.status;
+  if (st === 'ok') return '<span class="status">正常</span>';
+  if (st === 'shared') return '<span class="status warn">共用額度</span>';
+  if (st === 'quota') return '<span class="status warn">額度用完</span>';
+  if (st === 'error') return '<span class="status warn">查詢失敗</span>';
+  if (st === 'offline') return '<span class="status demo">離線</span>';
+  return '';
+}
+async function gbooksSetup() {
+  const own = LS.get(GB_KEY) || '';
+  const r = await dialog({
+    title: 'Google Books 書目查詢', focus: false,
+    body: `<p class="small">沒有金鑰的查詢是全世界共用一份每日額度，常常一早就用完，掃書時會變成查不到。用自己的 Firebase 專案開通 Books API 就不會這樣，而且免費。</p>
+      <ol class="gb-steps">
+        <li>電腦打開 <b>console.cloud.google.com</b>，上方專案選 <b>Tsundoku</b>。</li>
+        <li>左邊選單 › <b>API 和服務</b> › <b>程式庫</b>，搜尋 <b>Books API</b>，按「啟用」。</li>
+        <li>回到這裡按「測試」。如果還是不行：到 <b>API 和服務 › 憑證</b>，打開「Browser key (auto created by Firebase)」，在「API 限制」裡把 Books API 勾起來，儲存後等幾分鐘再測。</li>
+      </ol>
+      <p class="small muted">目前：${esc(gbSourceText())}</p>
+      <label class="field"><span>另外建立的金鑰（選填，通常不用填）</span><input type="text" id="gb-key" maxlength="100" value="${esc(own)}" placeholder="AIza…" autocomplete="off" spellcheck="false"></label>`,
+    actions: [{ label: '關閉', kind: 'ghost', value: null }, { label: '儲存並測試', kind: 'primary', get: el => ({ key: el.querySelector('#gb-key').value.trim() }) }]
+  });
+  if (!r) return;
+  if (r.key) LS.set(GB_KEY, r.key); else LS.del(GB_KEY);
+  app.gb.keyBad = false;
+  toast('測試中…');
+  try {
+    await gFetch('q=isbn:9789573265856&maxResults=1');
+    if (app.gb.status === 'ok') toast('可以了：用的是你自己的額度');
+    else if (gbSource() === 'none') toast('可以查詢，但用的是共用額度，隨時可能用完', 'err');
+    else toast('金鑰還不能查書目（Books API 沒有開通），先改用共用額度', 'err');
+  } catch (e) {
+    toast(app.gb.status === 'quota' ? '金鑰沒開通，共用額度也用完了' : app.inFrame ? '預覽頁不能連網，部署後再測' : '連不上 Google，請確認網路', 'err');
+  }
   render();
 }
 
@@ -2004,7 +2365,7 @@ async function exportJSON() {
   } catch (e) { toast('匯出失敗：' + errMsg(e), 'err'); }
 }
 function exportCSV() {
-  const cols = [['title', '書名'], ['subtitle', '副標題'], ['authors', '作者'], ['publisher', '出版商'], ['publishedDate', '出版日期'], ['isbn', 'ISBN'], ['format', '格式'], ['language', '語言'], ['pages', '頁數'], ['owner', '所有者'], ['location', '位置'], ['locationNote', '位置補充'], ['price', '價格'], ['currency', '幣別'], ['purchaseDate', '購買日期'], ['tags', '標籤'], ['readStatus', '閱讀狀態'], ['rating', '評分'], ['ownership', '擁有狀態'], ['verified', '資料已確認'], ['addedAt', '加入日期'], ['id', 'ID']];
+  const cols = [['title', '書名'], ['subtitle', '副標題'], ['originalTitle', '原著名'], ['series', '系列'], ['volume', '卷'], ['authors', '作者'], ['publisher', '出版商'], ['publishedDate', '出版日期'], ['edition', '版次'], ['printing', '刷次'], ['isbn', 'ISBN'], ['format', '格式'], ['language', '語言'], ['pages', '頁數'], ['categories', '類型'], ['owner', '所有者'], ['quantity', '數量'], ['location', '位置'], ['locationNote', '位置補充'], ['price', '價格'], ['currency', '幣別'], ['purchaseDate', '購買日期'], ['tags', '標籤'], ['readStatus', '閱讀狀態'], ['rating', '評分'], ['ownership', '擁有狀態'], ['loan', '借閱'], ['verified', '資料已確認'], ['addedAt', '加入日期'], ['id', 'ID']];
   const val = (b, k) => {
     switch (k) {
       case 'authors': return authorsText(b);
@@ -2012,7 +2373,10 @@ function exportCSV() {
       case 'location': return locCode(b);
       case 'tags': return (b.tags || []).join('#');
       case 'readStatus': return READ_STATUS[b.readStatus] || '';
-      case 'ownership': return b.ownership === 'wishlist' ? '願望清單' : '已收藏';
+      case 'ownership': return b.ownership === 'wishlist' ? '願望清單' : b.ownership === 'borrowed' ? '借來的' : '已收藏';
+      case 'categories': return (b.categories || []).map(catPath).filter(Boolean).join('、');
+      case 'quantity': return b.quantity || 1;
+      case 'loan': return b.loan ? `${b.loan.dir === 'in' ? '借入' : '借出'}：${b.loan.person || ''} ${b.loan.date || ''}`.trim() : '';
       case 'verified': return b.verified ? '是' : '否';
       case 'addedAt': return fmtDate(b.addedAt);
       default: return b[k] ?? '';
@@ -2031,7 +2395,7 @@ async function importFile(file) {
   const n = a => (Array.isArray(a) ? a.length : 0);
   const mode = await dialog({
     title: '從備份還原',
-    body: `<p>備份時間：${esc(fmtDate(data.exportedAt) || '不明')}</p><p>內容：房間 ${n(data.rooms)}、書櫃 ${n(data.cabinets)}、書籍 ${n(data.books)}、照片 ${n(data.photos)}</p><p class="muted small">「合併」會保留現有資料，相同的項目以備份為準；「全部取代」會先清空現有資料。</p>`,
+    body: `<p>備份時間：${esc(fmtDate(data.exportedAt) || '不明')}</p><p>內容：房間 ${n(data.rooms)}、書櫃 ${n(data.cabinets)}、書籍 ${n(data.books)}、類型 ${n(data.categories)}、照片 ${n(data.photos)}</p><p class="muted small">「合併」會保留現有資料，相同的項目以備份為準；「全部取代」會先清空現有資料。</p>`,
     actions: [{ label: '取消', kind: 'ghost', value: null }, { label: '全部取代', kind: 'danger', value: 'replace' }, { label: '合併', kind: 'primary', value: 'merge' }]
   });
   if (!mode) return;
@@ -2179,7 +2543,7 @@ document.addEventListener('click', async e => {
   }
 });
 document.addEventListener('input', e => {
-  if (e.target.dataset && e.target.dataset.field) { setDraftField(e.target); return; }
+  if (e.target.dataset && e.target.dataset.field) { if (e.target.tagName !== 'SELECT') setDraftField(e.target); return; }
   if (e.target.id === 'book-q') { app.bookQuery = e.target.value; const l = $('#book-list'); if (l) l.innerHTML = bookListHTML(); return; }
   if (!app.draft) return;
   if (e.target.id === 'ed-code') app.draft.code = e.target.value;
