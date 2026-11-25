@@ -373,6 +373,30 @@ button.star{width:34px;height:34px}
 .loaninfo{display:flex;align-items:center;gap:12px}
 .loaninfo .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .status.warn{color:var(--orange)}
+.readline{display:flex;align-items:flex-start;gap:8px;margin:12px 2px 0;font-size:14px;color:var(--ink)}
+.readline svg{width:18px;height:18px;flex:none;margin-top:1px;color:var(--wood)}
+.readline b{font-variant-numeric:tabular-nums}
+.icon-btn.fav svg{width:22px;height:22px}
+.icon-btn.fav.on{color:var(--orange)}
+.icon-btn.fav.on svg{fill:currentColor}
+.bhero .chips{justify-content:center}
+.bhero .chip svg{width:13px;height:13px;fill:currentColor;margin-right:3px;vertical-align:-2px}
+.locnote{margin-top:2px}
+.loancard{display:flex;flex-direction:column;gap:12px}
+.loancard .loaninfo{display:flex;align-items:center;gap:12px}
+.loanacts{display:flex;justify-content:flex-end;gap:8px}
+.loanacts.solo{justify-content:flex-start;margin-top:-4px}
+.loanacts svg{width:16px;height:16px}
+.overdue{color:#b4442c;font-weight:700}
+.chip.warn{background:#fbe0d6;color:#b4442c}
+.binnote{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 0}
+.sprow .sp-title{width:100%;height:38px;padding:0 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font-size:15px;font-weight:700}
+.sprow .tx{flex:1}
+.check-row{display:flex;align-items:flex-start;gap:10px;margin-top:12px;font-size:14px}
+.check-row input{width:20px;height:20px;accent-color:var(--orange);flex:none;margin-top:1px}
+.scan-pills button svg{width:15px;height:15px;vertical-align:-3px;margin-right:4px}
+.share-head{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.share-head img{width:72px;height:104px;object-fit:cover;border-radius:4px 10px 10px 4px;box-shadow:var(--shadow);flex:none}
 .slots.four{grid-template-columns:repeat(4,minmax(0,1fr))}
 .slots.four .slot{font-size:12px;text-align:center;padding:0 4px}
 .layer.full{padding:0;background:var(--bg)}
@@ -552,7 +576,7 @@ button.star{width:34px;height:34px}
 <div id="toasts" aria-live="polite"></div>
 <script type="module">
 /* ========= 吋讀 Tsundoku · 第一階段：地基、書櫃編輯器、匯出備份 ========= */
-const VERSION = '0.4.0';
+const VERSION = '0.5.0';
 const SCHEMA_VERSION = 1;
 const FB_VERSION = '10.12.2';
 const COLS = ['rooms', 'cabinets', 'categories', 'books'];
@@ -587,7 +611,7 @@ const LS = {
 };
 
 /* ---------- 資料規格 v1 ---------- */
-function defaultMeta() { return { owners: ['爸爸', '我'], publishers: [], languages: [], lastBackupAt: null }; }
+function defaultMeta() { return { owners: ['爸爸', '我'], publishers: [], languages: [], binOnVerify: true, binDays: 30, lastBackupAt: null }; }
 function newRoom(name, order) { return { id: newId(), name, order, createdAt: nowISO() }; }
 function newCabinet(roomId, code) {
   const t = nowISO();
@@ -608,7 +632,8 @@ function newBook(p = {}) {
     owner: '', quantity: 1, location: null, // { cabinetId, r, c, depth }
     locationNote: '', price: null, currency: 'TWD', purchaseDate: '', tags: [],
     rating: null, readStatus: 'unread', currentPage: null, startDate: '', finishDate: '', favorite: false, review: '',
-    loan: null,                // { dir: 'out' 借出 / 'in' 借入, person, date }
+    loan: null,                // { dir: 'out' 借出 / 'in' 借入, person, date, due 預計歸還 }
+    photoBin: [],              // 回收桶裡的照片：{ id, kind, at, size }
     loanHistory: [], verified: false, addedAt: t, updatedAt: t
   }, p);
 }
@@ -816,6 +841,9 @@ const ICON = {
   books: svg('<rect x="4" y="4" width="4.5" height="16" rx="1"/><rect x="10" y="4" width="4.5" height="16" rx="1"/><path d="M16.2 5.5l3.2-.8 2.6 14.6-3.2.8z"/>', 1.8),
   scan: svg('<path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M8.5 8.5v7M11 8.5v7M13.5 8.5v7M15.5 8.5v7"/>'),
   loan: svg('<path d="M6 8h12l-3-3M18 16H6l3 3"/>', 1.8),
+  calendar: svg('<rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/>', 1.8),
+  heart: svg('<path d="M12 19.5s-7-4.3-7-9.5a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.2-7 9.5-7 9.5z"/>', 1.8),
+  spines: svg('<rect x="4" y="5" width="3.5" height="14" rx=".8"/><rect x="9" y="4" width="3.5" height="15" rx=".8"/><path d="M14.5 6.2l3.2-.9 3.3 12.6-3.2.9z"/><path d="M3 20.5h18"/>', 1.7),
   stats: svg('<path d="M4 20h16"/><rect x="5.5" y="11" width="3" height="6" rx="1"/><rect x="10.5" y="6" width="3" height="11" rx="1"/><rect x="15.5" y="13.5" width="3" height="3.5" rx="1"/>', 1.8),
   gear: svg('<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>', 1.8),
   cloud: svg('<path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.1 10 4 4 0 0 0 7 18z"/>', 1.8),
@@ -1132,12 +1160,17 @@ const V = {
       <section class="group"><h2>AI 讀圖</h2><div class="list">
         <button type="button" class="row" data-action="ai-setup"><span class="tx"><b>Gemini 金鑰</b><span>${LS.get(AI_KEY) ? esc('已設定' + (LS.get(AI_MODEL) ? '・' + LS.get(AI_MODEL) : '')) : '還沒設定，讀封底文案和版權頁要用'}</span></span>${LS.get(AI_KEY) ? '<span class="status">可以用</span>' : ''}${ICON.chev}</button>
       </div></section>
+      <section class="group"><h2>照片回收桶</h2><div class="list">
+        <button type="button" class="row" data-action="bin-open"><span class="tx"><b>回收桶</b><span>${esc(binSummary())}</span></span>${ICON.chev}</button>
+        <div class="row"><span class="tx"><b>確認資料後，照片移到回收桶</b><span>版權頁、藏書章、封底文案</span></span><button type="button" class="switch" role="switch" aria-checked="${binOn()}" aria-label="確認資料後照片移到回收桶" data-action="bin-toggle"></button></div>
+        <button type="button" class="row" data-action="bin-days"><span class="tx"><b>保留天數</b><span>過了就自動清除</span></span><span class="status">${binDays()} 天</span>${ICON.chev}</button>
+      </div></section>
       <section class="group"><h2>備份與還原</h2><div class="card">
         <div class="backup-status"><span style="flex:1"><span class="small muted">上次備份</span><b>${m.lastBackupAt ? (days <= 0 ? '今天' : `${days} 天前`) : '還沒有備份'}</b></span><span class="small muted" style="text-align:right">房間、書櫃、書籍、照片、<br>出版商和類型都在裡面</span></div>
         <button type="button" class="btn primary wide" data-action="export-json">${ICON.download}匯出完整備份</button>
         <div class="grid2" style="margin-top:8px"><button type="button" class="btn" data-action="export-csv">匯出書目 CSV</button><button type="button" class="btn" data-action="import">從備份還原</button></div>
         <input type="file" id="import-file" accept=".json,application/json" hidden></div></section>
-      <section class="group"><h2>關於</h2><div class="card about"><b>吋讀 Tsundoku</b><span class="small muted">版本 ${VERSION} · 第四階段 · 資料格式 v${SCHEMA_VERSION}</span></div></section>`;
+      <section class="group"><h2>關於</h2><div class="card about"><b>吋讀 Tsundoku</b><span class="small muted">版本 ${VERSION} · 第五階段 · 資料格式 v${SCHEMA_VERSION}</span></div></section>`;
     return { body };
   }
 };
@@ -1171,6 +1204,7 @@ const SCREENS = {
 /* ---------- 繪製 ---------- */
 function render() {
   const root = $('#app');
+  if (!app.bookDraft && localStorage.getItem(DRAFT_KEY) && app.screen === 'main') LS.del(DRAFT_KEY);
   if (app.screen !== 'main') { root.innerHTML = SCREENS[app.screen](); app.lastKey = ''; return; }
   const v = cur(), out = V[v.name](v);
   const main = $('#main'), same = app.lastKey === viewKey(v), st = same && main ? main.scrollTop : 0;
@@ -1645,12 +1679,12 @@ function scaleTo(src, w, h) {
 }
 function encodeCanvas(c, kind) {
   let out = c;
-  if (kind !== 'cover') {
+  if (kind !== 'cover' && kind !== 'spines') {
     const x = c.getContext('2d'), id = x.getImageData(0, 0, c.width, c.height), d = id.data;
     for (let i = 0; i < d.length; i += 4) { const y = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; d[i] = d[i + 1] = d[i + 2] = y; }
     x.putImageData(id, 0, 0);
   }
-  const q = kind === 'cover' ? 0.82 : 0.72;
+  const q = kind === 'cover' || kind === 'spines' ? 0.82 : 0.72;
   let url = out.toDataURL('image/webp', q);
   if (!url.startsWith('data:image/webp')) url = out.toDataURL('image/jpeg', q);
   return { data: url, w: out.width, h: out.height };
@@ -1702,13 +1736,14 @@ function warpQuad(src, q, outW, outH) {
 const dist = (p, q) => Math.hypot(p.x - q.x, p.y - q.y);
 function finishCrop(src, quad, kind) {
   const W = Math.max(dist(quad[0], quad[1]), dist(quad[3], quad[2])), H = Math.max(dist(quad[0], quad[3]), dist(quad[1], quad[2]));
-  const k = Math.min(1, 1400 / Math.max(W, H));
+  const LONG = kind === 'spines' ? 1600 : DOC_LONG;
+  const k = Math.min(1, (kind === 'spines' ? 2000 : 1400) / Math.max(W, H));
   const warped = warpQuad(src, quad, W * k, H * k);
   const final = kind === 'cover' ? scaleTo(warped, Math.min(COVER_W, warped.width), null)
-    : (warped.width >= warped.height ? scaleTo(warped, Math.min(DOC_LONG, warped.width), null) : scaleTo(warped, null, Math.min(DOC_LONG, warped.height)));
+    : (warped.width >= warped.height ? scaleTo(warped, Math.min(LONG, warped.width), null) : scaleTo(warped, null, Math.min(LONG, warped.height)));
   return encodeCanvas(final, kind);
 }
-const KIND_LABEL = { cover: '封面', copyright: '版權頁', stamp: '藏書章', blurb: '封底文案' };
+const KIND_LABEL = { cover: '封面', copyright: '版權頁', stamp: '藏書章', blurb: '封底文案', spines: '書背' };
 // 全螢幕裁切校正；回傳 { data, w, h } 或 null（取消）
 function cropEditor(srcCanvas, kind) {
   return new Promise(resolve => {
@@ -1853,10 +1888,14 @@ function commitDraft() {
   if (!(b.quantity >= 1)) b.quantity = 1;
   b.categories = normCats(b.categories);
   rememberPublisher(b.publisher);
+  const was = B().cache.books[b.id], wasV = !!(was && was.verified);
+  if (was) b.photoBin = was.photoBin || [];
   B().put('books', b);
   d.photos.filter(p => p.isNew).forEach(p => B().putPhoto({ id: p.id, bookId: b.id, kind: p.kind, data: p.data, w: p.w, h: p.h, createdAt: nowISO(), trashedAt: null }));
   d.removed.forEach(id => B().removePhoto(id));
   delete app.photoCache[b.id];
+  if (b.verified && !wasV) binBookPhotos(b.id).then(n => { if (n) toast(`${n} 張照片移到回收桶，${binDays()} 天後清除`); });
+  else if (!b.verified && wasV) restoreBookPhotos(b.id);
   return b;
 }
 async function takeDraftPhoto(kind) {
@@ -2045,8 +2084,8 @@ function bookListHTML() {
   if (!list.length) return emptyHTML(q ? '找不到符合的書' : '這裡還沒有書', q ? '你的書裡沒有這本。要新增的話，可以上網查書目。' : '按右上角的「新增」，或用中間的掃描鈕開始登記。') + (q ? `<button type="button" class="btn soft wide" data-action="web-search">${ICON.search}上網搜尋「${esc(q)}」</button>` : '');
   const count = `<p class="small muted countline">${nfmt(list.length)} 本${filtered ? '<button type="button" class="link" data-action="clear-book-filters">清除類型和篩選</button>' : ''}</p>`;
   const more = list.length > shown.length ? `<button type="button" class="btn soft wide" data-action="book-more">再顯示 ${nfmt(Math.min(BOOK_PAGE, list.length - shown.length))} 本（還有 ${nfmt(list.length - shown.length)} 本）</button>` : '';
-  if (bookView() === 'grid') return count + `<div class="bgrid">${shown.map(b => `<button type="button" class="gcell" data-action="open-book" data-id="${b.id}">${coverThumb(b, 'gcover')}${b.loan || !b.verified ? `<span class="gbadges">${b.loan ? `<span class="chip peach">${b.loan.dir === 'in' ? '借入' : '借出'}</span>` : ''}${b.verified ? '' : '<span class="chip line">待補</span>'}</span>` : ''}<span class="gt">${esc(b.title || '書名待補')}${b.volume ? ` ${esc(b.volume)}` : ''}</span></button>`).join('')}</div>` + more;
-  return count + `<div class="list booklist2">${shown.map(b => `<button type="button" class="row brow" data-action="open-book" data-id="${b.id}">${coverThumb(b, 'thumb')}<span class="tx"><b>${esc(b.title || '書名待補')}</b><span>${esc(authorsText(b) || (b.isbn ? 'ISBN ' + b.isbn : '作者待補'))}</span>${b.location ? `<span class="mono loc">${esc(locLabel(b.location))}</span>` : ''}</span><span class="chips" style="flex:none;flex-direction:column;align-items:flex-end">${b.loan ? `<span class="chip peach">${b.loan.dir === 'in' ? '借入' : '借出'}</span>` : ''}${b.verified ? '' : '<span class="chip line">待補</span>'}</span></button>`).join('')}</div>` + more;
+  if (bookView() === 'grid') return count + `<div class="bgrid">${shown.map(b => `<button type="button" class="gcell" data-action="open-book" data-id="${b.id}">${coverThumb(b, 'gcover')}${b.loan || !b.verified ? `<span class="gbadges">${b.loan ? `<span class="chip ${overdueDays(b.loan) > 0 ? 'warn' : 'peach'}">${overdueDays(b.loan) > 0 ? '逾期' : b.loan.dir === 'in' ? '借入' : '借出'}</span>` : ''}${b.verified ? '' : '<span class="chip line">待補</span>'}</span>` : ''}<span class="gt">${esc(b.title || '書名待補')}${b.volume ? ` ${esc(b.volume)}` : ''}</span></button>`).join('')}</div>` + more;
+  return count + `<div class="list booklist2">${shown.map(b => `<button type="button" class="row brow" data-action="open-book" data-id="${b.id}">${coverThumb(b, 'thumb')}<span class="tx"><b>${esc(b.title || '書名待補')}</b><span>${esc(authorsText(b) || (b.isbn ? 'ISBN ' + b.isbn : '作者待補'))}</span>${b.location ? `<span class="mono loc">${esc(locLabel(b.location))}</span>` : ''}</span><span class="chips" style="flex:none;flex-direction:column;align-items:flex-end">${b.loan ? `<span class="chip peach">${b.loan.dir === 'in' ? '借入' : '借出'}</span>${overdueDays(b.loan) > 0 ? `<span class="chip warn">逾期 ${overdueDays(b.loan)} 天</span>` : ''}` : ''}${b.verified ? '' : '<span class="chip line">待補</span>'}</span></button>`).join('')}</div>` + more;
 }
 
 /* ---------- 第二階段：頁面 ---------- */
@@ -2071,7 +2110,7 @@ Object.assign(V, {
       <div class="scan-top"><button type="button" class="scan-round" data-action="scan-close" aria-label="結束掃描">${ICON.close}</button>${sessionChipHTML()}</div>
       <div class="viewfinder" aria-hidden="true"><i></i><i></i><i></i><i></i><span class="laser"></span></div>
       <div class="scan-under"><p class="scan-tip" id="scan-tip" aria-live="polite">${esc(scanTipText())}</p>
-      <div class="scan-pills"><button type="button" data-action="scan-manual">手動輸入 ISBN</button><button type="button" data-action="scan-nobarcode">這本沒有條碼</button></div></div>
+      <div class="scan-pills"><button type="button" data-action="scan-manual">手動輸入 ISBN</button><button type="button" data-action="scan-nobarcode">這本沒有條碼</button><button type="button" data-action="scan-spines">${ICON.ai}拍一排書背</button></div></div>
       <section class="scan-sheet" id="scan-sheet" aria-live="polite">${scanSheetHTML()}</section>
     </div>`;
     return { body, full: true, after: startCamera };
@@ -2083,6 +2122,7 @@ Object.assign(V, {
       B().photosFor(v.id).then(ps => { app.photoCache[v.id] = ps; if (cur() && cur().name === 'book' && cur().id === v.id) render(); }).catch(() => { app.photoCache[v.id] = []; });
     }
     const photos = (app.photoCache[v.id] || []).filter(p => !p.trashedAt);
+    rememberRecent(b.id);
     const loc = b.location, cab = loc && B().cache.cabinets[loc.cabinetId];
     const isWish = b.ownership === 'wishlist', loanIn = b.loan && b.loan.dir === 'in';
     const ed = [b.edition, b.printing ? `${b.printing} 刷` : ''].filter(Boolean).join(' ');
@@ -2092,17 +2132,17 @@ Object.assign(V, {
     const status = seg('bk-quick-status', Object.entries(READ_STATUS), b.readStatus || 'unread');
     const navIds = bookNavIds(b.id), navI = navIds ? navIds.indexOf(b.id) : -1, prevId = neighborId(b.id, -1), nextId = neighborId(b.id, 1);
     const slide = app.slideDir ? (app.slideDir > 0 ? ' slide-n' : ' slide-p') : ''; app.slideDir = 0;
-    let body = `${navIds ? `<button type="button" class="navarrow prev" data-action="book-prev" aria-label="上一本"${prevId ? '' : ' disabled'}>${ICON.back}</button><button type="button" class="navarrow next" data-action="book-next" aria-label="下一本"${nextId ? '' : ' disabled'}>${ICON.chev}</button>` : ''}<div class="bookpane${slide}"><header class="page-head"><div class="toprow"><button type="button" class="icon-btn" data-action="back" aria-label="返回">${ICON.back}</button>${navIds && navIds.length > 1 ? `<span class="mid navpos" aria-label="第 ${navI + 1} 本，共 ${navIds.length} 本">${navI + 1} / ${navIds.length}</span>` : ''}<span class="acts"><button type="button" class="btn small soft" data-action="edit-book" data-id="${b.id}">${ICON.pencil}編輯</button></span></div></header>
-      <div class="bhero">${coverThumb(b, 'bigcover')}<h1 class="title">${esc(b.title || '書名待補')}</h1>${b.subtitle ? `<p class="sub">${esc(b.subtitle)}</p>` : ''}${b.originalTitle ? `<p class="sub">原著名：${esc(b.originalTitle)}</p>` : ''}${b.series ? `<p class="sub">${esc(b.series)}${b.volume ? ` · 卷 ${esc(b.volume)}` : ''}</p>` : ''}<p class="bauthor">${esc(authorsText(b) || '作者待補')}</p>${b.rating ? starsHTML(b.rating) : ''}${b.verified ? '' : '<span class="chip line">待補資料</span>'}</div>
-      <section class="card">${status}${b.readStatus === 'reading' && b.pages ? `<div class="progress"><div class="sub2"><span>讀到</span><b>${b.currentPage || 0} / ${b.pages} 頁</b></div><div class="bar"><i style="width:${clamp(Math.round((b.currentPage || 0) / b.pages * 100), 0, 100)}%"></i></div></div>` : ''}</section>`;
-    if (b.loan) body += `<section class="card loaninfo"><span class="chip peach">${loanIn ? '借入' : '借出'}</span><span class="tx"><b>${loanIn ? `跟 ${esc(b.loan.person || '（沒填）')} 借的` : `借給 ${esc(b.loan.person || '（沒填）')}`}</b><span class="small muted">${b.loan.date ? '借閱日期 ' + esc(b.loan.date) : '沒填借閱日期'}</span></span></section>`;
-    body += cab && !isWish ? `<section class="loccard"><span class="small">${b.loan && !loanIn ? '借出前放在' : '放在哪裡'}</span><b class="mono">${esc(locLabel(loc))}</b><span class="small">${esc(locWords(loc))}</span><button type="button" class="btn small accent" data-action="open-cab" data-id="${cab.id}">在書櫃上看</button></section>`
-      : `<section class="card"><p class="hint">${isWish ? '這本在願望清單裡，還沒買。' : '還沒放到書櫃上。'}</p></section>`;
+    let body = `${navIds ? `<button type="button" class="navarrow prev" data-action="book-prev" aria-label="上一本"${prevId ? '' : ' disabled'}>${ICON.back}</button><button type="button" class="navarrow next" data-action="book-next" aria-label="下一本"${nextId ? '' : ' disabled'}>${ICON.chev}</button>` : ''}<div class="bookpane${slide}"><header class="page-head"><div class="toprow"><button type="button" class="icon-btn" data-action="back" aria-label="返回">${ICON.back}</button>${navIds && navIds.length > 1 ? `<span class="mid navpos" aria-label="第 ${navI + 1} 本，共 ${navIds.length} 本">${navI + 1} / ${navIds.length}</span>` : ''}<span class="acts"><button type="button" class="icon-btn fav${b.favorite ? ' on' : ''}" data-action="toggle-fav" aria-pressed="${!!b.favorite}" aria-label="${b.favorite ? '取消最愛' : '加到最愛'}">${ICON.heart}</button><button type="button" class="btn small soft" data-action="edit-book" data-id="${b.id}">${ICON.pencil}編輯</button></span></div></header>
+      <div class="bhero">${coverThumb(b, 'bigcover')}<h1 class="title">${esc(b.title || '書名待補')}</h1>${b.subtitle ? `<p class="sub">${esc(b.subtitle)}</p>` : ''}${b.originalTitle ? `<p class="sub">原著名：${esc(b.originalTitle)}</p>` : ''}${b.series ? `<p class="sub">${esc(b.series)}${b.volume ? ` · 卷 ${esc(b.volume)}` : ''}</p>` : ''}<p class="bauthor">${esc(authorsText(b) || '作者待補')}</p>${b.rating ? starsHTML(b.rating) : ''}${b.favorite || !b.verified ? `<span class="chips">${b.favorite ? `<span class="chip peach">${ICON.heart}我的最愛</span>` : ''}${b.verified ? '' : '<span class="chip line">待補資料</span>'}</span>` : ''}</div>
+      <section class="card">${status}${b.readStatus === 'reading' && b.pages ? `<div class="progress"><div class="sub2"><span>讀到</span><b>${b.currentPage || 0} / ${b.pages} 頁</b></div><div class="bar"><i style="width:${clamp(Math.round((b.currentPage || 0) / b.pages * 100), 0, 100)}%"></i></div></div>` : b.readStatus === 'reading' && b.currentPage ? `<p class="readline">${ICON.book || ''}<span>讀到第 <b>${esc(b.currentPage)}</b> 頁</span></p>` : ''}${readingLine(b)}</section>`;
+    body += loanSectionHTML(b);
+    body += cab && !isWish ? `<section class="loccard"><span class="small">${b.loan && !loanIn ? '借出前放在' : '放在哪裡'}</span><b class="mono">${esc(locLabel(loc))}</b><span class="small">${esc(locWords(loc))}</span>${b.locationNote ? `<span class="small locnote">補充：${esc(b.locationNote)}</span>` : ''}<button type="button" class="btn small accent" data-action="open-cab" data-id="${cab.id}">在書櫃上看</button></section>`
+      : `<section class="card"><p class="hint" style="margin:0">${isWish ? '這本在願望清單裡，還沒買。' : '還沒放到書櫃上。'}${!isWish && b.locationNote ? `位置補充：${esc(b.locationNote)}` : ''}</p></section>`;
     body += rows.length ? `<section class="card infolist"><dl>${rows.map(([k, val]) => `<div><dt>${k}</dt><dd>${Array.isArray(val) ? val.map(esc).join('<br>') : esc(val)}</dd></div>`).join('')}</dl>${(b.refSubjects || []).length ? `<p class="hint" style="margin-top:8px">書目庫的主題：${esc(b.refSubjects.join('、'))}</p>` : ''}</section>` : '';
     if (b.summary) body += `<section class="group"><h2>摘要</h2><p class="prose">${esc(b.summary)}</p></section>`;
     body += `<section class="group"><h2>心得</h2><div class="card"><p class="${b.review ? 'prose' : 'hint'}" style="margin:0">${b.review ? esc(b.review) : '還沒寫心得。'}</p></div></section>`;
-    body += `<section class="group"><h2>整理用的照片</h2><div class="card">${app.photoCache[v.id] === null ? '<p class="hint">讀取中…</p>' : photos.length ? `<div class="photos">${photos.map(p => `<button type="button" class="pthumb" data-action="view-photo" data-id="${p.id}" data-book="${b.id}"><img src="${p.data}" alt="${KIND_LABEL[p.kind] || '照片'}"><span>${KIND_LABEL[p.kind] || '照片'}</span></button>`).join('')}</div>` : '<p class="hint">沒有版權頁或藏書章照片。</p>'}
-      <div class="switch-row"><span><b>資料已確認</b><span class="small muted">補完資料後打開，書就不會出現在「待補資料」裡。</span></span><button type="button" class="switch" role="switch" aria-checked="${!!b.verified}" aria-label="資料已確認" data-action="toggle-verified" data-id="${b.id}"></button></div></div></section>`;
+    body += `<section class="group"><h2>整理用的照片</h2><div class="card">${app.photoCache[v.id] === null ? '<p class="hint">讀取中…</p>' : photos.length ? `<div class="photos">${photos.map(p => `<button type="button" class="pthumb" data-action="view-photo" data-id="${p.id}" data-book="${b.id}"><img src="${p.data}" alt="${KIND_LABEL[p.kind] || '照片'}"><span>${KIND_LABEL[p.kind] || '照片'}</span></button>`).join('')}</div>` : '<p class="hint">沒有整理用的照片。</p>'}${(b.photoBin || []).length ? `<p class="hint binnote">${b.photoBin.length} 張照片在回收桶，${binLeft(b.photoBin[0].at)} 天後清除。<button type="button" class="link" data-action="bin-restore-book" data-id="${b.id}">拿回來</button></p>` : ''}
+      <div class="switch-row"><span><b>資料已確認</b><span class="small muted">補完資料後打開，書就不會出現在「待補資料」裡${binOn() ? `；照片會移到回收桶，${binDays()} 天後清除` : ''}。</span></span><button type="button" class="switch" role="switch" aria-checked="${!!b.verified}" aria-label="資料已確認" data-action="toggle-verified" data-id="${b.id}"></button></div></div></section>`;
     if (navIds && navIds.length > 1) body += `<p class="hint navhint">左右滑動可以切換上一本、下一本</p>`;
     body += `</div>`;
     return { body, after: bindBookSwipe };
@@ -2143,7 +2183,8 @@ Object.assign(V, {
       <section class="card form">
         <div class="field">擁有狀態${seg('bk-ownership', [['owned', '已收藏'], ['wishlist', '願望清單'], ['loan', '借閱']], tabV)}</div>
         ${tabV === 'loan' ? `<div class="loanbox">${seg('bk-loan-dir', [['out', '借出'], ['in', '借入']], b.loan.dir)}
-          <div class="grid2"><label class="field">${loanIn ? '跟誰借的' : '借給誰'}<input type="text" data-field="loan-person" list="loan-people" value="${esc(b.loan.person || '')}" placeholder="名字"></label><label class="field">借閱日期<input type="date" data-field="loan-date" value="${esc(b.loan.date || '')}"></label></div>
+          <label class="field">${loanIn ? '跟誰借的' : '借給誰'}<input type="text" data-field="loan-person" list="loan-people" value="${esc(b.loan.person || '')}" placeholder="名字"></label>
+          <div class="grid2"><label class="field">借閱日期<input type="date" data-field="loan-date" value="${esc(b.loan.date || '')}"></label><label class="field">預計歸還<input type="date" data-field="loan-due" value="${esc(b.loan.due || '')}"></label></div>
           <datalist id="loan-people">${loanPeople().map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist></div>` : ''}
         <div class="grid-wide"><label class="field">所有者${sel('owner', [['', '未填'], ...ownerOpts.map(o => [o, o])], b.owner)}</label><label class="field">數量<input type="number" inputmode="numeric" min="1" data-field="quantity" value="${esc(b.quantity ?? 1)}"></label></div>
         ${isWish ? '' : `<div class="field">位置<div class="locpick">${b.location ? `<span class="chip code">${esc(locLabel(b.location))}</span>` : '<span class="small muted">還沒選</span>'}<button type="button" class="btn small soft" data-action="pick-book-loc">${b.location ? '更換' : '選擇位置'}</button>${b.location ? '<button type="button" class="btn small ghost" data-action="clear-book-loc">清除</button>' : ''}</div></div>
@@ -2164,7 +2205,7 @@ Object.assign(V, {
         <h2 style="margin:0">整理用的照片</h2>
         ${photos.length ? `<div class="photos">${photos.map(p => `<button type="button" class="pthumb" data-action="view-draft-photo" data-id="${p.id}"><img src="${p.data}" alt="${KIND_LABEL[p.kind] || '照片'}"><span>${KIND_LABEL[p.kind] || '照片'}${d.pin && d.pin.id === p.id ? '・釘在上方' : ''}</span></button>`).join('')}</div><p class="hint" style="margin:0">點照片可以放大、刪除，或釘在畫面上方邊看邊填。</p>` : '<p class="hint">還沒有照片。</p>'}
         <div class="slots">${['copyright', 'stamp', 'blurb'].map(k => `<button type="button" class="slot" data-action="draft-photo" data-kind="${k}">${ICON.camera}<span>拍${KIND_LABEL[k]}</span></button>`).join('')}</div>
-        <div class="switch-row"><span><b>資料已確認</b><span class="small muted">補完資料後打開。</span></span><button type="button" class="switch" role="switch" aria-checked="${!!b.verified}" aria-label="資料已確認" data-action="bk-toggle" data-f="verified"></button></div>
+        <div class="switch-row"><span><b>資料已確認</b><span class="small muted">補完資料後打開${binOn() ? `，儲存時照片會移到回收桶，${binDays()} 天後清除` : ''}。</span></span><button type="button" class="switch" role="switch" aria-checked="${!!b.verified}" aria-label="資料已確認" data-action="bk-toggle" data-f="verified"></button></div>
       </section>
       ${(() => { const nid = !d.isNew && d.origin === 'detail' ? neighborId(b.id, 1) : null, nb = nid && B().cache.books[nid]; return nb ? `<button type="button" class="btn soft wide savenext" data-action="save-next"><span>儲存並編輯下一本</span><small>${esc(nb.title || '書名待補')}</small></button>` : ''; })()}
       ${d.isNew ? '' : '<button type="button" class="btn danger wide" data-action="del-book">刪除這本書</button>'}`;
@@ -2216,7 +2257,7 @@ async function openEditBook(id, replace = false) {
   const b = B().cache.books[id]; if (!b) return;
   let photos = app.photoCache[id];
   if (!photos) { try { photos = await B().photosFor(id); } catch (e) { photos = []; } app.photoCache[id] = photos; }
-  setDraft({ book: clone(b), photos: photos.map(p => ({ ...p, isNew: false })), removed: [], origin: 'detail', isNew: false, filled: 0, lookup: null, dup: [] });
+  setDraft({ book: clone(b), photos: photos.filter(p => !p.trashedAt).map(p => ({ ...p, isNew: false })), removed: [], origin: 'detail', isNew: false, filled: 0, lookup: null, dup: [] });
   if (replace) { app.stack[app.stack.length - 1] = { name: 'bookEdit', id }; render(); }
   else go({ name: 'bookEdit', id });
 }
@@ -2233,6 +2274,7 @@ function setDraftField(el) {
     case 'edition': if (v === CUSTOM) customEdition(); else b.edition = v; break;
     case 'loan-person': if (b.loan) b.loan.person = v; break;
     case 'loan-date': if (b.loan) b.loan.date = v; break;
+    case 'loan-due': if (b.loan) b.loan.due = v; break;
     case 'quantity': b.quantity = v === '' ? null : Math.max(1, Math.round(Number(v)) || 1); break;
     case 'tagsText': b.tags = v.split(/[#\s,，]+/).map(t => t.trim()).filter(Boolean); break;
     case 'volume': case 'pages': case 'price': case 'currentPage': case 'printing': b[f] = num(v); break;
@@ -2272,7 +2314,14 @@ async function moreAction(a, el) {
     case 'ai-setup': aiSetup(); break;
     case 'open-book': { app.bookNav = el.closest('#book-list') ? { ids: filteredBooks().map(b => b.id) } : null; go({ name: 'book', id: el.dataset.id }); break; }
     case 'edit-book': openEditBook(el.dataset.id); break;
-    case 'toggle-verified': { const b = B().cache.books[el.dataset.id]; if (b) { B().put('books', { ...b, verified: !b.verified }); toast(b.verified ? '已改回待補資料' : '已標記為資料已確認'); } break; }
+    case 'toggle-verified': { const b = B().cache.books[el.dataset.id]; if (b) setVerified(b.id, !b.verified); break; }
+    case 'toggle-fav': { const b = B().cache.books[cur().id]; if (b) { B().put('books', { ...b, favorite: !b.favorite }); toast(b.favorite ? '已從最愛拿掉' : '已加到最愛'); } break; }
+    case 'loan-out': case 'loan-edit': case 'loan-return': loanAction(a, cur().id); break;
+    case 'bin-restore-book': { const n = await restoreBookPhotos(el.dataset.id); toast(n ? `已拿回 ${n} 張照片` : '找不到照片，可能已經清除了'); break; }
+    case 'bin-open': binManage(); break;
+    case 'bin-toggle': B().putMeta({ binOnVerify: !binOn() }); break;
+    case 'bin-days': { const v = await dialog({ title: '回收桶保留幾天', vertical: true, actions: [7, 30, 90].map(n => ({ label: `${n} 天${n === binDays() ? '（目前）' : ''}`, kind: n === binDays() ? 'primary' : '', value: n })).concat([{ label: '取消', kind: 'ghost', value: null }]) }); if (v) B().putMeta({ binDays: v }); break; }
+    case 'scan-spines': spineScan(); break;
     case 'view-photo': {
       const p = (app.photoCache[el.dataset.book] || []).find(x => x.id === el.dataset.id); if (!p) return;
       photoViewer(p, 'view');
@@ -3140,7 +3189,7 @@ async function webCover() {
     title: '上網找封面', sheet: true, focus: false,
     body: `<label class="field"><span>搜尋字</span><input id="wc-q" type="search" value="${esc(q0)}" placeholder="書名 作者"></label>
       <div class="grid2"><button type="button" class="btn soft" data-site="google">${ICON.search}Google 圖片</button><button type="button" class="btn soft" data-site="books">${ICON.search}博客來</button></div>
-      <ol class="gb-steps" style="margin-top:12px"><li>按上面的按鈕，會開新分頁搜尋。</li><li>找到對的封面，<b>長按圖片 →「複製圖片」</b>。</li><li>回到吋讀，按「貼上圖片」，第一次會問能不能讀剪貼簿，選允許。</li></ol>
+      <ol class="gb-steps" style="margin-top:12px"><li>按上面的按鈕，會開新分頁搜尋。</li><li>找到對的封面，<b>長按圖片 →「複製圖片」</b>。</li><li>回到吋讀，按「貼上圖片」，第一次會問能不能讀剪貼簿，選允許。</li></ol><p class="small muted" style="margin:-4px 0 0">吋讀裝到手機主畫面的話，也可以長按圖片 →「分享」→ 選「吋讀」，正在編輯的內容會保留。</p>
       <div class="wc-preview" id="wc-prev"><span class="small muted">複製的圖片會出現在這裡</span></div>
       <div class="grid2"><button type="button" class="btn" id="wc-paste">${ICON.paste}貼上圖片</button><button type="button" class="btn" id="wc-file">${ICON.image}從相簿選</button></div>`,
     actions: [{ label: '取消', kind: 'ghost', value: null }, { label: '確定', kind: 'primary', get: () => ({ ok: true }), validate: () => { if (!picked) toast('還沒有圖片', 'err'); return !!picked; } }],
@@ -3389,6 +3438,289 @@ async function aiSetup() {
   render();
 }
 
+/* ---------- 日期小工具 ---------- */
+function parseDay(s) { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
+function daysBetween(a, b) { const x = parseDay(a), y = parseDay(b); return x && y ? Math.round((y - x) / 864e5) : null; }
+function readingLine(b) {
+  const s = b.startDate, f = b.finishDate, st = b.readStatus || 'unread';
+  const parts = [];
+  if (s && f) {
+    const n = daysBetween(s, f);
+    if (n !== null && n >= 0) {
+      const days = n + 1, pace = st === 'done' && b.pages ? Math.round(b.pages / days) : 0;
+      parts.push(`<b>${esc(s)} → ${esc(f)}</b>`, st === 'dropped' ? `讀了 ${days} 天後放下` : `看了 ${days} 天`);
+      if (pace) parts.push(`平均一天 ${pace} 頁`);
+    } else parts.push(`<b>${esc(s)} → ${esc(f)}</b>`, '日期好像填反了');
+  } else if (s) {
+    const n = daysBetween(s, todayStr());
+    parts.push(`<b>${esc(s)} 開始讀</b>`);
+    if (st === 'reading' && n !== null && n >= 0) parts.push(n === 0 ? '今天開始' : `已經 ${n + 1} 天`);
+  } else if (f) parts.push(`<b>${esc(f)} ${st === 'dropped' ? '放下' : '讀完'}</b>`);
+  return parts.length ? `<p class="readline">${ICON.calendar}<span>${parts.join('・')}</span></p>` : '';
+}
+
+/* ---------- 照片回收桶 ---------- */
+const BIN_KINDS = ['copyright', 'stamp', 'blurb'];
+const binDays = () => Number(B().meta.binDays) || 30;
+const binOn = () => B().meta.binOnVerify !== false;
+function binLeft(at) { const t = new Date(at).getTime(); return isNaN(t) ? binDays() : Math.max(0, Math.ceil((t + binDays() * 864e5 - Date.now()) / 864e5)); }
+function binAll() {
+  const out = [];
+  Object.values(B().cache.books).forEach(b => (b.photoBin || []).forEach(x => out.push({ ...x, book: b })));
+  return out;
+}
+async function binBookPhotos(bookId) {
+  if (!binOn()) return 0;
+  let ps = [];
+  try { ps = (await B().photosFor(bookId)).filter(p => !p.trashedAt && BIN_KINDS.includes(p.kind)); } catch (e) { return 0; }
+  if (!ps.length) return 0;
+  const at = nowISO();
+  ps.forEach(p => B().putPhoto({ ...p, trashedAt: at }));
+  delete app.photoCache[bookId];
+  const b = B().cache.books[bookId];
+  if (b) B().put('books', { ...b, photoBin: [...(b.photoBin || []), ...ps.map(p => ({ id: p.id, kind: p.kind, at, size: Math.round(String(p.data || '').length * 0.75) }))] });
+  return ps.length;
+}
+async function restoreBookPhotos(bookId) {
+  const b = B().cache.books[bookId]; if (!b || !(b.photoBin || []).length) return 0;
+  const ids = new Set(b.photoBin.map(x => x.id));
+  let ps = [];
+  try { ps = (await B().photosFor(bookId)).filter(p => ids.has(p.id)); } catch (e) { return 0; }
+  ps.forEach(p => B().putPhoto({ ...p, trashedAt: null }));
+  delete app.photoCache[bookId];
+  B().put('books', { ...B().cache.books[bookId], photoBin: [] });
+  return ps.length;
+}
+function purgeBin(all = false) {
+  const cutoff = Date.now() - binDays() * 864e5; let n = 0;
+  Object.values(B().cache.books).forEach(b => {
+    const bin = b.photoBin || []; if (!bin.length) return;
+    const gone = bin.filter(x => all || new Date(x.at).getTime() < cutoff); if (!gone.length) return;
+    gone.forEach(x => B().removePhoto(x.id)); n += gone.length;
+    delete app.photoCache[b.id];
+    B().put('books', { ...b, photoBin: bin.filter(x => !gone.includes(x)) });
+  });
+  return n;
+}
+function binSummary() {
+  const all = binAll(); if (!all.length) return '是空的';
+  const mb = all.reduce((s, x) => s + (x.size || 0), 0) / 1048576, soon = Math.min(...all.map(x => binLeft(x.at)));
+  return `${all.length} 張照片・約 ${mb < 0.1 ? '0.1' : mb.toFixed(1)} MB・最快 ${soon} 天後清除`;
+}
+async function binManage() {
+  for (;;) {
+    const books = Object.values(B().cache.books).filter(b => (b.photoBin || []).length).sort((a, b) => String(a.photoBin[0].at).localeCompare(String(b.photoBin[0].at)));
+    const r = await dialog({
+      title: '照片回收桶', sheet: true, focus: false,
+      body: `<p class="hint">書標成「資料已確認」後，版權頁、藏書章、封底文案照片會放在這裡 ${binDays()} 天，時間到自動清除，騰出 Firebase 的空間。</p><div class="list picklist mgr">${books.length ? books.map(b => `<div class="row"><span class="tx"><b>${esc(b.title || '書名待補')}</b><span>${b.photoBin.length} 張・${binLeft(b.photoBin[0].at)} 天後清除</span></span><button type="button" class="btn small soft" data-restore="${b.id}">還原</button></div>`).join('') : '<p class="hint" style="padding:14px;margin:0">回收桶是空的。</p>'}</div>`,
+      actions: [...(books.length ? [{ label: '清空回收桶', kind: 'danger ghost', value: { empty: true } }] : []), { label: '完成', kind: 'primary', value: null }],
+      onOpen: (el, close) => el.querySelector('.mgr').addEventListener('click', ev => { const b = ev.target.closest('button[data-restore]'); if (b) close({ restore: b.dataset.restore }); })
+    });
+    if (!r) { render(); return; }
+    if (r.restore) { const n = await restoreBookPhotos(r.restore); toast(n ? `已還原 ${n} 張照片` : '找不到照片，可能已經清除了'); }
+    else if (r.empty) {
+      if (!(await confirmBox('清空回收桶？', `${binAll().length} 張照片會永久刪除，沒辦法復原。`, '清空', true))) continue;
+      toast(`已刪除 ${purgeBin(true)} 張照片`);
+    }
+  }
+}
+async function setVerified(id, on) {
+  const b = B().cache.books[id]; if (!b) return;
+  B().put('books', { ...b, verified: on });
+  if (on) { const n = await binBookPhotos(id); toast(n ? `已確認，${n} 張照片移到回收桶，${binDays()} 天後清除` : '已標記為資料已確認'); }
+  else { const n = await restoreBookPhotos(id); toast(n ? `已改回待補資料，${n} 張照片拿回來了` : '已改回待補資料'); }
+}
+
+/* ---------- 借閱 ---------- */
+function loanDialog(L, title) {
+  const inn = L.dir === 'in';
+  return dialog({
+    title,
+    body: `<label class="field"><span>${inn ? '跟誰借的' : '借給誰'}</span><input type="text" id="ln-person" list="ln-people" value="${esc(L.person || '')}" placeholder="名字"><datalist id="ln-people">${loanPeople().map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist></label>
+      <div class="grid2"><label class="field"><span>借閱日期</span><input type="date" id="ln-date" value="${esc(L.date || todayStr())}"></label><label class="field"><span>預計歸還（可不填）</span><input type="date" id="ln-due" value="${esc(L.due || '')}"></label></div>`,
+    actions: [{ label: '取消', kind: 'ghost', value: null }, { label: '儲存', kind: 'primary', get: el => ({ ...L, person: el.querySelector('#ln-person').value.trim(), date: el.querySelector('#ln-date').value, due: el.querySelector('#ln-due').value }) }]
+  });
+}
+const overdueDays = L => L && L.due && L.due < todayStr() ? daysBetween(L.due, todayStr()) : 0;
+function loanSectionHTML(b) {
+  if (b.ownership === 'wishlist') return '';
+  const L = b.loan, hist = b.loanHistory || [];
+  let h = '';
+  if (L) {
+    const inn = L.dir === 'in', who = esc(L.person || '（沒填）'), n = L.date ? daysBetween(L.date, todayStr()) : null, over = overdueDays(L);
+    h += `<section class="card loancard"><div class="loaninfo"><span class="chip peach">${inn ? '借入' : '借出'}</span><span class="tx"><b>${inn ? `跟 ${who} 借的` : `借給 ${who}`}</b><span class="small muted">${L.date ? `${esc(L.date)} ${inn ? '借來' : '借出'}・${n === 0 ? '今天' : n > 0 ? `已經 ${n} 天` : ''}` : '沒填借閱日期'}${L.due ? `・預計 ${esc(L.due)} 還` : ''}</span>${over > 0 ? `<span class="small overdue">超過預計歸還日 ${over} 天</span>` : ''}</span></div>
+      <div class="loanacts"><button type="button" class="btn small soft" data-action="loan-edit">修改</button><button type="button" class="btn small primary" data-action="loan-return">${inn ? '已經還回去了' : '已經還回來了'}</button></div></section>`;
+  } else if (b.ownership !== 'borrowed') h += `<div class="loanacts solo"><button type="button" class="btn small soft" data-action="loan-out">${ICON.loan}借給別人</button></div>`;
+  if (hist.length) h += `<section class="group"><h2>借閱紀錄</h2><div class="list">${hist.slice().reverse().map(x => { const n = daysBetween(x.date, x.returned); return `<div class="row"><span class="tx"><b>${x.dir === 'in' ? `跟 ${esc(x.person || '（沒填）')} 借` : `借給 ${esc(x.person || '（沒填）')}`}</b><span>${esc(x.date || '?')} → ${esc(x.returned || '?')}${n !== null && n >= 0 ? `・${n} 天` : ''}</span></span></div>`; }).join('')}</div></section>`;
+  return h;
+}
+async function loanAction(a, id) {
+  const b = B().cache.books[id]; if (!b) return;
+  if (a === 'loan-out') { const r = await loanDialog({ dir: 'out' }, '借給別人'); if (r) { B().put('books', { ...B().cache.books[id], loan: r }); toast('已記下借出'); } return; }
+  if (a === 'loan-edit' && b.loan) { const r = await loanDialog(b.loan, '修改借閱'); if (r) { B().put('books', { ...B().cache.books[id], loan: r }); toast('已更新'); } return; }
+  if (a !== 'loan-return' || !b.loan) return;
+  const rec = { ...b.loan, returned: todayStr() }, hist = [...(b.loanHistory || []), rec];
+  if (b.loan.dir !== 'in') {
+    if (!(await confirmBox('書還回來了？', `《${b.title || '書名待補'}》會記進借閱紀錄。`, '還回來了'))) return;
+    B().put('books', { ...B().cache.books[id], loan: null, loanHistory: hist }); toast('已歸還'); return;
+  }
+  const c = await dialog({ title: '還回去了', body: `<p>《${esc(b.title || '書名待補')}》還給 ${esc(b.loan.person || '對方')} 之後，這本書要怎麼處理？</p>`, vertical: true,
+    actions: [{ label: '改成願望清單（想自己買一本）', kind: 'primary', value: 'wish' }, { label: '從書單刪除', kind: 'danger', value: 'del' }, { label: '取消', kind: 'ghost', value: null }] });
+  if (c === 'wish') { B().put('books', { ...B().cache.books[id], loan: null, loanHistory: hist, ownership: 'wishlist', location: null }); toast('已改成願望清單'); }
+  else if (c === 'del') {
+    let ps = []; try { ps = await B().photosFor(id); } catch (e) {}
+    ps.forEach(p => B().removePhoto(p.id)); B().remove('books', id); delete app.photoCache[id];
+    toast('已刪除'); popLevels(1);
+  }
+}
+
+/* ---------- AI 認書背 ---------- */
+AI_PROMPTS.spines = `這是書架上一排書的書背照片。請由左到右（橫放的書由上到下）列出每一本書，只回傳 JSON：
+{"books": [{"title": 書名, "author": 作者（書背上看得到才填）, "publisher": 出版社（看得到才填）, "volume": 集數或卷數（數字，看得到才填）, "unsure": 書名有看不清楚的字就填 true}]}
+- 照書背上的原文用字，不要翻譯，不要補上沒寫出來的字。看不清楚的字用「□」代替。
+- 書擋、盒子、裝飾品這些不是書的東西不要列。`;
+const normTitle = t => String(t || '').replace(/[\s\p{P}\p{S}]/gu, '').toLowerCase();
+async function spineScan() {
+  if (!LS.get(AI_KEY)) return aiErrorBox({ code: 'nokey' });
+  const loc = sessionLoc();
+  if (!loc) { toast('先選好要放進哪一格', 'err'); openPicker('session'); return; }
+  const shot = await capturePhoto('spines'); if (!shot) return;
+  const done = busyBox('AI 正在認書背…');
+  let out; try { out = await aiReadPhoto({ data: shot.data }, 'spines'); } catch (e) { done(); return aiErrorBox(e); }
+  done();
+  const str = v => (v === null || v === undefined) ? '' : String(v).trim();
+  const list = (Array.isArray(out.books) ? out.books : []).map(x => ({ title: str(x && x.title), author: str(x && x.author), publisher: str(x && x.publisher), volume: zhToNum(x && x.volume), unsure: !!(x && x.unsure) })).filter(x => x.title && x.title !== 'null');
+  if (!list.length) return infoBox('沒認出書', '<p>照片裡沒找到看得清楚的書背。光線亮一點、書背正對鏡頭再拍一次。</p>');
+  const have = new Set(Object.values(B().cache.books).map(b => normTitle(b.title)));
+  list.forEach(x => { x.dup = have.has(normTitle(x.title)); });
+  const owner = (app.session && app.session.owner) || firstOwner();
+  const r = await dialog({
+    title: `認出 ${list.length} 本書`, sheet: true, focus: false,
+    body: `<p class="small muted">勾選要登記的書，書名可以直接改。會放進 <b>${esc(locLabel(loc))}</b>${owner ? `，所有者 ${esc(owner)}` : ''}，先標成待補資料。</p>
+      <div class="list ailist">${list.map((x, i) => `<div class="airow sprow"><input type="checkbox" data-c="${i}"${x.dup ? '' : ' checked'} aria-label="登記第 ${i + 1} 本"><span class="tx"><input type="text" class="sp-title" data-t="${i}" value="${esc(x.title)}" aria-label="第 ${i + 1} 本的書名"><small>${esc([x.author, x.publisher, x.volume ? `第 ${x.volume} 卷` : ''].filter(Boolean).join('・'))}${x.unsure ? `${x.author || x.publisher ? '・' : ''}有字看不清楚` : ''}${x.dup ? `<b class="overdue">${x.author || x.publisher || x.unsure ? '・' : ''}已經有同名的書</b>` : ''}</small></span></div>`).join('')}</div>
+      <label class="check-row"><input type="checkbox" id="sp-lookup" checked><span>用書名上網查書目，書名完全一樣才補資料</span></label>`,
+    actions: [{ label: '取消', kind: 'ghost', value: null }, { label: '登記勾選的書', kind: 'primary', get: el => ({ rows: list.map((x, i) => ({ ...x, title: el.querySelector(`[data-t="${i}"]`).value.trim(), on: el.querySelector(`[data-c="${i}"]`).checked })), lookup: el.querySelector('#sp-lookup').checked }) }]
+  });
+  if (!r) return;
+  const made = r.rows.filter(x => x.on && x.title).map(x => {
+    const b = newBook(); b.title = x.title;
+    if (x.author) b.authors = [{ name: x.author, role: '著' }];
+    if (x.publisher) b.publisher = x.publisher;
+    if (x.volume) b.volume = x.volume;
+    b.location = clone(loc); b.owner = owner; b.needsLookup = true; b.verified = false;
+    return b;
+  });
+  if (!made.length) return;
+  made.forEach(b => { rememberPublisher(b.publisher); B().put('books', b); });
+  app.scan.lastSaved = `${made.length} 本（認書背）`; updateScanSheet();
+  toast(`已登記 ${made.length} 本到 ${locLabel(loc)}`);
+  if (!r.lookup) return;
+  let filled = 0;
+  for (const b of made) {
+    let res; try { res = await searchBooks([b.title, ((b.authors || [])[0] || {}).name].filter(Boolean).join(' ')); } catch (e) { break; }
+    if (res.offline) break;
+    if (res.quota && !res.results.length) { toast('Google 書目額度用完了，剩下的之後再補', 'err'); break; }
+    const hit = res.results.find(x => normTitle(x.title) === normTitle(b.title));
+    const cur = B().cache.books[b.id];
+    if (hit && cur) { const nb = clone(cur); fillEmpty(nb, hit); nb.needsLookup = false; B().put('books', nb); filled++; }
+  }
+  if (filled) toast(`其中 ${filled} 本查到書目，已經補上`);
+}
+
+/* ---------- 分享圖片到吋讀、編輯中的草稿 ---------- */
+const DRAFT_KEY = 'tsundoku-draft-save', RECENT_KEY = 'tsundoku-recent';
+function rememberRecent(id) {
+  const r = LS.get(RECENT_KEY) || [];
+  if (r[0] === id) return;
+  LS.set(RECENT_KEY, [id, ...r.filter(x => x !== id)].slice(0, 8));
+}
+function saveDraftForLater() {
+  const d = app.bookDraft;
+  if (!d || d.origin === 'scan' || !cur() || cur().name !== 'bookEdit') return;
+  const slim = { ...d, pin: null, photos: d.photos.map(p => p.isNew ? p : { id: p.id, kind: p.kind, isNew: false }) };
+  const rec = { at: nowISO(), d: slim, orig: app.bookDraftOrig, dirty: draftSig(d) !== app.bookDraftOrig };
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(rec)); }
+  catch (e) { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...rec, d: { ...slim, photos: slim.photos.filter(p => !p.isNew) } })); } catch (e2) {} }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveDraftForLater(); });
+window.addEventListener('pagehide', saveDraftForLater);
+async function restoreDraft(saved) {
+  const d = saved && saved.d; if (!d || !d.book) return false;
+  if (!d.isNew) {
+    if (!B().cache.books[d.book.id]) return false;
+    let ps = []; try { ps = await B().photosFor(d.book.id); } catch (e) {}
+    const keep = new Set(d.photos.filter(p => !p.isNew).map(p => p.id));
+    d.photos = [...ps.filter(p => keep.has(p.id) && !p.trashedAt).map(p => ({ ...p, isNew: false })), ...d.photos.filter(p => p.isNew)];
+  }
+  app.bookDraft = d; app.bookDraftOrig = saved.orig;
+  switchTab('books');
+  if (d.isNew) go({ name: 'bookEdit' });
+  else { go({ name: 'book', id: d.book.id }); go({ name: 'bookEdit', id: d.book.id }); }
+  return true;
+}
+async function takeSharedImage() {
+  try {
+    const c = await caches.open('tsundoku-share'), r = await c.match('./shared-image');
+    if (!r) return null;
+    const blob = await r.blob(); await c.delete('./shared-image');
+    return blob;
+  } catch (e) { return null; }
+}
+async function sharedToDraft(blob) {
+  let cv; try { cv = await loadImageFile(blob); } catch (e) { toast('這張圖片打不開', 'err'); return; }
+  const r = await cropEditor(cv, 'cover');
+  if (!r || !app.bookDraft) return;
+  app.bookDraft.book.cover = r.data; app.bookDraft.book.coverUrl = '';
+  toast('封面已換好，記得儲存'); render();
+}
+async function chooseBookForImage(blob) {
+  let cv; try { cv = await loadImageFile(blob); } catch (e) { toast('這張圖片打不開', 'err'); return; }
+  const preview = cv.toDataURL('image/jpeg', 0.8);
+  const recent = (LS.get(RECENT_KEY) || []).map(id => B().cache.books[id]).filter(Boolean);
+  const res = await dialog({
+    title: '收到一張圖片', sheet: true, focus: false,
+    body: `<div class="share-head"><img src="${preview}" alt="收到的圖片"><p class="small">要當成哪一本書的封面？</p></div>
+      <label class="search">${ICON.search}<span class="sr">找書</span><input id="sh-q" type="search" placeholder="輸入書名找書" autocomplete="off"></label>
+      <div class="list picklist" id="sh-list"></div>`,
+    actions: [{ label: '新增一本書', kind: 'soft', value: { add: true } }, { label: '取消', kind: 'ghost', value: null }],
+    onOpen: (el, close) => {
+      const q = el.querySelector('#sh-q'), box = el.querySelector('#sh-list');
+      const draw = () => {
+        const s = q.value.trim().toLowerCase();
+        const list = s ? Object.values(B().cache.books).filter(b => [b.title, b.subtitle, authorsText(b)].some(x => String(x || '').toLowerCase().includes(s))).slice(0, 30) : recent;
+        box.innerHTML = list.length ? `${s ? '' : '<p class="small muted" style="padding:10px 14px 0;margin:0">最近看過的書</p>'}${list.map(b => `<button type="button" class="row cb-row" data-id="${b.id}">${coverThumb(b, 'thumb')}<span class="binfo"><b>${esc(b.title || '書名待補')}</b><span>${esc(authorsText(b) || '')}</span></span></button>`).join('')}`
+          : `<p class="hint" style="padding:14px;margin:0">${s ? '找不到這本書。' : '輸入書名找要換封面的書。'}</p>`;
+      };
+      draw(); q.addEventListener('input', draw);
+      box.addEventListener('click', ev => { const b = ev.target.closest('button[data-id]'); if (b) close({ id: b.dataset.id }); });
+    }
+  });
+  if (!res) return;
+  const r = await cropEditor(cv, 'cover'); if (!r) return;
+  if (res.add) {
+    const dd = draftFromData({}, 'list'); dd.lookup = null; dd.book.cover = r.data; setDraft(dd);
+    switchTab('books'); go({ name: 'bookEdit' }); toast('先填書名，再儲存'); return;
+  }
+  const b = B().cache.books[res.id]; if (!b) return;
+  B().put('books', { ...b, cover: r.data, coverUrl: '' });
+  switchTab('books'); go({ name: 'book', id: b.id }); toast('封面已換好');
+}
+async function afterEnterMain() {
+  setTimeout(() => { try { purgeBin(); } catch (e) {} }, 3000);
+  const share = new URLSearchParams(location.search).get('share');
+  if (share !== null) { try { history.replaceState({ tsundoku: true }, '', location.pathname); } catch (e) {} }
+  const saved = app.savedDraft; app.savedDraft = null;
+  const fresh = saved && saved.d && Date.now() - new Date(saved.at).getTime() < 864e5;
+  if (share === '1') {
+    const blob = await takeSharedImage();
+    if (!blob) { toast('沒有收到圖片', 'err'); return; }
+    if (fresh && await restoreDraft(saved)) return sharedToDraft(blob);
+    return chooseBookForImage(blob);
+  }
+  if (share === 'none' || share === 'error') toast('只收得到圖片，請分享圖片本身', 'err');
+  if (fresh && saved.dirty && await confirmBox('繼續上次還沒儲存的編輯？', `《${saved.d.book.title || '書名待補'}》有還沒儲存的修改。`, '繼續編輯')) restoreDraft(saved);
+}
+
 /* ---------- 匯出與還原 ---------- */
 function offerFile(name, text, mime) {
   const kb = Math.max(1, Math.round(new Blob([text]).size / 1024));
@@ -3431,7 +3763,7 @@ function exportCSV() {
       case 'ownership': return b.ownership === 'wishlist' ? '願望清單' : b.ownership === 'borrowed' ? '借來的' : '已收藏';
       case 'categories': return catRows(b.categories).map(r => r.text.replace(/ › /g, '>')).join('；');
       case 'quantity': return b.quantity || 1;
-      case 'loan': return b.loan ? `${b.loan.dir === 'in' ? '借入' : '借出'}：${b.loan.person || ''} ${b.loan.date || ''}`.trim() : '';
+      case 'loan': return b.loan ? `${b.loan.dir === 'in' ? '借入' : '借出'}：${b.loan.person || ''} ${b.loan.date || ''}${b.loan.due ? ` 預計 ${b.loan.due} 還` : ''}`.trim() : '';
       case 'verified': return b.verified ? '是' : '否';
       case 'addedAt': return fmtDate(b.addedAt);
       default: return b[k] ?? '';
@@ -3483,7 +3815,7 @@ function attach(b) {
   });
   b.onWriteError = e => toast(errMsg(e), 'err');
 }
-function enterMain() { app.screen = 'main'; app.tab = 'shelf'; app.stack = [{ name: 'rooms' }]; render(); }
+function enterMain() { app.screen = 'main'; app.tab = 'shelf'; app.stack = [{ name: 'rooms' }]; render(); setTimeout(afterEnterMain, 0); }
 async function startDemo(preview) {
   const b = new LocalBackend(); await b.init(); attach(b);
   app.mode = 'demo'; app.preview = !!preview;
@@ -3512,6 +3844,7 @@ function registerSW() {
 }
 async function boot() {
   app.inFrame = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+  app.savedDraft = LS.get(DRAFT_KEY);
   registerSW();
   try { history.replaceState({ tsundoku: true }, ''); } catch (e) {}
   const mode = LS.get('tsundoku-mode');

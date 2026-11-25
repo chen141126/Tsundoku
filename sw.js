@@ -1,5 +1,6 @@
 // 吋讀 Tsundoku service worker：讓網站可以安裝到手機，並在離線時打開
-const CACHE = 'tsundoku-shell-0.4.0';
+const CACHE = 'tsundoku-shell-0.5.0';
+const SHARE = 'tsundoku-share';
 const RUNTIME = 'tsundoku-runtime';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './logo-mark.png', './favicon-64.png', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 
@@ -10,15 +11,31 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k.startsWith('tsundoku-') && k !== CACHE && k !== RUNTIME).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k.startsWith('tsundoku-') && k !== CACHE && k !== RUNTIME && k !== SHARE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', e => {
   const req = e.request;
-  if (req.method !== 'GET') return;
   const url = new URL(req.url);
+
+  // 從別的 App 分享圖片進來：先存起來，再打開吋讀去處理
+  if (req.method === 'POST' && url.origin === location.origin && url.pathname.endsWith('/share-target')) {
+    e.respondWith((async () => {
+      const back = q => Response.redirect(new URL('./?share=' + q, self.registration.scope).href, 303);
+      try {
+        const form = await req.formData();
+        const file = form.getAll('image').find(f => f && typeof f === 'object' && String(f.type).startsWith('image/'));
+        if (!file) return back('none');
+        const c = await caches.open(SHARE);
+        await c.put('./shared-image', new Response(file, { headers: { 'content-type': file.type } }));
+        return back('1');
+      } catch (err) { return back('error'); }
+    })());
+    return;
+  }
+  if (req.method !== 'GET') return;
 
   if (url.origin === location.origin) {
     // 網頁本身：先上網拿最新版，離線時用快取
