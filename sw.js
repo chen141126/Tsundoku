@@ -1,5 +1,5 @@
 // 吋讀 Tsundoku service worker：讓網站可以安裝到手機，並在離線時打開
-const CACHE = 'tsundoku-shell-0.2.2';
+const CACHE = 'tsundoku-shell-0.2.3';
 const RUNTIME = 'tsundoku-runtime';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './logo-mark.png', './favicon-64.png', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 
