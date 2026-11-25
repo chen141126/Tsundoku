@@ -245,6 +245,127 @@ button.row:hover{background:var(--bg)}
 .toast.err{background:var(--danger);color:#ffffff}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.spinner{animation-duration:3s}button.card:active{transform:none}}
+
+/* ---------- 第二階段 ---------- */
+main.full{overflow:hidden;position:relative;background:var(--wood)}
+.mono{font-family:ui-monospace,"SFMono-Regular",Menlo,monospace}
+.chip.peach{background:var(--peach);font-weight:700}
+.chip svg{width:13px;height:13px}
+.cell.sel{background:#ffe7d4;box-shadow:0 0 0 3.5px var(--wood),0 0 0 7px var(--orange),inset 0 7px 8px -7px rgba(52,36,28,.45)}
+.scan{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 70% at 50% 34%,var(--brown) 0%,var(--wood) 72%)}
+.scan video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.scan-top{position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);left:14px;right:14px;display:flex;align-items:center;gap:10px;z-index:2}
+.scan-round{flex:none;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,249,246,.2);color:#fff9f6;display:grid;place-items:center}
+.scan-round svg{width:20px;height:20px}
+.session-chip{flex:1;min-width:0;height:48px;border-radius:24px;border:0;background:rgba(255,249,246,.95);display:flex;align-items:center;gap:8px;padding:0 6px 0 14px;text-align:left;color:var(--ink)}
+.session-chip .dot{flex:none;width:9px;height:9px;border-radius:50%;background:var(--orange)}
+.session-chip .dot.off{background:#d9a387}
+.session-chip .tx{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2}
+.session-chip .tx span{font-size:11px;color:var(--wood)}
+.session-chip .tx b{font-size:13px;font-family:ui-monospace,Menlo,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.session-chip .chg{flex:none;height:34px;padding:0 12px;border-radius:17px;background:var(--peach);font-size:12px;font-weight:700;display:grid;place-items:center}
+.viewfinder{position:absolute;left:50%;top:27%;width:min(270px,72vw);height:150px;margin-left:calc(min(270px,72vw) / -2);z-index:1}
+.viewfinder i{position:absolute;width:34px;height:34px;border:0 solid var(--orange)}
+.viewfinder i:nth-child(1){left:0;top:0;border-left-width:4px;border-top-width:4px;border-top-left-radius:14px}
+.viewfinder i:nth-child(2){right:0;top:0;border-right-width:4px;border-top-width:4px;border-top-right-radius:14px}
+.viewfinder i:nth-child(3){left:0;bottom:0;border-left-width:4px;border-bottom-width:4px;border-bottom-left-radius:14px}
+.viewfinder i:nth-child(4){right:0;bottom:0;border-right-width:4px;border-bottom-width:4px;border-bottom-right-radius:14px}
+.viewfinder .laser{position:absolute;left:16px;right:16px;top:50%;height:2px;border-radius:2px;background:var(--orange);box-shadow:0 0 12px 2px rgba(255,141,34,.7);animation:laser 1.8s ease-in-out infinite alternate}
+@keyframes laser{from{transform:translateY(-44px)}to{transform:translateY(44px)}}
+.scan-under{position:absolute;left:0;right:0;top:calc(27% + 166px);display:flex;flex-direction:column;align-items:center;gap:12px;padding:0 24px;z-index:1}
+.scan-tip{margin:0;text-align:center;font-size:14px;line-height:1.5;color:#fff9f6;text-shadow:0 1px 4px rgba(52,36,28,.6)}
+.scan-tip:empty{display:none}
+.scan-pills{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+.scan-pills button{height:38px;padding:0 14px;border-radius:19px;border:1px solid rgba(255,249,246,.45);background:rgba(52,36,28,.22);color:#fff9f6;font-size:13px}
+.scan-sheet{position:absolute;left:0;right:0;bottom:0;max-height:64%;overflow:auto;background:var(--bg);border-radius:28px 28px 0 0;padding:26px 18px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px;z-index:3;box-shadow:0 -10px 40px rgba(52,36,28,.25)}
+.scan-sheet::before{content:"";position:absolute;top:10px;left:50%;width:44px;height:5px;margin-left:-22px;border-radius:3px;background:#e4b49b}
+.sheet-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.looking{display:flex;align-items:center;gap:16px;padding:12px 4px}
+.looking .spinner{margin:0}
+.saved{display:flex;align-items:center;gap:6px;margin:0;font-size:14px;font-weight:700;color:var(--ok)}
+.saved svg{width:16px;height:16px}
+.result{display:flex;gap:14px;align-items:center}
+.rcover,.thumb,.bigcover{flex:none;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;font-weight:700;letter-spacing:.05em;overflow:hidden;box-shadow:inset 4px 0 0 rgba(0,0,0,.14),0 4px 10px rgba(52,36,28,.22)}
+.rcover{width:62px;height:90px;border-radius:4px 8px 8px 4px;font-size:13px}
+.thumb{width:44px;height:64px;border-radius:3px 6px 6px 3px;font-size:12px}
+.bigcover{width:150px;height:222px;border-radius:5px 12px 12px 5px;font-size:22px;box-shadow:inset 6px 0 0 rgba(0,0,0,.14),0 18px 34px rgba(52,36,28,.3)}
+.rcover.img,.thumb.img,.bigcover.img{background:var(--soft)}
+.rcover img,.thumb img,.bigcover img{width:100%;height:100%;object-fit:cover;display:block}
+.rinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.rinfo b{font-size:21px;font-weight:900;line-height:1.25}
+.rinfo span{font-size:13px;color:var(--wood)}
+.rinfo .chip{font-size:12px}
+.slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.slot{height:66px;border-radius:14px;border:1.5px dashed #d9a387;background:var(--white);color:var(--ink);font-size:13px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.slot svg{width:18px;height:18px}
+.slot.done{border:0;background:var(--brown);color:#fff9f6}
+.save-row{display:grid;grid-template-columns:1fr 1.6fr;gap:8px}
+.search{display:flex;align-items:center;gap:10px;height:50px;padding:0 14px;border-radius:16px;background:var(--white);box-shadow:var(--shadow);color:var(--wood)}
+.search svg{width:20px;height:20px;flex:none}
+.search input{flex:1;min-width:0;border:0;background:transparent;font-size:16px;color:var(--ink);outline:none}
+.filters{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 4px;scrollbar-width:none}
+.fchip{flex:none;height:38px;padding:0 15px;border-radius:999px;border:1.5px solid var(--line);background:var(--white);color:var(--ink);font-size:14px}
+.fchip.on{border-color:var(--brown);background:var(--brown);color:#fff9f6;font-weight:700}
+.brow{align-items:center}
+.brow .loc{font-size:11.5px !important;color:var(--brown) !important;margin-top:2px}
+.picklist{box-shadow:none;border:1px solid var(--line-2);max-height:56vh;overflow:auto}
+.bhero{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;padding:4px 0 6px}
+.bhero .bigcover{margin-bottom:14px}
+.bhero h1.title{font-size:28px;margin:0}
+.bauthor{margin:2px 0 4px;font-size:15px;font-weight:700}
+.stars{display:inline-flex;gap:3px}
+.star{width:22px;height:22px;padding:0;border:0;background:#f0cdb9;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+.star.full{background:var(--orange)}
+.star.half{background:linear-gradient(90deg,var(--orange) 50%,#f0cdb9 50%)}
+button.star{width:34px;height:34px}
+.star-row{display:flex;align-items:center;gap:10px;color:var(--ink)}
+.star-row b{font-size:15px}
+.progress{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.progress .sub2{display:flex;justify-content:space-between;font-size:13px;color:var(--wood)}
+.progress .sub2 b{color:var(--ink)}
+.bar{height:8px;border-radius:4px;background:var(--soft);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:4px;background:var(--orange)}
+.loccard{background:var(--wood);color:#fff9f6;border-radius:22px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.loccard .small{color:var(--peach)}
+.loccard b{font-size:17px}
+.loccard .btn{margin-top:4px}
+.infolist dl{margin:0}
+.infolist dl div{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--line-2)}
+.infolist dl div:last-child{border-bottom:0}
+.infolist dt{flex:none;font-size:13px;color:var(--wood)}
+.infolist dd{margin:0;font-size:14px;text-align:right;word-break:break-all}
+.prose{margin:0 6px;font-size:14px;line-height:1.8;white-space:pre-wrap}
+.card .prose{margin:0}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.pthumb{position:relative;display:flex;flex-direction:column;gap:4px;padding:0;border:0;background:transparent;text-align:left;color:var(--wood);font-size:12px}
+.pthumb img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:10px;box-shadow:inset 0 0 0 1px var(--line);background:var(--soft)}
+.pthumb .round-btn{position:absolute;top:6px;right:6px;width:30px;height:30px;background:rgba(255,249,246,.9)}
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:4px}
+.switch-row > span{display:flex;flex-direction:column;gap:2px}
+.switch{flex:none;width:52px;height:32px;border-radius:16px;border:0;background:var(--line);position:relative;padding:0}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(52,36,28,.3);transition:transform .15s}
+.switch[aria-checked="true"]{background:var(--brown)}
+.switch[aria-checked="true"]::after{transform:translateX(20px)}
+.field select{width:100%;height:46px;background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:0 10px;color:var(--ink);font-size:16px}
+.field select:focus{outline:none;border-color:var(--orange)}
+.grid-wide{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:10px}
+.author-row{display:grid;grid-template-columns:minmax(0,1fr) 72px 40px;gap:8px;align-items:center}
+.author-row input,.author-row select{height:46px;background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:0 10px;color:var(--ink);font-size:16px;width:100%}
+.cover-edit{display:flex;gap:16px;align-items:center}
+.cover-edit .bigcover{width:96px;height:142px;font-size:16px}
+.locpick{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--ink)}
+.pick-done{position:sticky;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;margin:0 -16px;background:linear-gradient(transparent,var(--bg) 30%)}
+.pick-done .btn{min-width:120px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.cropper{position:fixed;inset:0;z-index:80;background:#2b1d16;color:#fff9f6;display:flex;flex-direction:column;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.crop-top{width:100%;max-width:900px;display:flex;align-items:center;justify-content:space-between}
+.crop-stage{position:relative;touch-action:none;margin:auto 0}
+.crop-stage canvas{display:block;border-radius:4px}
+.handle{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:rgba(255,141,34,.25);border:3px solid var(--orange);pointer-events:none}
+.crop-tip{margin:0;font-size:13px;color:var(--peach);text-align:center}
+.crop-actions{width:100%;max-width:520px;display:grid;grid-template-columns:1fr 1.6fr;gap:10px}
+.cropper .round-btn{background:rgba(255,249,246,.15);color:#fff9f6}
+@media (prefers-reduced-motion:reduce){.viewfinder .laser{animation:none}}
 </style>
 </head>
 <body>
@@ -253,7 +374,7 @@ button.row:hover{background:var(--bg)}
 <div id="toasts" aria-live="polite"></div>
 <script type="module">
 /* ========= 吋讀 Tsundoku · 第一階段：地基、書櫃編輯器、匯出備份 ========= */
-const VERSION = '0.1.2';
+const VERSION = '0.2.0';
 const SCHEMA_VERSION = 1;
 const FB_VERSION = '10.12.2';
 const COLS = ['rooms', 'cabinets', 'categories', 'books'];
@@ -382,6 +503,9 @@ class LocalBackend {
     if (data.settings) Object.assign(this.meta, data.settings);
     this._save(); this._emit();
   }
+  putPhoto(p) { this.photos[p.id] = clone(p); this._save(); }
+  removePhoto(id) { delete this.photos[id]; this._save(); }
+  async photosFor(bookId) { return Object.values(this.photos).filter(p => p.bookId === bookId).map(clone); }
   resetDemo() { this._load(demoSeed()); this._save(); this._emit(); }
 }
 
@@ -436,6 +560,12 @@ class FirebaseBackend {
   put(col, obj) { obj = clone(obj); obj.updatedAt = nowISO(); this.cache[col][obj.id] = obj; this._emit(); this._w(this.F.setDoc(this.ref(col, obj.id), obj)); }
   remove(col, id) { delete this.cache[col][id]; this._emit(); this._w(this.F.deleteDoc(this.ref(col, id))); }
   putMeta(patch) { Object.assign(this.meta, clone(patch)); this._emit(); this._w(this.F.setDoc(this.ref('meta', 'settings'), clone(patch), { merge: true })); }
+  putPhoto(p) { this._w(this.F.setDoc(this.ref('photos', p.id), clone(p))); }
+  removePhoto(id) { this._w(this.F.deleteDoc(this.ref('photos', id))); }
+  async photosFor(bookId) {
+    const snap = await this.F.getDocs(this.F.query(this.col('photos'), this.F.where('bookId', '==', bookId)));
+    return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+  }
   async exportAll() {
     const o = { schemaVersion: SCHEMA_VERSION };
     for (const c of COLS) o[c] = Object.values(this.cache[c]);
@@ -470,7 +600,9 @@ class FirebaseBackend {
 }
 
 /* ---------- App 狀態 ---------- */
-const app = { screen: 'loading', mode: null, B: null, tab: 'shelf', stack: [], draft: null, draftOrig: '', edTool: 'toggle', edDepth: 'default', histOK: false, ignorePop: false, preview: false, inFrame: false, loginError: '', syncError: '', loadingMsg: '' };
+const app = { screen: 'loading', mode: null, B: null, tab: 'shelf', stack: [], draft: null, draftOrig: '', edTool: 'toggle', edDepth: 'default', histOK: false, ignorePop: false, preview: false, inFrame: false, loginError: '', syncError: '', loadingMsg: '',
+  session: LS.get('tsundoku-session') || { location: null, owner: '' }, scan: { status: 'idle', camera: 'off', lastCode: '', lastAt: 0, lastSaved: '', looking: '' },
+  bookDraft: null, bookDraftOrig: '', photoCache: {}, bookQuery: '', bookFilter: 'all', pick: null, prevTab: 'shelf' };
 const B = () => app.B;
 const cur = () => app.stack[app.stack.length - 1];
 const viewKey = v => v ? v.name + ':' + (v.id || '') : '';
@@ -496,6 +628,9 @@ const ICON = {
   download: svg('<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>'),
   toggle: svg('<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5" stroke-dasharray="2 2"/>'),
   tall: svg('<rect x="7" y="3" width="10" height="18" rx="1.5"/><path d="M12 7v10M10 9l2-2 2 2M10 15l2 2 2-2"/>'),
+  check: svg('<path d="M5 12l5 5 9-10"/>', 2.6),
+  camera: svg('<path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>', 1.8),
+  search: svg('<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>', 1.8),
   layers: svg('<path d="M4 9l8-4 8 4-8 4z"/><path d="M4 13l8 4 8-4"/><path d="M4 17l8 4 8-4" opacity=".6"/>')
 };
 const LOGO_IMG = '<img src="logo-mark.png" alt="" width="30" height="40">';
@@ -563,6 +698,11 @@ async function doBack() {
     if (!ok) return false;
     app.draft = null;
   }
+  if (v && v.name === 'bookEdit' && app.bookDraft && app.bookDraft.origin !== 'scan' && bookDirty()) {
+    const ok = await confirmBox('放棄修改？', '這本書的修改還沒儲存。', '放棄修改', true);
+    if (!ok) return false;
+  }
+  if (v && v.name === 'bookEdit' && app.bookDraft && app.bookDraft.origin !== 'scan') app.bookDraft = null;
   if (app.stack.length > 1) app.stack.pop();
   render(); return true;
 }
@@ -578,6 +718,7 @@ window.addEventListener('popstate', async () => {
 });
 function switchTab(t) {
   if (cur() && cur().name === 'editor' && edDirty()) { toast('請先儲存或放棄書櫃的修改', 'err'); return; }
+  if (t === 'scan' && app.tab !== 'scan') app.prevTab = app.tab;
   app.draft = null; app.tab = t;
   app.stack = [{ name: t === 'shelf' ? 'rooms' : t }];
   render();
@@ -638,7 +779,7 @@ function editorCellHTML(cab, r, c) {
   const label = cellLabel(cab, r, c);
   return `<div class="cell${off ? ' off' : ''}${tall ? ' tall' : ''}" data-key="${k}" tabindex="0" role="button" aria-label="${label}${off ? '，沒有格子' : `，深 ${cellDepth(cab, k)} 層${tall ? '，高格' : ''}`}"><span class="lbl">${label}</span>${off ? '' : `<span class="dep${set ? ' set' : ''}">${cellDepth(cab, k)}</span>${tall ? '<span class="tallmark">高</span>' : ''}`}</div>`;
 }
-function boardHTML(cab, { editor = false, counts = {} } = {}) {
+function boardHTML(cab, { editor = false, counts = {}, action = 'open-cell', selected = null } = {}) {
   const tr = tallRows(cab);
   const rowH = editor ? [44, 66] : [64, 96];
   const rows = (editor ? '28px ' : '16px ') + Array.from({ length: cab.rows }, (_, r) => (tr.has(r) ? rowH[1] : rowH[0]) + 'px').join(' ');
@@ -653,7 +794,7 @@ function boardHTML(cab, { editor = false, counts = {} } = {}) {
       const k = cellKey(r, c);
       if (isOff(cab, k)) { h += '<div class="cell off"></div>'; continue; }
       const n = counts[k] || 0, label = cellLabel(cab, r, c), d = cellDepth(cab, k);
-      h += `<button type="button" class="cell" data-action="open-cell" data-cab="${cab.id}" data-key="${k}" aria-label="${label}，${n} 本，深 ${d} 層"><span class="lbl">${label}</span>${n ? `<span class="cnt">${n}</span>` : ''}<span class="spines">${spinesHTML(cab.id + k, n, 14)}</span></button>`;
+      h += `<button type="button" class="cell${selected === k ? ' sel' : ''}" data-action="${action}" data-cab="${cab.id}" data-key="${k}" aria-label="${label}，${n} 本，深 ${d} 層"${selected === k ? ' aria-pressed="true"' : ''}><span class="lbl">${label}</span>${n ? `<span class="cnt">${n}</span>` : ''}<span class="spines">${spinesHTML(cab.id + k, n, 14)}</span></button>`;
     }
   }
   return h + '</div>';
@@ -785,7 +926,7 @@ const V = {
         <button type="button" class="btn primary wide" data-action="export-json">${ICON.download}匯出完整備份</button>
         <div class="grid2" style="margin-top:8px"><button type="button" class="btn" data-action="export-csv">匯出書目 CSV</button><button type="button" class="btn" data-action="import">從備份還原</button></div>
         <input type="file" id="import-file" accept=".json,application/json" hidden></div></section>
-      <section class="group"><h2>關於</h2><div class="card about"><b>吋讀 Tsundoku</b><span class="small muted">版本 ${VERSION} · 第一階段 · 資料格式 v${SCHEMA_VERSION}</span></div></section>`;
+      <section class="group"><h2>關於</h2><div class="card about"><b>吋讀 Tsundoku</b><span class="small muted">版本 ${VERSION} · 第二階段 · 資料格式 v${SCHEMA_VERSION}</span></div></section>`;
     return { body };
   }
 };
@@ -823,6 +964,8 @@ function render() {
   const v = cur(), out = V[v.name](v);
   const main = $('#main'), same = app.lastKey === viewKey(v), st = same && main ? main.scrollTop : 0;
   const tab = (id, label, icon, fab) => `<button type="button" class="${fab ? 'fab ' : ''}${app.tab === id ? 'on' : ''}" data-action="tab" data-tab="${id}" ${app.tab === id ? 'aria-current="page"' : ''}><span class="ico">${icon}</span>${label}</button>`;
+  if (v.name !== 'scan') stopCamera();
+  if (out.full) { root.innerHTML = `<main id="main" class="full">${out.body}</main>`; app.lastKey = viewKey(v); if (out.after) out.after(); return; }
   root.innerHTML = `<main id="main"><div class="page${out.noTabs ? ' no-tabs' : ''}">${out.body}</div></main>` +
     (out.noTabs ? '' : `<nav class="tabbar" aria-label="主選單">${tab('shelf', '書架', ICON.shelf)}${tab('books', '書籍', ICON.books)}${tab('scan', '掃描', ICON.scan, true)}${tab('loans', '借閱', ICON.loan)}${tab('settings', '設定', ICON.gear)}</nav>`);
   $('#main').scrollTop = st;
@@ -1002,13 +1145,832 @@ function openCell(cabId, k) {
     title: `${room.name} ${c.code} 號櫃 ${label} 格`, hideTitle: true, body, sheet: true,
     onOpen: (el, close) => {
       el.querySelector('[data-close]').addEventListener('click', () => close(null));
-      el.querySelector('[data-soon]').addEventListener('click', () => toast('掃描登記會在第二階段加入'));
+      el.querySelector('[data-soon]').addEventListener('click', () => {
+        const sel = el.querySelector('[data-layer][aria-selected="true"]'), depth = sel ? +sel.dataset.layer : 1;
+        app.session = { location: { cabinetId: cabId, r, c: col, depth }, owner: (app.session && app.session.owner) || firstOwner() }; saveSession();
+        close(null); switchTab('scan');
+      });
       el.querySelectorAll('[data-layer]').forEach(btn => btn.addEventListener('click', () => {
         el.querySelectorAll('[data-layer]').forEach(b => b.setAttribute('aria-selected', String(b === btn)));
         el.querySelectorAll('[data-panel]').forEach(p => { p.hidden = p.dataset.panel !== btn.dataset.layer; });
       }));
     }
   });
+}
+
+/* ---------- 第二階段：ISBN 與書目查詢 ---------- */
+const CURRENCIES = ['TWD', 'USD', 'JPY', 'CNY', 'HKD', 'EUR'];
+const LANG_OPTIONS = [['', '未填'], ['zho-Hant', '正體中文'], ['zho-Hans', '簡體中文'], ['eng', '英語'], ['jpn', '日語'], ['kor', '韓語'], ['fra', '法語'], ['deu', '德語'], ['spa', '西班牙語']];
+const ISO1 = { zh: 'zho', en: 'eng', ja: 'jpn', ko: 'kor', fr: 'fra', de: 'deu', es: 'spa', chi: 'zho', jpn: 'jpn', eng: 'eng', kor: 'kor', fre: 'fra', ger: 'deu', spa: 'spa' };
+// 只在示範模式、而且連不上網路時使用（預覽頁不能連外）
+const DEMO_LOOKUP = {
+  '9789573265856': { title: '往事知多少', series: '戰爭與愛情', volume: 1, authors: [{ name: '唐德剛', role: '著' }], publisher: '遠流出版事業股份有限公司', publishedDate: '2010-02-01', pages: 508, language: 'zho', script: 'Hant', format: '平裝' }
+};
+function isbnDigits(s) { return String(s || '').toUpperCase().replace(/[^0-9X]/g, ''); }
+function isbn13Valid(d) {
+  if (!/^\d{13}$/.test(d)) return false;
+  let sum = 0; for (let i = 0; i < 12; i++) sum += (+d[i]) * (i % 2 ? 3 : 1);
+  return (10 - (sum % 10)) % 10 === +d[12];
+}
+function isbn10Valid(d) {
+  if (!/^\d{9}[\dX]$/.test(d)) return false;
+  let sum = 0; for (let i = 0; i < 10; i++) sum += (d[i] === 'X' ? 10 : +d[i]) * (10 - i);
+  return sum % 11 === 0;
+}
+function to13(d) {
+  const core = '978' + d.slice(0, 9);
+  let sum = 0; for (let i = 0; i < 12; i++) sum += (+core[i]) * (i % 2 ? 3 : 1);
+  return core + ((10 - (sum % 10)) % 10);
+}
+// 回傳 13 碼 ISBN；不是有效 ISBN 回傳 null
+function normalizeISBN(s) {
+  const d = isbnDigits(s);
+  if (d.length === 13 && (d.startsWith('978') || d.startsWith('979')) && isbn13Valid(d)) return d;
+  if (d.length === 10 && isbn10Valid(d)) return to13(d);
+  return null;
+}
+function normDate(s) {
+  s = String(s || '').trim(); if (!s) return '';
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+  m = s.match(/^(\d{4})-(\d{1,2})$/); if (m) return `${m[1]}-${m[2].padStart(2, '0')}`;
+  m = s.match(/^(\d{4})$/); if (m) return m[1];
+  const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+  const y = s.match(/(\d{4})/); if (!y) return '';
+  const mi = months.findIndex(x => s.toLowerCase().includes(x));
+  if (mi < 0) return y[1];
+  const dd = s.replace(y[1], '').match(/\b(\d{1,2})\b/);
+  return `${y[1]}-${String(mi + 1).padStart(2, '0')}${dd ? '-' + dd[1].padStart(2, '0') : ''}`;
+}
+function normLang(code) {
+  if (!code) return {};
+  const c = String(code).replace('/languages/', '').toLowerCase();
+  if (c.startsWith('zh')) return { language: 'zho', script: /cn|hans|sg/.test(c) ? 'Hans' : 'Hant' };
+  const base = ISO1[c.split('-')[0]] || ISO1[c];
+  if (base === 'zho') return { language: 'zho', script: 'Hant' };
+  return base ? { language: base, script: '' } : {};
+}
+function normFormat(s) {
+  s = String(s || '').toLowerCase();
+  if (/hard/.test(s)) return '精裝';
+  if (/paper|soft|mass market/.test(s)) return '平裝';
+  return '';
+}
+const httpsURL = u => u ? String(u).replace(/^http:/, 'https:') : '';
+async function fetchJSON(url, ms = 9000) {
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), ms);
+  try { const r = await fetch(url, { signal: ctl.signal }); if (!r.ok) throw new Error('HTTP ' + r.status); return await r.json(); }
+  finally { clearTimeout(t); }
+}
+function fromGoogle(v) {
+  const out = {};
+  if (v.title) out.title = v.title;
+  if (v.subtitle) out.subtitle = v.subtitle;
+  if (v.authors && v.authors.length) out.authors = v.authors.map(n => ({ name: n, role: '著' }));
+  if (v.publisher) out.publisher = v.publisher;
+  if (v.publishedDate) out.publishedDate = normDate(v.publishedDate);
+  if (v.pageCount) out.pages = v.pageCount;
+  if (v.description) out.summary = v.description.replace(/<[^>]+>/g, '').trim();
+  Object.assign(out, normLang(v.language));
+  if (v.categories) out.refSubjects = v.categories.slice(0, 5);
+  const img = v.imageLinks && (v.imageLinks.thumbnail || v.imageLinks.smallThumbnail);
+  if (img) out.coverUrl = httpsURL(img).replace('&edge=curl', '');
+  return out;
+}
+function fromOpenLibrary(d, isbn) {
+  const out = {};
+  if (d.title) out.title = d.title;
+  if (d.subtitle) out.subtitle = d.subtitle;
+  if (d.authors && d.authors.length) out.authors = d.authors.map(a => ({ name: a.name, role: '著' })).filter(a => a.name);
+  if (d.publishers && d.publishers.length) out.publisher = typeof d.publishers[0] === 'string' ? d.publishers[0] : d.publishers[0].name;
+  if (d.publish_date) out.publishedDate = normDate(d.publish_date);
+  if (d.number_of_pages) out.pages = d.number_of_pages;
+  if (d.physical_format) out.format = normFormat(d.physical_format);
+  if (d.languages && d.languages[0]) Object.assign(out, normLang(d.languages[0].key));
+  if (d.series && d.series[0]) out.series = String(d.series[0]);
+  if (d.edition_name) out.edition = d.edition_name;
+  if (d.subjects) out.refSubjects = d.subjects.slice(0, 5).map(s => typeof s === 'string' ? s : s.name);
+  if (d.covers && d.covers[0] > 0) out.coverUrl = `https://covers.openlibrary.org/b/id/${d.covers[0]}-M.jpg`;
+  return out;
+}
+// 用 ISBN 查書目：Google Books 為主，Open Library 補欄位
+async function lookupISBN(isbn) {
+  let g = {}, o = {}, reached = false;
+  try {
+    const r = await fetchJSON(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+    reached = true;
+    if (r.items && r.items[0]) g = fromGoogle(r.items[0].volumeInfo || {});
+  } catch (e) {}
+  try {
+    const r = await fetchJSON(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=details`);
+    reached = true;
+    const hit = r['ISBN:' + isbn];
+    if (hit && hit.details) o = fromOpenLibrary(hit.details, isbn);
+  } catch (e) {}
+  const merged = { ...o, ...g };
+  for (const k of Object.keys(o)) if (merged[k] === undefined || merged[k] === '' || (Array.isArray(merged[k]) && !merged[k].length)) merged[k] = o[k];
+  if (!g.coverUrl && o.coverUrl) merged.coverUrl = o.coverUrl;
+  if (!reached && app.mode === 'demo' && DEMO_LOOKUP[isbn]) return { ok: true, offline: false, demo: true, data: clone(DEMO_LOOKUP[isbn]) };
+  if (!reached) return { ok: false, offline: true, data: {} };
+  return { ok: Object.keys(merged).length > 0, offline: false, data: merged };
+}
+async function searchBooks(q) {
+  const r = await fetchJSON(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=12`);
+  return (r.items || []).map(it => {
+    const v = it.volumeInfo || {};
+    const ids = v.industryIdentifiers || [];
+    const i13 = ids.find(x => x.type === 'ISBN_13'), i10 = ids.find(x => x.type === 'ISBN_10');
+    const data = fromGoogle(v);
+    const isbn = normalizeISBN((i13 || i10 || {}).identifier || '');
+    if (isbn) data.isbn = isbn;
+    return data;
+  }).filter(x => x.title);
+}
+const FILL_KEYS = ['title', 'subtitle', 'series', 'volume', 'edition', 'authors', 'publisher', 'publishedDate', 'format', 'language', 'pages', 'summary', 'coverUrl'];
+function countFilled(data) { return FILL_KEYS.filter(k => { const v = data[k]; return Array.isArray(v) ? v.length : v !== undefined && v !== null && v !== ''; }).length; }
+// 只填空白欄位，不覆蓋已經有的資料
+function fillEmpty(book, data) {
+  for (const [k, v] of Object.entries(data)) {
+    if (v === undefined || v === null || v === '') continue;
+    const cur = book[k];
+    const empty = cur === undefined || cur === null || cur === '' || (Array.isArray(cur) && !cur.length);
+    if (empty) book[k] = clone(v);
+  }
+  if (data.language && !book.script && data.script) book.script = data.script;
+  return book;
+}
+// 封面網址轉成小圖存起來；對方不允許的話就只記網址
+async function coverFromURL(url) {
+  try {
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 9000);
+    const r = await fetch(url, { signal: ctl.signal }); clearTimeout(t);
+    if (!r.ok) return null;
+    const blob = await r.blob();
+    if (blob.size < 1200) return null;
+    const bmp = await createImageBitmap(blob);
+    if (bmp.width < 20) return null;
+    return encodeCanvas(scaleTo(bmp, COVER_W, null), 'cover');
+  } catch (e) { return null; }
+}
+
+/* ---------- 第二階段：圖片處理 ---------- */
+const COVER_W = 300, DOC_LONG = 1000;
+function makeCanvas(w, h) { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; }
+function scaleTo(src, w, h) {
+  const sw = src.width, sh = src.height;
+  if (w && !h) h = sh * w / sw;
+  if (h && !w) w = sw * h / sh;
+  const c = makeCanvas(w, h), x = c.getContext('2d');
+  x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, c.width, c.height);
+  return c;
+}
+function encodeCanvas(c, kind) {
+  let out = c;
+  if (kind !== 'cover') {
+    const x = c.getContext('2d'), id = x.getImageData(0, 0, c.width, c.height), d = id.data;
+    for (let i = 0; i < d.length; i += 4) { const y = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; d[i] = d[i + 1] = d[i + 2] = y; }
+    x.putImageData(id, 0, 0);
+  }
+  const q = kind === 'cover' ? 0.82 : 0.72;
+  let url = out.toDataURL('image/webp', q);
+  if (!url.startsWith('data:image/webp')) url = out.toDataURL('image/jpeg', q);
+  return { data: url, w: out.width, h: out.height };
+}
+async function loadImageFile(file) {
+  let bmp;
+  try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+  catch (e) {
+    bmp = await new Promise((res, rej) => { const img = new Image(); img.onload = () => res(img); img.onerror = rej; img.src = URL.createObjectURL(file); });
+  }
+  const long = Math.max(bmp.width, bmp.height), k = Math.min(1, 2000 / long);
+  return scaleTo(bmp, bmp.width * k, bmp.height * k);
+}
+function rotateCanvas(src) {
+  const c = makeCanvas(src.height, src.width), x = c.getContext('2d');
+  x.translate(c.width, 0); x.rotate(Math.PI / 2); x.drawImage(src, 0, 0);
+  return c;
+}
+// 把四邊形（左上、右上、右下、左下）拉成長方形
+function warpQuad(src, q, outW, outH) {
+  const [p0, p1, p2, p3] = q;
+  const dx1 = p1.x - p2.x, dx2 = p3.x - p2.x, dx3 = p0.x - p1.x + p2.x - p3.x;
+  const dy1 = p1.y - p2.y, dy2 = p3.y - p2.y, dy3 = p0.y - p1.y + p2.y - p3.y;
+  let a, b, c, d, e, f, g, h;
+  if (Math.abs(dx3) < 1e-9 && Math.abs(dy3) < 1e-9) {
+    a = p1.x - p0.x; b = p3.x - p0.x; c = p0.x; d = p1.y - p0.y; e = p3.y - p0.y; f = p0.y; g = 0; h = 0;
+  } else {
+    const den = dx1 * dy2 - dx2 * dy1;
+    g = (dx3 * dy2 - dx2 * dy3) / den; h = (dx1 * dy3 - dx3 * dy1) / den;
+    a = p1.x - p0.x + g * p1.x; b = p3.x - p0.x + h * p3.x; c = p0.x;
+    d = p1.y - p0.y + g * p1.y; e = p3.y - p0.y + h * p3.y; f = p0.y;
+  }
+  const sw = src.width, sh = src.height;
+  const sd = src.getContext('2d').getImageData(0, 0, sw, sh).data;
+  const out = makeCanvas(outW, outH), ox = out.getContext('2d'), od = ox.createImageData(out.width, out.height), o = od.data;
+  for (let j = 0; j < out.height; j++) {
+    const v = (j + 0.5) / out.height;
+    for (let i = 0; i < out.width; i++) {
+      const u = (i + 0.5) / out.width, w = g * u + h * v + 1;
+      let x = Math.round((a * u + b * v + c) / w), y = Math.round((d * u + e * v + f) / w);
+      x = x < 0 ? 0 : x >= sw ? sw - 1 : x; y = y < 0 ? 0 : y >= sh ? sh - 1 : y;
+      const si = (y * sw + x) * 4, di = (j * out.width + i) * 4;
+      o[di] = sd[si]; o[di + 1] = sd[si + 1]; o[di + 2] = sd[si + 2]; o[di + 3] = 255;
+    }
+  }
+  ox.putImageData(od, 0, 0);
+  return out;
+}
+const dist = (p, q) => Math.hypot(p.x - q.x, p.y - q.y);
+function finishCrop(src, quad, kind) {
+  const W = Math.max(dist(quad[0], quad[1]), dist(quad[3], quad[2])), H = Math.max(dist(quad[0], quad[3]), dist(quad[1], quad[2]));
+  const k = Math.min(1, 1400 / Math.max(W, H));
+  const warped = warpQuad(src, quad, W * k, H * k);
+  const final = kind === 'cover' ? scaleTo(warped, Math.min(COVER_W, warped.width), null)
+    : (warped.width >= warped.height ? scaleTo(warped, Math.min(DOC_LONG, warped.width), null) : scaleTo(warped, null, Math.min(DOC_LONG, warped.height)));
+  return encodeCanvas(final, kind);
+}
+const KIND_LABEL = { cover: '封面', copyright: '版權頁', stamp: '藏書章' };
+// 全螢幕裁切校正；回傳 { data, w, h } 或 null（取消）
+function cropEditor(srcCanvas, kind) {
+  return new Promise(resolve => {
+    let src = srcCanvas, quad;
+    const wrap = document.createElement('div');
+    wrap.className = 'cropper';
+    wrap.innerHTML = `<div class="crop-top"><button type="button" class="round-btn" data-c="cancel" aria-label="取消">${ICON.close}</button><b>校正${KIND_LABEL[kind]}</b><button type="button" class="btn small soft" data-c="rotate">旋轉</button></div>
+      <div class="crop-stage"><canvas></canvas>${[0, 1, 2, 3].map(i => `<span class="handle" data-h="${i}" aria-hidden="true"></span>`).join('')}</div>
+      <p class="crop-tip">拖動四個圓點，對齊${KIND_LABEL[kind]}的四個角。</p>
+      <div class="crop-actions"><button type="button" class="btn" data-c="full">用整張</button><button type="button" class="btn accent" data-c="ok">確定</button></div>`;
+    document.body.append(wrap);
+    const stage = wrap.querySelector('.crop-stage'), cv = wrap.querySelector('canvas'), ctx = cv.getContext('2d');
+    let scale = 1;
+    const reset = (inset = 0.05) => { quad = [{ x: src.width * inset, y: src.height * inset }, { x: src.width * (1 - inset), y: src.height * inset }, { x: src.width * (1 - inset), y: src.height * (1 - inset) }, { x: src.width * inset, y: src.height * (1 - inset) }]; };
+    const layout = () => {
+      const maxW = Math.min(window.innerWidth - 32, 900), maxH = window.innerHeight - 220;
+      scale = Math.min(maxW / src.width, maxH / src.height);
+      cv.width = Math.round(src.width * scale); cv.height = Math.round(src.height * scale);
+      stage.style.width = cv.width + 'px'; stage.style.height = cv.height + 'px';
+      draw();
+    };
+    const draw = () => {
+      ctx.drawImage(src, 0, 0, cv.width, cv.height);
+      ctx.save(); ctx.fillStyle = 'rgba(52,36,28,.5)'; ctx.beginPath(); ctx.rect(0, 0, cv.width, cv.height);
+      ctx.moveTo(quad[0].x * scale, quad[0].y * scale); for (let i = 3; i >= 1; i--) ctx.lineTo(quad[i].x * scale, quad[i].y * scale); ctx.closePath();
+      ctx.fill('evenodd'); ctx.restore();
+      ctx.strokeStyle = '#ff8d22'; ctx.lineWidth = 2.5; ctx.beginPath();
+      quad.forEach((p, i) => i ? ctx.lineTo(p.x * scale, p.y * scale) : ctx.moveTo(p.x * scale, p.y * scale)); ctx.closePath(); ctx.stroke();
+      wrap.querySelectorAll('.handle').forEach((hd, i) => { hd.style.left = quad[i].x * scale + 'px'; hd.style.top = quad[i].y * scale + 'px'; });
+    };
+    let drag = -1;
+    stage.addEventListener('pointerdown', e => {
+      const r = cv.getBoundingClientRect(), px = (e.clientX - r.left) / scale, py = (e.clientY - r.top) / scale;
+      let best = -1, bd = 48 / scale;
+      quad.forEach((p, i) => { const dd = Math.hypot(p.x - px, p.y - py); if (dd < bd) { bd = dd; best = i; } });
+      if (best < 0) return;
+      drag = best; e.preventDefault(); try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+    stage.addEventListener('pointermove', e => {
+      if (drag < 0) return;
+      const r = cv.getBoundingClientRect();
+      quad[drag] = { x: clamp((e.clientX - r.left) / scale, 0, src.width), y: clamp((e.clientY - r.top) / scale, 0, src.height) };
+      draw();
+    });
+    const up = () => { drag = -1; };
+    stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
+    const done = v => { window.removeEventListener('resize', layout); wrap.remove(); resolve(v); };
+    wrap.addEventListener('click', e => {
+      const b = e.target.closest('[data-c]'); if (!b) return;
+      const c = b.dataset.c;
+      if (c === 'cancel') done(null);
+      else if (c === 'rotate') { src = rotateCanvas(src); reset(); layout(); }
+      else if (c === 'full') done(finishCrop(src, [{ x: 0, y: 0 }, { x: src.width, y: 0 }, { x: src.width, y: src.height }, { x: 0, y: src.height }], kind));
+      else if (c === 'ok') done(finishCrop(src, quad, kind));
+    });
+    window.addEventListener('resize', layout);
+    reset(); layout();
+  });
+}
+// 開相機或選圖片 → 校正 → 回傳結果
+function capturePhoto(kind) {
+  return new Promise(resolve => {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*'; inp.setAttribute('capture', 'environment'); inp.hidden = true; inp.id = 'photo-input';
+    document.body.append(inp);
+    let settled = false;
+    inp.addEventListener('change', async () => {
+      settled = true; const f = inp.files[0]; inp.remove();
+      if (!f) return resolve(null);
+      try { const src = await loadImageFile(f); resolve(await cropEditor(src, kind)); }
+      catch (e) { toast('這張圖片打不開，請換一張試試', 'err'); resolve(null); }
+    });
+    inp.addEventListener('cancel', () => { if (!settled) { settled = true; inp.remove(); resolve(null); } });
+    document.querySelectorAll('input#photo-input').forEach(x => { if (x !== inp) x.remove(); });
+    inp.click();
+  });
+}
+
+/* ---------- 第二階段：連續登記設定 ---------- */
+function sessionLoc() {
+  const s = app.session; if (!s || !s.location) return null;
+  const cab = B().cache.cabinets[s.location.cabinetId];
+  return cab && locValid(cab, s.location) ? s.location : null;
+}
+function saveSession() { LS.set('tsundoku-session', app.session); }
+function locLabel(loc) {
+  if (!loc) return '';
+  const cab = B().cache.cabinets[loc.cabinetId]; if (!cab) return '';
+  const room = B().cache.rooms[cab.roomId] || { name: '?' };
+  return `${room.name}-${cab.code}-${cellLabel(cab, loc.r, loc.c)}-${loc.depth}`;
+}
+function locWords(loc) {
+  const cab = loc && B().cache.cabinets[loc.cabinetId]; if (!cab) return '';
+  const room = B().cache.rooms[cab.roomId] || { name: '?' }, d = cellDepth(cab, cellKey(loc.r, loc.c));
+  const layer = d === 1 ? '' : loc.depth === 1 ? ' · 外層' : loc.depth === d ? ' · 內層' : ` · 第 ${loc.depth} 層`;
+  return `${room.name} · ${cab.code} 號櫃 · ${cellLabel(cab, loc.r, loc.c)} 格${layer}`;
+}
+const cellBookCount = loc => loc ? Object.values(B().cache.books).filter(b => b.location && b.location.cabinetId === loc.cabinetId && b.location.r === loc.r && b.location.c === loc.c && b.location.depth === loc.depth).length : 0;
+const firstOwner = () => (B().meta.owners || [])[0] || '';
+
+/* ---------- 第二階段：草稿（掃到但還沒存的書） ---------- */
+function setDraft(d) { app.bookDraft = d; app.bookDraftOrig = draftSig(d); }
+const draftSig = d => d ? JSON.stringify({ b: d.book, p: d.photos.map(p => p.id), r: d.removed }) : '';
+const bookDirty = () => !!app.bookDraft && draftSig(app.bookDraft) !== app.bookDraftOrig;
+function draftFromData(data, origin, extra = {}) {
+  const book = newBook({ owner: extra.owner ?? firstOwner(), location: extra.location ?? null });
+  fillEmpty(book, data);
+  if (data.isbn) book.isbn = data.isbn;
+  return { book, photos: [], removed: [], origin, isNew: true, filled: countFilled(data), lookup: null, dup: [] };
+}
+async function attachCover(book) {
+  if (!book.coverUrl || book.cover) return;
+  const c = await coverFromURL(book.coverUrl);
+  if (c) { book.cover = c.data; book.coverUrl = ''; }
+}
+async function handleISBN(isbn, origin) {
+  const dup = Object.values(B().cache.books).filter(b => b.isbn === isbn);
+  const extra = origin === 'scan' ? { owner: (app.session && app.session.owner) || firstOwner(), location: clone(sessionLoc()) } : {};
+  if (origin === 'scan') { app.scan.status = 'looking'; app.scan.looking = isbn; updateScanSheet(); }
+  else toast('查詢書目中…');
+  const res = await lookupISBN(isbn);
+  const d = draftFromData(res.data, origin, extra);
+  d.book.isbn = isbn; d.dup = dup;
+  d.lookup = res.ok ? (res.demo ? 'demo' : 'ok') : res.offline ? 'offline' : 'none';
+  if (res.offline) d.book.needsLookup = true;
+  await attachCover(d.book);
+  if (origin === 'scan' && (app.screen !== 'main' || cur().name !== 'scan')) return;
+  setDraft(d);
+  if (origin === 'scan') { app.scan.status = 'draft'; updateScanSheet(); }
+  else go({ name: 'bookEdit' });
+}
+function startNoBarcode() {
+  const extra = { owner: (app.session && app.session.owner) || firstOwner(), location: clone(sessionLoc()) };
+  const d = draftFromData({}, 'scan', extra); d.lookup = 'nobarcode'; d.filled = 0;
+  setDraft(d); app.scan.status = 'draft'; updateScanSheet();
+}
+function commitDraft() {
+  const d = app.bookDraft, b = d.book;
+  b.title = String(b.title || '').trim();
+  b.authors = (b.authors || []).filter(a => a.name && a.name.trim());
+  B().put('books', b);
+  d.photos.filter(p => p.isNew).forEach(p => B().putPhoto({ id: p.id, bookId: b.id, kind: p.kind, data: p.data, w: p.w, h: p.h, createdAt: nowISO(), trashedAt: null }));
+  d.removed.forEach(id => B().removePhoto(id));
+  delete app.photoCache[b.id];
+  return b;
+}
+async function takeDraftPhoto(kind) {
+  const d = app.bookDraft; if (!d) return;
+  const r = await capturePhoto(kind); if (!r || !app.bookDraft) return;
+  if (kind === 'cover') { d.book.cover = r.data; d.book.coverUrl = ''; }
+  else {
+    if (d.origin === 'scan') d.photos.filter(p => p.kind === kind && p.isNew).forEach(p => { d.photos.splice(d.photos.indexOf(p), 1); });
+    d.photos.push({ id: newId(), kind, data: r.data, w: r.w, h: r.h, isNew: true });
+  }
+  refreshDraftView();
+}
+function refreshDraftView() { const n = cur() && cur().name; if (n === 'scan') updateScanSheet(); else if (n === 'bookEdit') render(); }
+
+/* ---------- 第二階段：相機掃描 ---------- */
+const cam = { stream: null, timer: null, detector: null, busy: false };
+async function startCamera() {
+  const video = $('#scan-video'); if (!video) return;
+  if (cam.stream) { video.srcObject = cam.stream; video.play().catch(() => {}); ensureLoop(); return; }
+  if (!('BarcodeDetector' in window) || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { app.scan.camera = 'unsupported'; updateScanTip(); return; }
+  app.scan.camera = 'starting'; updateScanTip();
+  try {
+    let fmts = ['ean_13', 'ean_8', 'upc_a'];
+    try { const sup = await BarcodeDetector.getSupportedFormats(); if (sup && sup.length) fmts = fmts.filter(f => sup.includes(f)); } catch (e) {}
+    cam.detector = new BarcodeDetector({ formats: fmts.length ? fmts : ['ean_13'] });
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+    if (app.screen !== 'main' || cur().name !== 'scan') { stream.getTracks().forEach(t => t.stop()); return; }
+    cam.stream = stream;
+    const v = $('#scan-video'); v.srcObject = stream; await v.play().catch(() => {});
+    app.scan.camera = 'on'; updateScanTip(); ensureLoop();
+  } catch (e) { app.scan.camera = e && e.name === 'NotAllowedError' ? 'denied' : 'error'; updateScanTip(); }
+}
+function ensureLoop() { if (!cam.timer) cam.timer = setInterval(scanTick, 220); }
+async function scanTick() {
+  if (cam.busy || app.scan.status !== 'idle' || openDialogs.length || document.querySelector('.cropper') || !cam.detector) return;
+  const v = $('#scan-video'); if (!v || v.readyState < 2) return;
+  cam.busy = true;
+  try {
+    const codes = await cam.detector.detect(v);
+    for (const c of codes) {
+      const isbn = normalizeISBN(c.rawValue); if (!isbn) continue;
+      if (isbn === app.scan.lastCode && Date.now() - app.scan.lastAt < 4000) continue;
+      app.scan.lastCode = isbn; app.scan.lastAt = Date.now();
+      try { navigator.vibrate && navigator.vibrate(60); } catch (e) {}
+      handleISBN(isbn, 'scan'); break;
+    }
+  } catch (e) {}
+  cam.busy = false;
+}
+function stopCamera() {
+  if (cam.timer) { clearInterval(cam.timer); cam.timer = null; }
+  if (cam.stream) { cam.stream.getTracks().forEach(t => t.stop()); cam.stream = null; }
+  if (app.scan.camera === 'on' || app.scan.camera === 'starting') app.scan.camera = 'off';
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) stopCamera();
+  else if (app.screen === 'main' && cur() && cur().name === 'scan') startCamera();
+});
+async function scanFromPhoto() {
+  if (!('BarcodeDetector' in window)) { toast('這個瀏覽器不能辨識條碼，請改用手動輸入 ISBN', 'err'); return; }
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.hidden = true; inp.id = 'barcode-photo';
+  document.body.append(inp);
+  inp.addEventListener('change', async () => {
+    const f = inp.files[0]; inp.remove(); if (!f) return;
+    try {
+      const bmp = await createImageBitmap(f);
+      const codes = await new BarcodeDetector({ formats: ['ean_13'] }).detect(bmp);
+      const isbn = codes.map(c => normalizeISBN(c.rawValue)).find(Boolean);
+      if (isbn) handleISBN(isbn, 'scan'); else toast('照片裡找不到 ISBN 條碼，再拍清楚一點試試', 'err');
+    } catch (e) { toast('照片裡找不到 ISBN 條碼', 'err'); }
+  });
+  inp.click();
+}
+async function manualISBN(origin) {
+  const v = await promptBox('輸入 ISBN 或書名', 'ISBN（10 或 13 碼）或書名', '', '例如：9789573265856');
+  if (!v) return;
+  const isbn = normalizeISBN(v);
+  if (isbn) return handleISBN(isbn, origin);
+  if (/^[\d\-\sXx]{9,17}$/.test(v)) { toast('這組 ISBN 的檢查碼不對，請再確認一次', 'err'); return; }
+  return searchByText(v, origin);
+}
+async function searchByText(q, origin) {
+  toast('搜尋中…');
+  let results;
+  try { results = await searchBooks(q); }
+  catch (e) { toast(app.inFrame ? '預覽頁不能連網查書目，部署後就能用' : '查詢失敗，請確認網路', 'err'); return; }
+  if (!results.length) { toast('找不到符合的書，可以改用手動新增', 'err'); return; }
+  const pick = await dialog({
+    title: `「${q}」的搜尋結果`,
+    body: `<div class="list picklist">${results.map((r, i) => `<button type="button" class="row" data-r="${i}">${coverThumb(r, 'thumb')}<span class="tx"><b>${esc(r.title)}</b><span>${esc(authorsText(r))}${r.publisher ? ' · ' + esc(r.publisher) : ''}${r.publishedDate ? ' · ' + esc(r.publishedDate.slice(0, 4)) : ''}</span></span></button>`).join('')}</div>`,
+    actions: [{ label: '取消', kind: 'ghost', value: null }],
+    onOpen: (el, close) => el.querySelectorAll('[data-r]').forEach(b => b.addEventListener('click', () => close(+b.dataset.r)))
+  });
+  if (pick === null || pick === undefined) return;
+  const data = results[pick];
+  const extra = origin === 'scan' ? { owner: (app.session && app.session.owner) || firstOwner(), location: clone(sessionLoc()) } : {};
+  const d = draftFromData(data, origin, extra); d.lookup = 'ok';
+  d.dup = data.isbn ? Object.values(B().cache.books).filter(b => b.isbn === data.isbn) : [];
+  await attachCover(d.book);
+  setDraft(d);
+  if (origin === 'scan') { app.scan.status = 'draft'; updateScanSheet(); } else go({ name: 'bookEdit' });
+}
+
+/* ---------- 第二階段：封面、星等等小元件 ---------- */
+function coverThumb(b, cls) {
+  const src = b.cover || b.coverUrl;
+  if (src) return `<span class="${cls} img"><img src="${esc(src)}" alt="" loading="lazy" referrerpolicy="no-referrer"></span>`;
+  return `<span class="${cls}" style="${coverStyle(b.id || b.title || 'x')}" aria-hidden="true">${esc(String(b.title || '待補').slice(0, 2))}</span>`;
+}
+function starsHTML(rating, interactive) {
+  let h = '';
+  for (let i = 1; i <= 5; i++) {
+    const fill = rating >= i ? 'full' : rating >= i - 0.5 ? 'half' : '';
+    h += interactive ? `<button type="button" class="star ${fill}" data-action="bk-star" data-i="${i}" aria-label="${i} 顆星"></button>` : `<span class="star ${fill}"></span>`;
+  }
+  return `<span class="stars" ${interactive ? '' : `role="img" aria-label="評分 ${rating || 0} 顆星"`}>${h}</span>`;
+}
+function draftChip(d) {
+  if (d.lookup === 'ok') return `<span class="chip peach">${ICON.check}自動帶入 ${d.filled} 個欄位</span>`;
+  if (d.lookup === 'demo') return `<span class="chip peach">${ICON.check}示範資料：帶入 ${d.filled} 個欄位</span>`;
+  if (d.lookup === 'offline') return '<span class="chip line">目前離線，之後可以補查書目</span>';
+  if (d.lookup === 'none') return '<span class="chip line">查不到書目，先存著待補</span>';
+  return '';
+}
+function slotHTML(kind) {
+  const d = app.bookDraft, b = d.book;
+  const has = kind === 'cover' ? (b.cover || b.coverUrl) : d.photos.find(p => p.kind === kind);
+  const label = has ? (kind === 'cover' ? '封面已取得' : `${KIND_LABEL[kind]}已拍`) : `拍${KIND_LABEL[kind]}`;
+  return `<button type="button" class="slot${has ? ' done' : ''}" data-action="draft-photo" data-kind="${kind}">${has ? ICON.check : ICON.camera}<span>${label}</span></button>`;
+}
+
+/* ---------- 第二階段：掃描畫面 ---------- */
+function scanTipText() {
+  return ({ on: '把 ISBN 條碼放進框裡', starting: '正在打開相機…', unsupported: '不支援即時掃描，請拍條碼照片或手動輸入', denied: '沒有相機權限：請到瀏覽器設定允許這個網站使用相機', error: '相機打不開，可以改用拍照或手動輸入', off: '' })[app.scan.camera] || '';
+}
+function updateScanTip() { const t = $('#scan-tip'); if (t) t.textContent = scanTipText(); const s = $('#scan-sheet'); if (s && app.scan.status === 'idle') s.innerHTML = scanSheetHTML(); }
+function updateScanSheet() { const s = $('#scan-sheet'); if (s) s.innerHTML = scanSheetHTML(); const c = $('#session-chip'); if (c) c.outerHTML = sessionChipHTML(); }
+function sessionChipHTML() {
+  const loc = sessionLoc(), owner = (app.session && app.session.owner) || firstOwner();
+  return `<button type="button" class="session-chip" id="session-chip" data-action="pick-session"><span class="dot${loc ? '' : ' off'}"></span><span class="tx"><span>${loc ? '連續登記到' : '還沒選位置'}</span><b>${loc ? esc(locLabel(loc)) : '點這裡選一格'}${owner ? ' · ' + esc(owner) : ''}</b></span><span class="chg">${loc ? '更換' : '選擇'}</span></button>`;
+}
+function scanSheetHTML() {
+  const s = app.scan, loc = sessionLoc(), n = cellBookCount(loc);
+  if (s.status === 'looking') return `<div class="looking"><div class="spinner"></div><p class="hint">查詢書目中…<br><span class="mono">${esc(s.looking || '')}</span></p></div>`;
+  if (s.status === 'draft' && app.bookDraft) {
+    const d = app.bookDraft, b = d.book;
+    const meta = [authorsText(b), b.publisher, (b.publishedDate || '').slice(0, 4)].filter(Boolean).join(' · ');
+    const dupBox = d.dup.length ? `<div class="banner warn"><p>這本已經登記過${d.dup.length > 1 ? ` ${d.dup.length} 次` : ''}：${esc(locLabel(d.dup[0].location) || '還沒放到書櫃')}。儲存的話會再多一本。</p></div>` : '';
+    return `<div class="sheet-row"><b class="small">${b.isbn ? '剛剛掃到' : '沒有條碼的書'}</b><span class="small muted">這一格已登記 ${n} 本</span></div>${dupBox}
+      <div class="result">${coverThumb(b, 'rcover')}<div class="rinfo"><b>${esc(b.title || '書名待補')}</b><span>${esc(meta || (b.isbn ? 'ISBN ' + b.isbn : '可以之後再補資料'))}</span>${draftChip(d)}</div></div>
+      ${d.lookup === 'nobarcode' ? `<label class="field">書名（可以之後再補）<input type="text" data-field="title" value="${esc(b.title)}" placeholder="先拍照也可以"></label>` : ''}
+      <div class="slots">${slotHTML('cover')}${slotHTML('copyright')}${slotHTML('stamp')}</div>
+      <div class="save-row"><button type="button" class="btn" data-action="draft-edit">修改資料</button><button type="button" class="btn accent" data-action="draft-save">儲存，掃下一本</button></div>
+      <button type="button" class="btn ghost small wide" data-action="draft-discard">不要這本</button>`;
+  }
+  return `${loc ? '' : '<div class="banner warn"><p>還沒選要登記到哪一格。選好之後，每一本掃到的書都會自動放進那一格。</p><button type="button" class="btn small primary" data-action="pick-session">選擇位置</button></div>'}
+    <div class="sheet-row"><b class="small">連續登記中</b><span class="small muted">${loc ? `這一格已登記 ${n} 本` : ''}</span></div>
+    ${s.lastSaved ? `<p class="saved">${ICON.check}剛存好：${esc(s.lastSaved)}</p>` : ''}
+    ${app.scan.camera === 'on' ? '' : `<p class="hint">${esc(scanTipText())}</p>`}
+    <div class="grid2"><button type="button" class="btn" data-action="scan-photo">${ICON.camera}拍條碼照片</button><button type="button" class="btn" data-action="scan-manual">手動輸入</button></div>`;
+}
+
+/* ---------- 第二階段：書籍清單 ---------- */
+function filteredBooks() {
+  const q = String(app.bookQuery || '').trim().toLowerCase(), f = app.bookFilter || 'all';
+  return Object.values(B().cache.books).filter(b => {
+    if (f === 'pending' && b.verified) return false;
+    if (f === 'wish' && b.ownership !== 'wishlist') return false;
+    if (f !== 'wish' && f !== 'all' && f !== 'pending' && b.owner !== f) return false;
+    if (f === 'all' && b.ownership === 'wishlist') return false;
+    if (!q) return true;
+    return [b.title, b.subtitle, b.series, authorsText(b), b.isbn, b.publisher].some(x => String(x || '').toLowerCase().includes(q));
+  }).sort((a, b) => String(b.addedAt).localeCompare(String(a.addedAt)));
+}
+function bookListHTML() {
+  const list = filteredBooks(), shown = list.slice(0, 300);
+  if (!list.length) return emptyHTML(app.bookQuery ? '找不到符合的書' : '這裡還沒有書', app.bookQuery ? '換個關鍵字試試，或檢查篩選條件。' : '按右上角的「新增」，或用中間的掃描鈕開始登記。');
+  return `<p class="small muted" style="margin:0 6px">${list.length} 本</p><div class="list booklist2">${shown.map(b => `<button type="button" class="row brow" data-action="open-book" data-id="${b.id}">${coverThumb(b, 'thumb')}<span class="tx"><b>${esc(b.title || '書名待補')}</b><span>${esc(authorsText(b) || (b.isbn ? 'ISBN ' + b.isbn : '作者待補'))}</span>${b.location ? `<span class="mono loc">${esc(locLabel(b.location))}</span>` : ''}</span><span class="chips" style="flex:none">${b.verified ? '' : '<span class="chip line">待補</span>'}</span></button>`).join('')}</div>${list.length > shown.length ? `<p class="hint" style="text-align:center">還有 ${list.length - shown.length} 本，請用搜尋縮小範圍。封面牆會在第三階段加入。</p>` : ''}`;
+}
+
+/* ---------- 第二階段：頁面 ---------- */
+Object.assign(V, {
+  books() {
+    const st = bookStats(), owners = B().meta.owners || [], f = app.bookFilter || 'all';
+    const filters = [['all', '全部'], ['pending', '待補資料'], ...owners.map(o => [o, o]), ...(st.wish ? [['wish', '願望清單']] : [])];
+    let body = head({ title: '書籍', sub: `收藏 ${nfmt(st.owned)} 本 · ${nfmt(st.pending)} 本待補資料`, actions: `<button type="button" class="btn small primary" data-action="add-book">${ICON.plus}新增</button>` });
+    body += `<label class="search">${ICON.search}<span class="sr">搜尋書籍</span><input id="book-q" type="search" placeholder="書名、作者、ISBN" value="${esc(app.bookQuery || '')}"></label>`;
+    body += `<div class="filters">${filters.map(([v, l]) => `<button type="button" class="fchip${f === v ? ' on' : ''}" data-action="book-filter" data-f="${esc(v)}">${esc(l)}</button>`).join('')}</div>`;
+    body += `<div id="book-list" class="stack" style="gap:8px">${bookListHTML()}</div>`;
+    return { body };
+  },
+  scan() {
+    const body = `<div class="scan">
+      <video id="scan-video" playsinline muted autoplay></video>
+      <div class="scan-top"><button type="button" class="scan-round" data-action="scan-close" aria-label="結束掃描">${ICON.close}</button>${sessionChipHTML()}</div>
+      <div class="viewfinder" aria-hidden="true"><i></i><i></i><i></i><i></i><span class="laser"></span></div>
+      <div class="scan-under"><p class="scan-tip" id="scan-tip" aria-live="polite">${esc(scanTipText())}</p>
+      <div class="scan-pills"><button type="button" data-action="scan-manual">手動輸入 ISBN</button><button type="button" data-action="scan-nobarcode">這本沒有條碼</button></div></div>
+      <section class="scan-sheet" id="scan-sheet" aria-live="polite">${scanSheetHTML()}</section>
+    </div>`;
+    return { body, full: true, after: startCamera };
+  },
+  book(v) {
+    const b = B().cache.books[v.id]; if (!b) return gone();
+    if (!(v.id in app.photoCache)) {
+      app.photoCache[v.id] = null;
+      B().photosFor(v.id).then(ps => { app.photoCache[v.id] = ps; if (cur() && cur().name === 'book' && cur().id === v.id) render(); }).catch(() => { app.photoCache[v.id] = []; });
+    }
+    const photos = (app.photoCache[v.id] || []).filter(p => !p.trashedAt);
+    const loc = b.location, cab = loc && B().cache.cabinets[loc.cabinetId];
+    const rows = [['出版社', b.publisher], ['出版日期', b.publishedDate], ['ISBN', b.isbn], ['版次', b.edition], ['格式', b.format], ['語言', langLabel(b)], ['頁數', b.pages], ['所有者', b.owner],
+      ['價格', b.price != null && b.price !== '' ? `${b.currency || 'TWD'} ${b.price}` : ''], ['購買日期', b.purchaseDate], ['標籤', (b.tags || []).map(t => '#' + t).join(' ')], ['加入日期', fmtDate(b.addedAt)]].filter(r => r[1] !== undefined && r[1] !== null && r[1] !== '');
+    const status = seg('bk-quick-status', Object.entries(READ_STATUS), b.readStatus || 'unread');
+    let body = `<header class="page-head"><div class="toprow"><button type="button" class="icon-btn" data-action="back" aria-label="返回">${ICON.back}</button><span class="acts"><button type="button" class="btn small soft" data-action="edit-book" data-id="${b.id}">${ICON.pencil}編輯</button></span></div></header>
+      <div class="bhero">${coverThumb(b, 'bigcover')}<h1 class="title">${esc(b.title || '書名待補')}</h1>${b.subtitle ? `<p class="sub">${esc(b.subtitle)}</p>` : ''}${b.series ? `<p class="sub">${esc(b.series)}${b.volume ? ` · 卷 ${esc(b.volume)}` : ''}</p>` : ''}<p class="bauthor">${esc(authorsText(b) || '作者待補')}</p>${b.rating ? starsHTML(b.rating) : ''}${b.verified ? '' : '<span class="chip line">待補資料</span>'}</div>
+      <section class="card">${status}${b.readStatus === 'reading' && b.pages ? `<div class="progress"><div class="sub2"><span>讀到</span><b>${b.currentPage || 0} / ${b.pages} 頁</b></div><div class="bar"><i style="width:${clamp(Math.round((b.currentPage || 0) / b.pages * 100), 0, 100)}%"></i></div></div>` : ''}</section>`;
+    body += cab ? `<section class="loccard"><span class="small">放在哪裡</span><b class="mono">${esc(locLabel(loc))}</b><span class="small">${esc(locWords(loc))}</span><button type="button" class="btn small accent" data-action="open-cab" data-id="${cab.id}">在書櫃上看</button></section>`
+      : `<section class="card"><p class="hint">${b.ownership === 'wishlist' ? '這本在願望清單裡，還沒買。' : '還沒放到書櫃上。'}</p></section>`;
+    body += rows.length ? `<section class="card infolist"><dl>${rows.map(([k, val]) => `<div><dt>${k}</dt><dd>${esc(val)}</dd></div>`).join('')}</dl>${(b.refSubjects || []).length ? `<p class="hint" style="margin-top:8px">書目庫的主題：${esc(b.refSubjects.join('、'))}</p>` : ''}</section>` : '';
+    if (b.summary) body += `<section class="group"><h2>摘要</h2><p class="prose">${esc(b.summary)}</p></section>`;
+    body += `<section class="group"><h2>心得</h2><div class="card"><p class="${b.review ? 'prose' : 'hint'}" style="margin:0">${b.review ? esc(b.review) : '還沒寫心得。'}</p></div></section>`;
+    body += `<section class="group"><h2>整理用的照片</h2><div class="card">${app.photoCache[v.id] === null ? '<p class="hint">讀取中…</p>' : photos.length ? `<div class="photos">${photos.map(p => `<button type="button" class="pthumb" data-action="view-photo" data-id="${p.id}" data-book="${b.id}"><img src="${p.data}" alt="${KIND_LABEL[p.kind] || '照片'}"><span>${KIND_LABEL[p.kind] || '照片'}</span></button>`).join('')}</div>` : '<p class="hint">沒有版權頁或藏書章照片。</p>'}
+      <div class="switch-row"><span><b>資料已確認</b><span class="small muted">補完資料後打開，書就不會出現在「待補資料」裡。</span></span><button type="button" class="switch" role="switch" aria-checked="${!!b.verified}" aria-label="資料已確認" data-action="toggle-verified" data-id="${b.id}"></button></div></div></section>`;
+    return { body };
+  },
+  bookEdit(v) {
+    const d = app.bookDraft; if (!d) return gone();
+    const b = d.book, owners = B().meta.owners || [];
+    const langVal = b.language === 'zho' ? 'zho-' + (b.script || 'Hant') : (b.language || '');
+    const ownerOpts = [...new Set([...(owners || []), b.owner].filter(Boolean))];
+    const sel = (field, opts, val) => `<select data-field="${field}">${opts.map(([ov, ol]) => `<option value="${esc(ov)}"${String(ov) === String(val ?? '') ? ' selected' : ''}>${esc(ol)}</option>`).join('')}</select>`;
+    const photos = d.photos;
+    let body = `<header class="page-head"><div class="toprow"><button type="button" class="icon-btn" data-action="back" aria-label="返回">${d.origin === 'scan' ? ICON.back : ICON.close}</button><span class="mid">${d.isNew ? '新增書籍' : '編輯書籍'}</span><button type="button" class="btn small primary" data-action="save-book">儲存</button></div></header>
+      <section class="card form">
+        <div class="cover-edit">${coverThumb(b, 'bigcover')}<div class="stack" style="gap:8px"><button type="button" class="btn small" data-action="draft-photo" data-kind="cover">${ICON.camera}${b.cover || b.coverUrl ? '重拍封面' : '拍封面'}</button>${b.cover || b.coverUrl ? '<button type="button" class="btn small ghost" data-action="cover-remove">移除封面</button>' : ''}${b.isbn ? '<button type="button" class="btn small ghost" data-action="relookup">用 ISBN 補查</button>' : ''}</div></div>
+        <label class="field">書名<input type="text" data-field="title" value="${esc(b.title)}"></label>
+        <label class="field">副標題<input type="text" data-field="subtitle" value="${esc(b.subtitle)}"></label>
+        <div class="grid-wide"><label class="field">系列<input type="text" data-field="series" value="${esc(b.series)}"></label><label class="field">卷<input type="number" inputmode="numeric" data-field="volume" value="${esc(b.volume ?? '')}"></label></div>
+        <label class="field">版次<input type="text" data-field="edition" value="${esc(b.edition)}" placeholder="例如：二版"></label>
+        <div class="field">作者${(b.authors.length ? b.authors : [{ name: '', role: '著' }]).map((a, i) => `<div class="author-row"><input type="text" data-field="author-name" data-i="${i}" value="${esc(a.name)}" placeholder="姓名" aria-label="作者姓名"><select data-field="author-role" data-i="${i}" aria-label="角色">${ROLES.map(r => `<option${r === a.role ? ' selected' : ''}>${r}</option>`).join('')}</select><button type="button" class="round-btn" data-action="del-author" data-i="${i}" aria-label="移除這位作者">${ICON.close}</button></div>`).join('')}<button type="button" class="btn small ghost" data-action="add-author" style="align-self:flex-start">${ICON.plus}再加一位</button></div>
+      </section>
+      <section class="card form">
+        <label class="field">出版商<input type="text" data-field="publisher" value="${esc(b.publisher)}"></label>
+        <div class="grid2"><label class="field">出版日期<input type="text" data-field="publishedDate" value="${esc(b.publishedDate)}" placeholder="YYYY-MM-DD"></label><label class="field">頁數<input type="number" inputmode="numeric" data-field="pages" value="${esc(b.pages ?? '')}"></label></div>
+        <label class="field">ISBN<input type="text" inputmode="numeric" data-field="isbn" value="${esc(b.isbn)}" placeholder="13 碼，可以留空"></label>
+        <div class="grid2"><label class="field">格式${sel('format', [['', '未填'], ...FORMATS.map(x => [x, x])], b.format)}</label><label class="field">語言${sel('lang', LANG_OPTIONS, langVal)}</label></div>
+        <label class="field">摘要<textarea rows="4" data-field="summary">${esc(b.summary)}</textarea></label>
+      </section>
+      <section class="card form">
+        <div class="field">擁有狀態${seg('bk-ownership', [['owned', '已收藏'], ['wishlist', '願望清單']], b.ownership)}</div>
+        <label class="field">所有者${sel('owner', [['', '未填'], ...ownerOpts.map(o => [o, o])], b.owner)}</label>
+        <div class="field">位置<div class="locpick">${b.location ? `<span class="chip code">${esc(locLabel(b.location))}</span>` : '<span class="small muted">還沒選</span>'}<button type="button" class="btn small soft" data-action="pick-book-loc">${b.location ? '更換' : '選擇位置'}</button>${b.location ? '<button type="button" class="btn small ghost" data-action="clear-book-loc">清除</button>' : ''}</div></div>
+        <label class="field">位置補充<input type="text" data-field="locationNote" value="${esc(b.locationNote)}" placeholder="例如：第二排靠後面"></label>
+        <div class="grid-wide"><label class="field">價格<input type="number" inputmode="decimal" data-field="price" value="${esc(b.price ?? '')}"></label><label class="field">幣別${sel('currency', CURRENCIES.map(c => [c, c]), b.currency || 'TWD')}</label></div>
+        <label class="field">購買日期<input type="date" data-field="purchaseDate" value="${esc(b.purchaseDate)}"></label>
+        <label class="field">標籤<input type="text" data-field="tagsText" value="${esc((b.tags || []).map(t => '#' + t).join(' '))}" placeholder="#簽名本 #絕版"></label>
+      </section>
+      <section class="card form">
+        <div class="field">評分<span class="star-row">${starsHTML(b.rating || 0, true)}<b>${b.rating || '未評分'}</b>${b.rating ? '<button type="button" class="btn small ghost" data-action="bk-star-clear">清除</button>' : ''}</span></div>
+        <div class="field">閱讀狀態${seg('bk-status', Object.entries(READ_STATUS), b.readStatus || 'unread')}</div>
+        ${b.readStatus === 'reading' ? `<label class="field">讀到第幾頁<input type="number" inputmode="numeric" data-field="currentPage" value="${esc(b.currentPage ?? '')}"></label>` : ''}
+        <div class="grid2"><label class="field">開始日期<input type="date" data-field="startDate" value="${esc(b.startDate)}"></label><label class="field">完成日期<input type="date" data-field="finishDate" value="${esc(b.finishDate)}"></label></div>
+        <div class="switch-row"><b>我的最愛</b><button type="button" class="switch" role="switch" aria-checked="${!!b.favorite}" aria-label="我的最愛" data-action="bk-toggle" data-f="favorite"></button></div>
+        <label class="field">心得<textarea rows="4" data-field="review">${esc(b.review)}</textarea></label>
+      </section>
+      <section class="card form">
+        <h2 style="margin:0">整理用的照片</h2>
+        ${photos.length ? `<div class="photos">${photos.map(p => `<span class="pthumb"><img src="${p.data}" alt="${KIND_LABEL[p.kind] || '照片'}"><span>${KIND_LABEL[p.kind] || '照片'}</span><button type="button" class="round-btn" data-action="photo-del" data-id="${p.id}" aria-label="刪除這張照片">${ICON.close}</button></span>`).join('')}</div>` : '<p class="hint">還沒有照片。</p>'}
+        <div class="grid2"><button type="button" class="btn small" data-action="draft-photo" data-kind="copyright">${ICON.camera}拍版權頁</button><button type="button" class="btn small" data-action="draft-photo" data-kind="stamp">${ICON.camera}拍藏書章</button></div>
+        <div class="switch-row"><span><b>資料已確認</b><span class="small muted">補完資料後打開。</span></span><button type="button" class="switch" role="switch" aria-checked="${!!b.verified}" aria-label="資料已確認" data-action="bk-toggle" data-f="verified"></button></div>
+      </section>
+      ${d.isNew ? '' : '<button type="button" class="btn danger wide" data-action="del-book">刪除這本書</button>'}`;
+    return { body, noTabs: true };
+  },
+  picker(v) {
+    const p = app.pick, rooms = sortedRooms();
+    let body = head({ back: true, title: '選擇位置', sub: v.target === 'session' ? '接下來掃到的書，都會放進這一格。' : '這本書放在哪裡？' });
+    if (!rooms.length) return { body: body + emptyHTML('還沒有房間和書櫃', '先到「書架」新增房間和書櫃，再回來選位置。'), noTabs: true };
+    body += `<section class="group"><h2>房間</h2><div class="filters">${rooms.map(r => `<button type="button" class="fchip${p.roomId === r.id ? ' on' : ''}" data-action="pick-room" data-id="${r.id}">${esc(r.name)}</button>`).join('')}</div></section>`;
+    const cabs = p.roomId ? roomCabs(p.roomId) : [];
+    if (p.roomId) body += `<section class="group"><h2>書櫃</h2>${cabs.length ? `<div class="filters">${cabs.map(c => `<button type="button" class="fchip${p.cabinetId === c.id ? ' on' : ''}" data-action="pick-cab" data-id="${c.id}">${c.code} 號櫃${c.name ? ' · ' + esc(c.name) : ''}</button>`).join('')}</div>` : '<p class="hint" style="margin:0 6px">這個房間還沒有書櫃。</p>'}</section>`;
+    const cab = p.cabinetId && B().cache.cabinets[p.cabinetId];
+    if (cab) {
+      const st = bookStats();
+      body += `<section class="group"><h2>點一格</h2><div class="board-wrap">${boardHTML(cab, { counts: st.byCell[cab.id] || {}, action: 'pick-cell', selected: p.key })}</div></section>`;
+      if (p.key) {
+        const dd = cellDepth(cab, p.key);
+        if (dd > 1) body += `<section class="group"><h2>哪一層</h2>${seg('pick-depth', Array.from({ length: dd }, (_, i) => [i + 1, i === 0 ? '外層' : i === dd - 1 ? '內層' : `第 ${i + 1} 層`]), p.depth)}</section>`;
+      }
+    }
+    if (v.target === 'session') {
+      const owners = B().meta.owners || [];
+      if (owners.length) body += `<section class="group"><h2>這批書的所有者</h2>${seg('pick-owner', owners.map(o => [o, esc(o)]), p.owner)}</section>`;
+    }
+    const ready = cab && p.key;
+    const code = ready ? locLabel({ cabinetId: cab.id, r: splitKey(p.key)[0], c: splitKey(p.key)[1], depth: p.depth }) : '';
+    body += `<div class="pick-done">${ready ? `<span class="chip code">${esc(code)}</span>` : '<span class="small muted">還沒選好格子</span>'}<button type="button" class="btn primary" data-action="pick-done"${ready ? '' : ' disabled'}>確定</button></div>`;
+    return { body, noTabs: true };
+  }
+});
+
+function openPicker(target) {
+  const loc = target === 'session' ? sessionLoc() : (app.bookDraft && app.bookDraft.book.location);
+  const cab = loc && B().cache.cabinets[loc.cabinetId];
+  const rooms = sortedRooms();
+  app.pick = {
+    target,
+    roomId: cab ? cab.roomId : (rooms[0] && rooms[0].id) || null,
+    cabinetId: cab ? cab.id : null,
+    key: cab ? cellKey(loc.r, loc.c) : null,
+    depth: cab ? loc.depth : 1,
+    owner: (app.session && app.session.owner) || firstOwner()
+  };
+  if (!app.pick.cabinetId && app.pick.roomId) { const cs = roomCabs(app.pick.roomId); if (cs.length === 1) app.pick.cabinetId = cs[0].id; }
+  go({ name: 'picker', target });
+}
+async function openEditBook(id) {
+  const b = B().cache.books[id]; if (!b) return;
+  let photos = app.photoCache[id];
+  if (!photos) { try { photos = await B().photosFor(id); } catch (e) { photos = []; } app.photoCache[id] = photos; }
+  setDraft({ book: clone(b), photos: photos.map(p => ({ ...p, isNew: false })), removed: [], origin: 'detail', isNew: false, filled: 0, lookup: null, dup: [] });
+  go({ name: 'bookEdit' });
+}
+function setDraftField(el) {
+  const d = app.bookDraft; if (!d) return;
+  const b = d.book, f = el.dataset.field, v = el.value;
+  const num = x => x === '' ? null : Number(x);
+  switch (f) {
+    case 'author-name': case 'author-role': {
+      if (!b.authors.length) b.authors.push({ name: '', role: '著' });
+      const a = b.authors[+el.dataset.i]; if (a) a[f === 'author-name' ? 'name' : 'role'] = v; break;
+    }
+    case 'lang': { if (!v) { b.language = ''; b.script = ''; } else if (v.startsWith('zho-')) { b.language = 'zho'; b.script = v.slice(4); } else { b.language = v; b.script = ''; } break; }
+    case 'tagsText': b.tags = v.split(/[#\s,，]+/).map(t => t.trim()).filter(Boolean); break;
+    case 'volume': case 'pages': case 'price': case 'currentPage': b[f] = num(v); break;
+    case 'isbn': b.isbn = isbnDigits(v); break;
+    default: b[f] = v;
+  }
+  if (f === 'title' && cur() && cur().name === 'scan') { const t = document.querySelector('.result .rinfo b'); if (t) t.textContent = v || '書名待補'; }
+}
+async function moreAction(a, el) {
+  const d = app.bookDraft;
+  switch (a) {
+    case 'add-book': {
+      const c = await dialog({ title: '新增書籍', sheet: true, vertical: true, actions: [{ label: '掃描條碼', value: 'scan', kind: 'primary' }, { label: '用 ISBN 或書名查詢', value: 'search' }, { label: '手動新增', value: 'manual' }, { label: '取消', kind: 'ghost', value: null }] });
+      if (c === 'scan') switchTab('scan');
+      else if (c === 'search') manualISBN('list');
+      else if (c === 'manual') { const dd = draftFromData({}, 'list'); dd.lookup = null; setDraft(dd); go({ name: 'bookEdit' }); }
+      break;
+    }
+    case 'book-filter': app.bookFilter = el.dataset.f; render(); break;
+    case 'open-book': go({ name: 'book', id: el.dataset.id }); break;
+    case 'edit-book': openEditBook(el.dataset.id); break;
+    case 'toggle-verified': { const b = B().cache.books[el.dataset.id]; if (b) { B().put('books', { ...b, verified: !b.verified }); toast(b.verified ? '已改回待補資料' : '已標記為資料已確認'); } break; }
+    case 'view-photo': {
+      const p = (app.photoCache[el.dataset.book] || []).find(x => x.id === el.dataset.id); if (!p) return;
+      dialog({ title: KIND_LABEL[p.kind] || '照片', body: `<img src="${p.data}" alt="" style="width:100%;border-radius:12px;display:block">`, actions: [{ label: '關閉', kind: 'ghost' }] });
+      break;
+    }
+    case 'scan-close': {
+      if (app.scan.status === 'draft' && app.bookDraft && !(await confirmBox('不要這本嗎？', '剛掃到的這本還沒儲存。', '不要了', true))) return;
+      if (app.scan.status === 'draft') { app.bookDraft = null; app.scan.status = 'idle'; }
+      stopCamera(); switchTab(app.prevTab && app.prevTab !== 'scan' ? app.prevTab : 'shelf'); break;
+    }
+    case 'pick-session': if (app.scan.status === 'idle' || app.scan.status === 'draft') openPicker('session'); break;
+    case 'scan-manual': manualISBN('scan'); break;
+    case 'scan-nobarcode':
+      if (app.scan.status === 'draft' && !(await confirmBox('換下一本？', '剛掃到的這本還沒儲存，要放棄嗎？', '放棄', true))) return;
+      startNoBarcode(); break;
+    case 'scan-photo': scanFromPhoto(); break;
+    case 'draft-photo': takeDraftPhoto(el.dataset.kind); break;
+    case 'draft-edit': go({ name: 'bookEdit' }); break;
+    case 'draft-save': {
+      if (!d) return;
+      const b = commitDraft();
+      app.scan.lastSaved = b.title || '書名待補'; app.scan.status = 'idle'; app.bookDraft = null;
+      toast('已存好'); updateScanSheet(); break;
+    }
+    case 'draft-discard': app.bookDraft = null; app.scan.status = 'idle'; updateScanSheet(); break;
+    case 'cover-remove': if (d) { d.book.cover = ''; d.book.coverUrl = ''; render(); } break;
+    case 'relookup': {
+      if (!d || !normalizeISBN(d.book.isbn)) { toast('ISBN 不正確，沒辦法查', 'err'); return; }
+      toast('查詢書目中…');
+      const res = await lookupISBN(normalizeISBN(d.book.isbn));
+      if (!res.ok) { toast(res.offline ? (app.inFrame ? '預覽頁不能連網查書目' : '目前離線，請連上網路再試') : '書目庫裡查不到這本', 'err'); return; }
+      fillEmpty(d.book, res.data); delete d.book.needsLookup; await attachCover(d.book);
+      toast(`補上了空白的欄位`); render(); break;
+    }
+    case 'add-author': if (d) { if (!d.book.authors.length) d.book.authors.push({ name: '', role: '著' }); d.book.authors.push({ name: '', role: '著' }); render(); } break;
+    case 'del-author': if (d) { d.book.authors.splice(+el.dataset.i, 1); render(); } break;
+    case 'bk-star': if (d) { const i = +el.dataset.i; d.book.rating = d.book.rating === i ? i - 0.5 : i; render(); } break;
+    case 'bk-star-clear': if (d) { d.book.rating = null; render(); } break;
+    case 'bk-toggle': if (d) { d.book[el.dataset.f] = !d.book[el.dataset.f]; render(); } break;
+    case 'photo-del': if (d) { const i = d.photos.findIndex(p => p.id === el.dataset.id); if (i >= 0) { const p = d.photos[i]; d.photos.splice(i, 1); if (!p.isNew) d.removed.push(p.id); render(); } } break;
+    case 'pick-book-loc': openPicker('book'); break;
+    case 'clear-book-loc': if (d) { d.book.location = null; render(); } break;
+    case 'save-book': {
+      if (!d) return;
+      if (d.book.isbn && !normalizeISBN(d.book.isbn) && !(await confirmBox('ISBN 好像不對', '檢查碼對不上，還是要用這組號碼儲存嗎？', '仍要儲存'))) return;
+      if (normalizeISBN(d.book.isbn)) d.book.isbn = normalizeISBN(d.book.isbn);
+      const b = commitDraft(), origin = d.origin, isNew = d.isNew;
+      app.bookDraft = null; toast('已儲存');
+      if (origin === 'scan') { app.scan.lastSaved = b.title || '書名待補'; app.scan.status = 'idle'; popLevels(1); }
+      else if (isNew) { app.stack[app.stack.length - 1] = { name: 'book', id: b.id }; render(); }
+      else popLevels(1);
+      break;
+    }
+    case 'del-book': {
+      if (!d || d.isNew) return;
+      if (!(await confirmBox('刪除這本書？', `確定要刪除《${d.book.title || '書名待補'}》嗎？照片也會一起刪除。`, '刪除', true))) return;
+      const id = d.book.id;
+      let ps = app.photoCache[id]; if (!ps) { try { ps = await B().photosFor(id); } catch (e) { ps = []; } }
+      ps.forEach(p => B().removePhoto(p.id));
+      B().remove('books', id); delete app.photoCache[id];
+      app.bookDraft = null; toast('已刪除');
+      popLevels(app.stack.length >= 3 && app.stack[app.stack.length - 2].name === 'book' ? 2 : 1);
+      break;
+    }
+    case 'pick-room': app.pick.roomId = el.dataset.id; app.pick.cabinetId = null; app.pick.key = null; { const cs = roomCabs(el.dataset.id); if (cs.length === 1) app.pick.cabinetId = cs[0].id; } render(); break;
+    case 'pick-cab': app.pick.cabinetId = el.dataset.id; app.pick.key = null; app.pick.depth = 1; render(); break;
+    case 'pick-cell': app.pick.key = el.dataset.key; app.pick.depth = 1; render(); break;
+    case 'pick-done': {
+      const p = app.pick, cab = B().cache.cabinets[p.cabinetId]; if (!cab || !p.key) return;
+      const [r, c] = splitKey(p.key), loc = { cabinetId: cab.id, r, c, depth: p.depth };
+      if (p.target === 'session') { app.session = { location: loc, owner: p.owner || '' }; saveSession(); if (app.bookDraft && app.bookDraft.origin === 'scan' && app.bookDraft.isNew) { app.bookDraft.book.location = clone(loc); app.bookDraft.book.owner = p.owner || app.bookDraft.book.owner; } toast('已設定：' + locLabel(loc)); }
+      else if (app.bookDraft) app.bookDraft.book.location = loc;
+      popLevels(1); break;
+    }
+  }
+}
+function segExtra(s, v) {
+  const d = app.bookDraft;
+  if (s === 'bk-ownership' && d) d.book.ownership = v;
+  else if (s === 'bk-status' && d) { d.book.readStatus = v; if (v === 'reading' && !d.book.startDate) d.book.startDate = new Date().toISOString().slice(0, 10); if (v === 'done' && !d.book.finishDate) d.book.finishDate = new Date().toISOString().slice(0, 10); }
+  else if (s === 'bk-quick-status') { const b = B().cache.books[cur().id]; if (b) { const nb = { ...b, readStatus: v }; if (v === 'reading' && !nb.startDate) nb.startDate = new Date().toISOString().slice(0, 10); if (v === 'done' && !nb.finishDate) nb.finishDate = new Date().toISOString().slice(0, 10); B().put('books', nb); } return; }
+  else if (s === 'pick-depth') app.pick.depth = +v;
+  else if (s === 'pick-owner') app.pick.owner = v;
+  render();
 }
 
 /* ---------- 匯出與還原 ---------- */
@@ -1092,7 +2054,14 @@ function parseConfig(text) {
 /* ---------- 啟動 ---------- */
 function attach(b) {
   app.B = b;
-  b.onChange(() => { if (app.screen === 'main' && !(cur() && cur().name === 'editor')) render(); });
+  b.onChange(() => {
+    if (app.screen !== 'main' || !cur()) return;
+    const n = cur().name;
+    if (n === 'editor' || n === 'bookEdit') return;
+    if (n === 'scan') { updateScanSheet(); return; }
+    if (n === 'books' && document.activeElement && document.activeElement.id === 'book-q') { const l = $('#book-list'); if (l) l.innerHTML = bookListHTML(); return; }
+    render();
+  });
   b.onWriteError = e => toast(errMsg(e), 'err');
 }
 function enterMain() { app.screen = 'main'; app.tab = 'shelf'; app.stack = [{ name: 'rooms' }]; render(); }
@@ -1159,6 +2128,7 @@ document.addEventListener('click', async e => {
     }
     case 'seg': {
       const s = el.dataset.seg, v = el.dataset.v;
+      if (s.startsWith('bk-') || s.startsWith('pick-')) { segExtra(s, v); break; }
       if (s === 'ed-depth') d.defaultDepth = +v;
       else if (s === 'ed-numbering') d.numbering = v;
       else if (s === 'ed-tool') app.edTool = v;
@@ -1205,14 +2175,18 @@ document.addEventListener('click', async e => {
     case 'export-json': exportJSON(); break;
     case 'export-csv': exportCSV(); break;
     case 'import': $('#import-file').click(); break;
+    default: moreAction(a, el);
   }
 });
 document.addEventListener('input', e => {
+  if (e.target.dataset && e.target.dataset.field) { setDraftField(e.target); return; }
+  if (e.target.id === 'book-q') { app.bookQuery = e.target.value; const l = $('#book-list'); if (l) l.innerHTML = bookListHTML(); return; }
   if (!app.draft) return;
   if (e.target.id === 'ed-code') app.draft.code = e.target.value;
   if (e.target.id === 'ed-name') app.draft.name = e.target.value;
 });
 document.addEventListener('change', e => {
+  if (e.target.tagName === 'SELECT' && e.target.dataset.field) { setDraftField(e.target); return; }
   if (e.target.id === 'import-file' && e.target.files[0]) { importFile(e.target.files[0]); e.target.value = ''; }
 });
 
