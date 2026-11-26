@@ -1,5 +1,5 @@
 // 吋讀 Tsundoku service worker：讓網站可以安裝到手機，並在離線時打開
-const CACHE = 'tsundoku-shell-0.5.2';
+const CACHE = 'tsundoku-shell-0.5.3';
 const SHARE = 'tsundoku-share';
 const RUNTIME = 'tsundoku-runtime';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './logo-mark.png', './favicon-64.png', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
@@ -17,6 +17,35 @@ self.addEventListener('activate', e => {
   );
 });
 
+// 備用：瀏覽器解析不出來時，自己從原始內容裡找出圖片
+function manualMultipart(buf, ctype) {
+  const m = /boundary=(?:"([^"]+)"|([^;]+))/i.exec(ctype || ''); if (!m) return null;
+  const bnd = new TextEncoder().encode('--' + (m[1] || m[2]).trim()), data = new Uint8Array(buf), CRLF2 = [13, 10, 13, 10];
+  const find = (pat, from) => {
+    outer: for (let i = from; i <= data.length - pat.length; i++) {
+      if (data[i] !== pat[0]) continue;
+      for (let j = 1; j < pat.length; j++) if (data[i + j] !== pat[j]) continue outer;
+      return i;
+    }
+    return -1;
+  };
+  let pos = find(bnd, 0);
+  while (pos >= 0) {
+    const start = pos + bnd.length + 2, next = find(bnd, start); if (next < 0) break;
+    const hEnd = find(CRLF2, start);
+    if (hEnd > 0 && hEnd < next) {
+      const head = new TextDecoder().decode(data.slice(start, hEnd));
+      const type = ((/content-type:\s*([^\r\n]+)/i.exec(head) || [])[1] || '').trim();
+      if (/filename=/i.test(head) && (!type || type.startsWith('image/') || type === 'application/octet-stream')) {
+        const body = data.slice(hEnd + 4, next - 2);
+        if (body.length) return new Blob([body], { type: type || 'application/octet-stream' });
+      }
+    }
+    pos = next;
+  }
+  return null;
+}
+
 self.addEventListener('fetch', e => {
   const req = e.request;
   const url = new URL(req.url);
@@ -29,10 +58,14 @@ self.addEventListener('fetch', e => {
       let c = null;
       try {
         c = await caches.open(SHARE);
-        const form = await req.formData();
+        info.ctype = req.headers.get('content-type') || '';
+        const buf = await req.clone().arrayBuffer();
+        info.bytes = buf.byteLength;
+        let form = null;
+        try { form = await req.formData(); } catch (err) { info.parseError = String((err && err.message) || err); }
         let file = null;
         // 不管欄位叫什麼，只要有檔案就收；有些 App 分享的圖片沒有標格式
-        for (const [k, v] of form.entries()) {
+        for (const [k, v] of (form ? form.entries() : [])) {
           if (v && typeof v === 'object' && 'size' in v) {
             info.fields.push({ k, file: true, type: v.type || '', size: v.size, name: v.name || '' });
             if (!file && v.size > 0 && (!v.type || v.type.startsWith('image/') || v.type === 'application/octet-stream')) file = v;
@@ -42,6 +75,7 @@ self.addEventListener('fetch', e => {
             if (t) info.texts[k] = t;
           }
         }
+        if (!file && buf.byteLength > 200) { file = manualMultipart(buf, info.ctype); info.manual = !!file; }
         await c.put('./share-info', new Response(JSON.stringify(info), { headers: { 'content-type': 'application/json' } }));
         if (file) {
           await c.put('./shared-image', new Response(file, { headers: { 'content-type': file.type || 'application/octet-stream' } }));

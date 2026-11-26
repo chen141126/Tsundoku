@@ -592,7 +592,7 @@ button.star{width:34px;height:34px}
 <div id="toasts" aria-live="polite"></div>
 <script type="module">
 /* ========= 吋讀 Tsundoku · 第一階段：地基、書櫃編輯器、匯出備份 ========= */
-const VERSION = '0.5.2';
+const VERSION = '0.5.3';
 const SCHEMA_VERSION = 1;
 const FB_VERSION = '10.12.2';
 const COLS = ['rooms', 'cabinets', 'categories', 'books'];
@@ -3229,7 +3229,7 @@ async function webCover() {
     title: '上網找封面', sheet: true, focus: false,
     body: `<label class="field"><span>搜尋字</span><input id="wc-q" type="search" value="${esc(q0)}" placeholder="書名 作者"></label>
       <div class="grid2"><button type="button" class="btn soft" data-site="google">${ICON.search}Google 圖片</button><button type="button" class="btn soft" data-site="books">${ICON.search}博客來</button></div>
-      <ol class="gb-steps" style="margin-top:12px"><li>按上面的按鈕，會開新分頁搜尋。</li><li>找到對的封面，<b>長按圖片 →「複製圖片」</b>。</li><li>回到吋讀，按「貼上圖片」，第一次會問能不能讀剪貼簿，選允許。</li></ol><p class="small muted" style="margin:-4px 0 0">吋讀裝到手機主畫面的話，也可以長按圖片 →「分享」→ 選「吋讀」，正在編輯的內容會保留。</p>
+      <ol class="gb-steps" style="margin-top:12px"><li>按上面的按鈕，會開新分頁搜尋。</li><li>找到對的封面，<b>長按圖片 →「複製圖片」</b>。</li><li>回到吋讀，圖片會自動貼上。第一次要按「貼上圖片」，並允許讀取剪貼簿。</li></ol>
       <div class="wc-preview" id="wc-prev"><span class="small muted">複製的圖片會出現在這裡</span></div>
       <div class="grid2"><button type="button" class="btn" id="wc-paste">${ICON.paste}貼上圖片</button><button type="button" class="btn" id="wc-file">${ICON.image}從相簿選</button></div>`,
     actions: [{ label: '取消', kind: 'ghost', value: null }, { label: '確定', kind: 'primary', get: () => ({ ok: true }), validate: () => { if (!picked) toast('還沒有圖片', 'err'); return !!picked; } }],
@@ -3259,6 +3259,19 @@ async function webCover() {
         else toast('剪貼簿裡沒有圖片，記得長按圖片選「複製圖片」', 'err');
       });
       el.querySelector('#wc-file').addEventListener('click', async () => { const f = await pickImageFile(); if (f) show(f); });
+      // 從瀏覽器複製圖片回來時，自動貼上（要先允許過讀剪貼簿）
+      let lastSig = '';
+      const autoPaste = async () => {
+        if (!el.isConnected) { document.removeEventListener('visibilitychange', onVis); window.removeEventListener('focus', onVis); return; }
+        if (document.visibilityState !== 'visible') return;
+        try { const st = await navigator.permissions.query({ name: 'clipboard-read' }); if (st.state !== 'granted') return; } catch (e) { return; }
+        const r = await clipboardImage();
+        if (!r.blob) return;
+        const sig = r.blob.size + ':' + r.blob.type; if (sig === lastSig) return;
+        lastSig = sig; await show(r.blob); toast('已貼上剛剛複製的圖片');
+      };
+      const onVis = () => setTimeout(autoPaste, 350);
+      document.addEventListener('visibilitychange', onVis); window.addEventListener('focus', onVis);
       // 電腦上可以直接 Ctrl+V
       el.addEventListener('paste', e => {
         const f = [...(e.clipboardData ? e.clipboardData.files : [])].find(x => x.type.startsWith('image/'));
@@ -3739,7 +3752,9 @@ function shareInfoHTML(info) {
   if (!info) return '<p class="small muted">沒有收到任何內容。</p>';
   const rows = (info.fields || []).map(f => f.file ? `${esc(f.k)}：檔案（${esc(f.type || '不明格式')}，${Math.round((f.size || 0) / 1024)} KB）` : `${esc(f.k)}：${esc(String(f.text || '').slice(0, 160))}`);
   if (info.error) rows.push(`錯誤：${esc(info.error)}`);
-  return `<details class="shareinfo"><summary>吋讀收到的內容</summary><p class="small mono">${rows.length ? rows.join('<br>') : '（空的）'}</p></details>`;
+  if (info.parseError) rows.push(`解析錯誤：${esc(info.parseError)}`);
+  const meta = [info.bytes !== undefined ? `內容大小：${info.bytes} bytes` : '', chromeVer() ? `Chrome ${chromeVer()}` : ''].filter(Boolean).join('・');
+  return `<details class="shareinfo"><summary>吋讀收到的內容</summary><p class="small mono">${rows.length ? rows.join('<br>') : '（空的）'}${meta ? `<br>${meta}` : ''}</p></details>`;
 }
 async function sharedLinkAsCover(url, restored) {
   const ok = await confirmBox('收到的是圖片網址', '這張圖片的網站不讓吋讀直接下載，可以先用網址當封面（要連網才看得到，之後也能再換）。', '用網址當封面');
@@ -3747,7 +3762,15 @@ async function sharedLinkAsCover(url, restored) {
   if (restored && app.bookDraft) { app.bookDraft.book.coverUrl = url; app.bookDraft.book.cover = ''; render(); toast('封面已換好，記得儲存'); return; }
   return chooseBookForImage(null, url);
 }
+const chromeVer = () => (navigator.userAgent.match(/Chrome\/(\d+)/) || [])[1] || '';
 async function handleSharedNonImage(kind, info, restored) {
+  // Android 版 Chrome 的問題：分享的檔案在送進網頁 App 前就被丟掉，只剩空的內容
+  if (kind === 'none' && info && !(info.fields || []).length && (info.bytes === undefined || info.bytes < 300)) {
+    return infoBox('Chrome 把圖片弄丟了', `<p>吋讀收到的分享是空的。這是 Android 版 Chrome 的問題：分享給網頁 App 的圖片，在送進來之前就被丟掉了，吋讀這邊沒辦法補救。</p>
+      <p><b>先改用複製的方式：</b></p>
+      <ol class="gb-steps"><li>編輯頁按「上網找封面」→「Google 圖片」。</li><li>長按圖片 →「複製圖片」。</li><li>關掉分頁回到吋讀，圖片會自動貼上（第一次要按「貼上圖片」並允許讀取剪貼簿）。</li><li>按「確定」。</li></ol>
+      <p class="small muted">Chrome 更新修好之後，分享就能直接用了。</p>${shareInfoHTML(info)}`);
+  }
   if (kind === 'text') {
     const got = await imageFromShareText(info);
     if (got && got.blob) return restored ? sharedToDraft(got.blob) : chooseBookForImage(got.blob);
