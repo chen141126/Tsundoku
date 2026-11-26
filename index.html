@@ -376,7 +376,7 @@ button.star{width:34px;height:34px}
 .shareinfo{margin-top:10px;font-size:13px}
 .shareinfo summary{color:var(--brown);font-weight:700;cursor:pointer}
 .shareinfo p{margin:6px 0 0;word-break:break-all;background:var(--soft);padding:8px 10px;border-radius:10px}
-.dclear{border:0;background:transparent;color:var(--brown);font-size:13px;font-weight:700;padding:2px 4px;border-radius:6px}
+.dclear{border:0;background:transparent;color:var(--brown);font-size:12px;font-weight:400;padding:2px 4px;border-radius:6px}
 .readline{display:flex;align-items:flex-start;gap:8px;margin:12px 2px 0;font-size:14px;color:var(--ink)}
 .readline>.rl{display:flex;flex-direction:column;gap:2px}
 .readsum{color:var(--wood);font-size:13px}
@@ -592,7 +592,7 @@ button.star{width:34px;height:34px}
 <div id="toasts" aria-live="polite"></div>
 <script type="module">
 /* ========= 吋讀 Tsundoku · 第一階段：地基、書櫃編輯器、匯出備份 ========= */
-const VERSION = '0.5.4';
+const VERSION = '0.5.5';
 const SCHEMA_VERSION = 1;
 const FB_VERSION = '10.12.2';
 const COLS = ['rooms', 'cabinets', 'categories', 'books'];
@@ -2875,6 +2875,11 @@ function sortVal(b, key) {
     case 'author': return surnameKey(((b.authors || [])[0] || {}).name);
     case 'publisher': return s(b.publisher);
     case 'series': return b.series ? [s(b.series), n(b.volume) === '' ? 0 : n(b.volume)] : '';
+    case 'category': {   // 類型：從最上層開始一層一層比，有好幾個類型時取排最前面的
+      const cats = B().cache.categories || {};
+      const paths = normCats(b.categories).map(id => { const out = []; let c = cats[id], g = 0; while (c && g++ < 10) { out.unshift(c.name); c = c.parentId ? cats[c.parentId] : null; } return out; });
+      return paths.length ? paths.sort(cmpVal)[0] : '';
+    }
     case 'rating': return b.rating ? Number(b.rating) : '';
     case 'readStatus': return Object.keys(READ_STATUS).indexOf(b.readStatus || 'unread');
     case 'owner': { if (!b.owner) return ''; const i = (B().meta.owners || []).indexOf(b.owner); return i < 0 ? 999 : i; }
@@ -2907,9 +2912,9 @@ function sortBooks(list) {
   });
   return keyed.map(x => x.b);
 }
-// 書櫃裡的順序：作者的姓 → 系列與卷 → 書名，都是正序，沒填的排後面
+// 書櫃裡的順序：作者的姓 → 類型 → 系列與卷 → 書名，都是正序，沒填的排後面
 function shelfOrder(a, b) {
-  for (const k of ['author', 'series', 'title']) {
+  for (const k of ['author', 'category', 'series', 'title']) {
     const x = sortVal(a, k), y = sortVal(b, k), ex = x === '' || x === undefined, ey = y === '' || y === undefined;
     if (ex && ey) continue;
     if (ex) return 1; if (ey) return -1;
