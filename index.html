@@ -373,6 +373,19 @@ button.star{width:34px;height:34px}
 .loaninfo{display:flex;align-items:center;gap:12px}
 .loaninfo .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .status.warn{color:var(--orange)}
+.dclear{border:0;background:transparent;color:var(--brown);font-size:13px;font-weight:700;padding:2px 4px;border-radius:6px}
+.readline{display:flex;align-items:flex-start;gap:8px;margin:12px 2px 0;font-size:14px;color:var(--ink)}
+.readline>.rl{display:flex;flex-direction:column;gap:2px}
+.readsum{color:var(--wood);font-size:13px}
+.pages-inline{flex-direction:row !important;align-items:center;justify-content:space-between;gap:12px}
+.pages-inline>span{display:flex;flex-direction:column;gap:1px}
+.pages-inline small{font-size:12px;font-weight:400;color:var(--wood)}
+.pages-inline input{width:120px;flex:none}
+.checklist{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:8px;font-size:14px}
+.checklist li{display:flex;align-items:flex-start;gap:8px}
+.checklist svg{width:18px;height:18px;flex:none;margin-top:1px}
+.checklist .ok svg{color:#3c8a4f}
+.checklist .bad svg{color:#b4442c}
 .readline{display:flex;align-items:flex-start;gap:8px;margin:12px 2px 0;font-size:14px;color:var(--ink)}
 .readline svg{width:18px;height:18px;flex:none;margin-top:1px;color:var(--wood)}
 .readline b{font-variant-numeric:tabular-nums}
@@ -576,7 +589,7 @@ button.star{width:34px;height:34px}
 <div id="toasts" aria-live="polite"></div>
 <script type="module">
 /* ========= 吋讀 Tsundoku · 第一階段：地基、書櫃編輯器、匯出備份 ========= */
-const VERSION = '0.5.0';
+const VERSION = '0.5.1';
 const SCHEMA_VERSION = 1;
 const FB_VERSION = '10.12.2';
 const COLS = ['rooms', 'cabinets', 'categories', 'books'];
@@ -1160,6 +1173,9 @@ const V = {
       <section class="group"><h2>AI 讀圖</h2><div class="list">
         <button type="button" class="row" data-action="ai-setup"><span class="tx"><b>Gemini 金鑰</b><span>${LS.get(AI_KEY) ? esc('已設定' + (LS.get(AI_MODEL) ? '・' + LS.get(AI_MODEL) : '')) : '還沒設定，讀封底文案和版權頁要用'}</span></span>${LS.get(AI_KEY) ? '<span class="status">可以用</span>' : ''}${ICON.chev}</button>
       </div></section>
+      <section class="group"><h2>分享到吋讀</h2><div class="list">
+        <button type="button" class="row" data-action="share-check"><span class="tx"><b>從別的 App 分享圖片進來</b><span>Android 才有，要先把吋讀裝到主畫面</span></span>${ICON.chev}</button>
+      </div></section>
       <section class="group"><h2>照片回收桶</h2><div class="list">
         <button type="button" class="row" data-action="bin-open"><span class="tx"><b>回收桶</b><span>${esc(binSummary())}</span></span>${ICON.chev}</button>
         <div class="row"><span class="tx"><b>確認資料後，照片移到回收桶</b><span>版權頁、藏書章、封底文案</span></span><button type="button" class="switch" role="switch" aria-checked="${binOn()}" aria-label="確認資料後照片移到回收桶" data-action="bin-toggle"></button></div>
@@ -1370,7 +1386,7 @@ function openCell(cabId, k) {
   const room = B().cache.rooms[c.roomId] || { name: '?' };
   const [r, col] = splitKey(k), d = cellDepth(c, k), label = cellLabel(c, r, col);
   const cellBooks = () => Object.values(B().cache.books).filter(b => b.ownership !== 'wishlist' && b.location && b.location.cabinetId === cabId && b.location.r === r && b.location.c === col)
-    .sort((a, b) => zhColl.compare(String(a.title || ''), String(b.title || '')));
+    .sort(shelfOrder);
   const layerName = i => d === 1 ? '這一格' : i === 1 ? '外層' : i === d ? '內層' : '中間';
   const layerNote = i => d === 1 ? '只有一層' : `第 ${i} 層${i === 1 ? '，靠近你' : i === d ? '，在最後面' : ''}`;
   let layer = 1, picking = false;
@@ -1510,7 +1526,8 @@ function normDate(s) {
 function normLang(code) {
   if (!code) return {};
   const c = String(code).replace('/languages/', '').toLowerCase();
-  if (c.startsWith('zh')) return { language: 'zho', script: /cn|hans|sg/.test(c) ? 'Hans' : 'Hant' };
+  // 書目庫常把台灣的書標成簡體，所以中文一律先算正體，真的是簡體再自己改
+  if (c.startsWith('zh')) return { language: 'zho', script: 'Hant' };
   const base = ISO1[c.split('-')[0]] || ISO1[c];
   if (base === 'zho') return { language: 'zho', script: 'Hant' };
   return base ? { language: base, script: '' } : {};
@@ -2050,7 +2067,9 @@ function scanSheetHTML() {
     const dupBox = d.dup.length ? `<div class="banner warn"><p>這本已經登記過${d.dup.length > 1 ? ` ${d.dup.length} 次` : ''}：${esc(locLabel(d.dup[0].location) || '還沒放到書櫃')}。儲存的話會再多一本。</p></div>` : '';
     return `<div class="sheet-row"><b class="small">${b.isbn ? '剛剛掃到' : '沒有條碼的書'}</b><span class="small muted">這一格已登記 ${n} 本</span></div>${dupBox}
       <div class="result">${coverThumb(b, 'rcover')}<div class="rinfo"><b>${esc(b.title || '書名待補')}</b><span>${esc(meta || (b.isbn ? 'ISBN ' + b.isbn : '可以之後再補資料'))}</span>${draftChip(d)}</div></div>
-      ${d.lookup === 'nobarcode' ? `<label class="field">書名（可以之後再補）<input type="text" data-field="title" value="${esc(b.title)}" placeholder="先拍照也可以"></label>` : ''}
+      ${d.lookup === 'nobarcode'
+        ? `<div class="grid-wide"><label class="field">書名（可以之後再補）<input type="text" data-field="title" value="${esc(b.title)}" placeholder="先拍照也可以"></label><label class="field">頁數<input type="number" inputmode="numeric" data-field="pages" value="${esc(b.pages ?? '')}" placeholder="320"></label></div>`
+        : `<label class="field pages-inline"><span>頁數${b.pages ? '' : '<small>書目裡沒有，可以順手填</small>'}</span><input type="number" inputmode="numeric" data-field="pages" value="${esc(b.pages ?? '')}" placeholder="320"></label>`}
       <div class="slots four">${slotHTML('cover')}${slotHTML('copyright')}${slotHTML('stamp')}${slotHTML('blurb')}</div>
       <div class="save-row"><button type="button" class="btn" data-action="draft-edit">修改資料</button><button type="button" class="btn accent" data-action="draft-save">儲存，掃下一本</button></div>
       <button type="button" class="btn ghost small wide" data-action="draft-discard">不要這本</button>`;
@@ -2184,20 +2203,20 @@ Object.assign(V, {
         <div class="field">擁有狀態${seg('bk-ownership', [['owned', '已收藏'], ['wishlist', '願望清單'], ['loan', '借閱']], tabV)}</div>
         ${tabV === 'loan' ? `<div class="loanbox">${seg('bk-loan-dir', [['out', '借出'], ['in', '借入']], b.loan.dir)}
           <label class="field">${loanIn ? '跟誰借的' : '借給誰'}<input type="text" data-field="loan-person" list="loan-people" value="${esc(b.loan.person || '')}" placeholder="名字"></label>
-          <div class="grid2"><label class="field">借閱日期<input type="date" data-field="loan-date" value="${esc(b.loan.date || '')}"></label><label class="field">預計歸還<input type="date" data-field="loan-due" value="${esc(b.loan.due || '')}"></label></div>
+          <div class="grid2">${dateField('借閱日期', 'loan-date', b.loan.date)}${dateField('預計歸還', 'loan-due', b.loan.due)}</div>
           <datalist id="loan-people">${loanPeople().map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist></div>` : ''}
         <div class="grid-wide"><label class="field">所有者${sel('owner', [['', '未填'], ...ownerOpts.map(o => [o, o])], b.owner)}</label><label class="field">數量<input type="number" inputmode="numeric" min="1" data-field="quantity" value="${esc(b.quantity ?? 1)}"></label></div>
         ${isWish ? '' : `<div class="field">位置<div class="locpick">${b.location ? `<span class="chip code">${esc(locLabel(b.location))}</span>` : '<span class="small muted">還沒選</span>'}<button type="button" class="btn small soft" data-action="pick-book-loc">${b.location ? '更換' : '選擇位置'}</button>${b.location ? '<button type="button" class="btn small ghost" data-action="clear-book-loc">清除</button>' : ''}</div></div>
         <label class="field">位置補充<input type="text" data-field="locationNote" value="${esc(b.locationNote)}" placeholder="例如：第二排靠後面"></label>`}
         ${loanIn ? '' : `<div class="grid-wide"><label class="field">價格<input type="number" inputmode="decimal" data-field="price" value="${esc(b.price ?? '')}"></label><label class="field">幣別${sel('currency', CURRENCIES.map(c => [c, c]), b.currency || 'TWD')}</label></div>`}
-        ${isWish || loanIn ? '' : `<label class="field">購買日期<input type="date" data-field="purchaseDate" value="${esc(b.purchaseDate)}"></label>`}
+        ${isWish || loanIn ? '' : dateField('購買日期', 'purchaseDate', b.purchaseDate)}
         <label class="field">標籤<input type="text" data-field="tagsText" value="${esc((b.tags || []).map(t => '#' + t).join(' '))}" placeholder="#簽名本 #絕版"></label>
       </section>
       <section class="card form">
         <div class="field">評分<span class="star-row">${starsHTML(b.rating || 0, true)}<b>${b.rating || '未評分'}</b>${b.rating ? '<button type="button" class="btn small ghost" data-action="bk-star-clear">清除</button>' : ''}</span></div>
         <div class="field">閱讀狀態${seg('bk-status', Object.entries(READ_STATUS), b.readStatus || 'unread')}</div>
         ${b.readStatus === 'reading' ? `<label class="field">讀到第幾頁<input type="number" inputmode="numeric" data-field="currentPage" value="${esc(b.currentPage ?? '')}"></label>` : ''}
-        <div class="grid2"><label class="field">開始日期<input type="date" data-field="startDate" value="${esc(b.startDate)}"></label><label class="field">完成日期<input type="date" data-field="finishDate" value="${esc(b.finishDate)}"></label></div>
+        <div class="grid2">${dateField('開始日期', 'startDate', b.startDate)}${dateField('完成日期', 'finishDate', b.finishDate)}</div>
         <div class="switch-row"><b>我的最愛</b><button type="button" class="switch" role="switch" aria-checked="${!!b.favorite}" aria-label="我的最愛" data-action="bk-toggle" data-f="favorite"></button></div>
         <label class="field">心得<textarea rows="4" data-field="review">${esc(b.review)}</textarea></label>
       </section>
@@ -2261,6 +2280,7 @@ async function openEditBook(id, replace = false) {
   if (replace) { app.stack[app.stack.length - 1] = { name: 'bookEdit', id }; render(); }
   else go({ name: 'bookEdit', id });
 }
+const dateField = (label, f, v) => `<div class="field"><span class="field-head">${label}<button type="button" class="dclear" data-action="clear-date" data-f="${f}" aria-label="清除${label}">清除</button></span><input type="date" data-field="${f}" value="${esc(v || '')}" aria-label="${label}"></div>`;
 function setDraftField(el) {
   const d = app.bookDraft; if (!d) return;
   const b = d.book, f = el.dataset.field, v = el.value;
@@ -2322,6 +2342,7 @@ async function moreAction(a, el) {
     case 'bin-toggle': B().putMeta({ binOnVerify: !binOn() }); break;
     case 'bin-days': { const v = await dialog({ title: '回收桶保留幾天', vertical: true, actions: [7, 30, 90].map(n => ({ label: `${n} 天${n === binDays() ? '（目前）' : ''}`, kind: n === binDays() ? 'primary' : '', value: n })).concat([{ label: '取消', kind: 'ghost', value: null }]) }); if (v) B().putMeta({ binDays: v }); break; }
     case 'scan-spines': spineScan(); break;
+    case 'share-check': shareCheck(); break;
     case 'view-photo': {
       const p = (app.photoCache[el.dataset.book] || []).find(x => x.id === el.dataset.id); if (!p) return;
       photoViewer(p, 'view');
@@ -2331,6 +2352,12 @@ async function moreAction(a, el) {
     case 'pin-zoom': if (d && d.pin) { d.pin.z = clamp(d.pin.z + Number(el.dataset.z) * 0.5, 1, 3); render(); } break;
     case 'pin-open': if (d && d.pin) openDraftPhoto(d.pin.id); break;
     case 'unpin': if (d) { d.pin = null; render(); } break;
+    case 'clear-date': if (d) {
+      const f = el.dataset.f, b = d.book;
+      if (f === 'loan-date' || f === 'loan-due') { if (b.loan) b.loan[f === 'loan-date' ? 'date' : 'due'] = ''; }
+      else b[f] = '';
+      const inp = el.closest('.field').querySelector('input'); if (inp) inp.value = '';
+    } break;
     case 'web-cover': webCover(); break;
     case 'ai-copyright': aiFromKind('copyright'); break;
     case 'ai-blurb': aiFromKind('blurb'); break;
@@ -2876,6 +2903,16 @@ function sortBooks(list) {
     return zhColl.compare(p.b.title || '', q.b.title || '');
   });
   return keyed.map(x => x.b);
+}
+// 書櫃裡的順序：作者的姓 → 系列與卷 → 書名，都是正序，沒填的排後面
+function shelfOrder(a, b) {
+  for (const k of ['author', 'series', 'title']) {
+    const x = sortVal(a, k), y = sortVal(b, k), ex = x === '' || x === undefined, ey = y === '' || y === undefined;
+    if (ex && ey) continue;
+    if (ex) return 1; if (ey) return -1;
+    const c = cmpVal(x, y); if (c) return c;
+  }
+  return 0;
 }
 function bookInCat(b, cat) {
   const ids = normCats(b.categories);
@@ -3443,20 +3480,21 @@ function parseDay(s) { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})
 function daysBetween(a, b) { const x = parseDay(a), y = parseDay(b); return x && y ? Math.round((y - x) / 864e5) : null; }
 function readingLine(b) {
   const s = b.startDate, f = b.finishDate, st = b.readStatus || 'unread';
-  const parts = [];
+  const parts = []; let head = '';
   if (s && f) {
     const n = daysBetween(s, f);
     if (n !== null && n >= 0) {
       const days = n + 1, pace = st === 'done' && b.pages ? Math.round(b.pages / days) : 0;
-      parts.push(`<b>${esc(s)} → ${esc(f)}</b>`, st === 'dropped' ? `讀了 ${days} 天後放下` : `看了 ${days} 天`);
+      head = `${esc(s)} → ${esc(f)}`;
+      parts.push(st === 'dropped' ? `讀了 ${days} 天後放下` : `看了 ${days} 天`);
       if (pace) parts.push(`平均一天 ${pace} 頁`);
-    } else parts.push(`<b>${esc(s)} → ${esc(f)}</b>`, '日期好像填反了');
+    } else { head = `${esc(s)} → ${esc(f)}`; parts.push('日期好像填反了'); }
   } else if (s) {
     const n = daysBetween(s, todayStr());
-    parts.push(`<b>${esc(s)} 開始讀</b>`);
+    head = `${esc(s)} 開始讀`;
     if (st === 'reading' && n !== null && n >= 0) parts.push(n === 0 ? '今天開始' : `已經 ${n + 1} 天`);
-  } else if (f) parts.push(`<b>${esc(f)} ${st === 'dropped' ? '放下' : '讀完'}</b>`);
-  return parts.length ? `<p class="readline">${ICON.calendar}<span>${parts.join('・')}</span></p>` : '';
+  } else if (f) head = `${esc(f)} ${st === 'dropped' ? '放下' : '讀完'}`;
+  return head ? `<div class="readline">${ICON.calendar}<span class="rl"><b>${head}</b>${parts.length ? `<span class="readsum">${parts.join('・')}</span>` : ''}</span></div>` : '';
 }
 
 /* ---------- 照片回收桶 ---------- */
@@ -3705,6 +3743,40 @@ async function chooseBookForImage(blob) {
   B().put('books', { ...b, cover: r.data, coverUrl: '' });
   switchTab('books'); go({ name: 'book', id: b.id }); toast('封面已換好');
 }
+async function shareCheck() {
+  const done = busyBox('檢查中…');
+  let man = null, swv = '';
+  try { man = await (await fetch('manifest.webmanifest', { cache: 'no-store' })).json(); } catch (e) {}
+  try { const t = await (await fetch('sw.js', { cache: 'no-store' })).text(); swv = (t.match(/tsundoku-shell-([\d.]+)/) || [])[1] || ''; } catch (e) {}
+  done();
+  const hasShare = !!(man && man.share_target && man.share_target.params && man.share_target.params.files);
+  const installed = matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: minimal-ui)').matches;
+  const ctl = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+  const ok = (b, t, f) => `<li class="${b ? 'ok' : 'bad'}">${b ? ICON.check : ICON.close}<span>${b ? t : f}</span></li>`;
+  infoBox('分享到吋讀', `<ul class="checklist">
+      ${ok(hasShare, '網站上的設定檔已經有分享功能', '網站上的設定檔還是舊的：請確認 manifest.webmanifest 有上傳，等幾分鐘再檢查')}
+      ${ok(swv === VERSION, `背景程式是新版（${esc(VERSION)}）`, `背景程式${swv ? `是 ${esc(swv)}` : '讀不到'}，跟網頁版本 ${esc(VERSION)} 不一樣：請確認 sw.js 有上傳`)}
+      ${ok(installed, '現在是從主畫面打開的安裝版', '現在是在瀏覽器分頁裡打開，不是安裝版')}
+    </ul>
+    <p class="small"><b>三項都打勾，但分享選單還是沒有吋讀的話：</b></p>
+    <ol class="gb-steps"><li>從主畫面移除吋讀。</li><li>用 Chrome 打開吋讀的網址，<b>重新整理兩次</b>，讓新版接手。</li><li>Chrome 右上角選單 →「安裝應用程式」。如果只看到「加到主畫面」，選了之後要選「安裝」，不要選「建立捷徑」。</li><li>分享圖片時，吋讀可能排在分享選單的 App 清單後面，要往下捲。</li></ol>
+    ${ctl ? '' : '<p class="small muted">提醒：這一頁目前沒有被背景程式接手，重新整理一次再檢查。</p>'}`);
+}
+async function offerHantFix() {
+  if (B().meta.hantFixDone) return;
+  const list = Object.values(B().cache.books).filter(b => b.language === 'zho' && b.script === 'Hans').sort(shelfOrder);
+  if (!list.length) { B().putMeta({ hantFixDone: true }); return; }
+  const r = await dialog({
+    title: `有 ${list.length} 本書標成簡體中文`, sheet: true, focus: false,
+    body: `<p class="small">之前查書目時，有些正體書被書目庫標成簡體。勾選的書會改成正體中文；真的是簡體的書，請把勾拿掉。</p>
+      <div class="list ailist">${list.map(b => `<label class="airow"><input type="checkbox" data-id="${b.id}" checked><span class="tx"><b>${esc(b.title || '書名待補')}</b><small>${esc([authorsText(b), b.publisher].filter(Boolean).join('・'))}</small></span></label>`).join('')}</div>`,
+    actions: [{ label: '都不用改', kind: 'ghost', value: { none: true } }, { label: '改成正體中文', kind: 'primary', get: el => ({ ids: [...el.querySelectorAll('input[data-id]:checked')].map(i => i.dataset.id) }) }]
+  });
+  if (!r) return;
+  (r.ids || []).forEach(id => { const b = B().cache.books[id]; if (b) B().put('books', { ...b, script: 'Hant' }); });
+  B().putMeta({ hantFixDone: true });
+  if (r.ids && r.ids.length) toast(`已把 ${r.ids.length} 本改成正體中文`);
+}
 async function afterEnterMain() {
   setTimeout(() => { try { purgeBin(); } catch (e) {} }, 3000);
   const share = new URLSearchParams(location.search).get('share');
@@ -3718,7 +3790,8 @@ async function afterEnterMain() {
     return chooseBookForImage(blob);
   }
   if (share === 'none' || share === 'error') toast('只收得到圖片，請分享圖片本身', 'err');
-  if (fresh && saved.dirty && await confirmBox('繼續上次還沒儲存的編輯？', `《${saved.d.book.title || '書名待補'}》有還沒儲存的修改。`, '繼續編輯')) restoreDraft(saved);
+  if (fresh && saved.dirty && await confirmBox('繼續上次還沒儲存的編輯？', `《${saved.d.book.title || '書名待補'}》有還沒儲存的修改。`, '繼續編輯')) { restoreDraft(saved); return; }
+  setTimeout(() => { if (!openDialogs.length && cur() && cur().name !== 'bookEdit') offerHantFix(); }, 800);
 }
 
 /* ---------- 匯出與還原 ---------- */

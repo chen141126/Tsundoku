@@ -1,11 +1,12 @@
 // 吋讀 Tsundoku service worker：讓網站可以安裝到手機，並在離線時打開
-const CACHE = 'tsundoku-shell-0.5.0';
+const CACHE = 'tsundoku-shell-0.5.1';
 const SHARE = 'tsundoku-share';
 const RUNTIME = 'tsundoku-runtime';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './logo-mark.png', './favicon-64.png', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  // cache: 'reload'：不要拿瀏覽器暫存的舊檔案
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
@@ -38,6 +39,15 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
 
   if (url.origin === location.origin) {
+    // App 設定檔：先上網拿最新版，不然 Chrome 安裝時會讀到舊的（例如沒有分享功能）
+    if (url.pathname.endsWith('/manifest.webmanifest')) {
+      e.respondWith(
+        fetch(req, { cache: 'no-store' })
+          .then(res => { const copy = res.clone(); caches.open(CACHE).then(c => c.put('./manifest.webmanifest', copy)); return res; })
+          .catch(() => caches.match('./manifest.webmanifest'))
+      );
+      return;
+    }
     // 網頁本身：先上網拿最新版，離線時用快取
     if (req.mode === 'navigate') {
       e.respondWith(
