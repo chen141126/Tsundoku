@@ -68,6 +68,7 @@ h1.title .nick{font-size:20px;font-weight:500;color:var(--wood);margin-left:10px
 .btn.ghost{background:transparent;border-color:transparent}
 .btn.ghost:hover{background:var(--soft)}
 .btn.small{min-height:38px;padding:0 14px;font-size:14px;border-radius:12px}
+.btn.clr{color:var(--orange)}
 .btn.wide{width:100%}
 .btn svg{width:18px;height:18px}
 .link{background:none;border:0;padding:0;color:var(--brown);text-decoration:underline;font-weight:700}
@@ -592,7 +593,7 @@ button.star{width:34px;height:34px}
 <div id="toasts" aria-live="polite"></div>
 <script type="module">
 /* ========= 吋讀 Tsundoku · 第一階段：地基、書櫃編輯器、匯出備份 ========= */
-const VERSION = '0.5.5';
+const VERSION = '0.5.6';
 const SCHEMA_VERSION = 1;
 const FB_VERSION = '10.12.2';
 const COLS = ['rooms', 'cabinets', 'categories', 'books'];
@@ -2209,14 +2210,14 @@ Object.assign(V, {
           <div class="grid2">${dateField('借閱日期', 'loan-date', b.loan.date)}${dateField('預計歸還', 'loan-due', b.loan.due)}</div>
           <datalist id="loan-people">${loanPeople().map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist></div>` : ''}
         <div class="grid-wide"><label class="field">所有者${sel('owner', [['', '未填'], ...ownerOpts.map(o => [o, o])], b.owner)}</label><label class="field">數量<input type="number" inputmode="numeric" min="1" data-field="quantity" value="${esc(b.quantity ?? 1)}"></label></div>
-        ${isWish ? '' : `<div class="field">位置<div class="locpick">${b.location ? `<span class="chip code">${esc(locLabel(b.location))}</span>` : '<span class="small muted">還沒選</span>'}<button type="button" class="btn small soft" data-action="pick-book-loc">${b.location ? '更換' : '選擇位置'}</button>${b.location ? '<button type="button" class="btn small ghost" data-action="clear-book-loc">清除</button>' : ''}</div></div>
+        ${isWish ? '' : `<div class="field">位置<div class="locpick">${b.location ? `<span class="chip code">${esc(locLabel(b.location))}</span>` : '<span class="small muted">還沒選</span>'}<button type="button" class="btn small soft" data-action="pick-book-loc">${b.location ? '更換' : '選擇位置'}</button>${b.location ? '<button type="button" class="btn small ghost clr" data-action="clear-book-loc">清除</button>' : ''}</div></div>
         <label class="field">位置補充<input type="text" data-field="locationNote" value="${esc(b.locationNote)}" placeholder="例如：第二排靠後面"></label>`}
         ${loanIn ? '' : `<div class="grid-wide"><label class="field">價格<input type="number" inputmode="decimal" data-field="price" value="${esc(b.price ?? '')}"></label><label class="field">幣別${sel('currency', CURRENCIES.map(c => [c, c]), b.currency || 'TWD')}</label></div>`}
         ${isWish || loanIn ? '' : dateField('購買日期', 'purchaseDate', b.purchaseDate)}
         <label class="field">標籤<input type="text" data-field="tagsText" value="${esc((b.tags || []).map(t => '#' + t).join(' '))}" placeholder="#簽名本 #絕版"></label>
       </section>
       <section class="card form">
-        <div class="field">評分<span class="star-row">${starsHTML(b.rating || 0, true)}<b>${b.rating || '未評分'}</b>${b.rating ? '<button type="button" class="btn small ghost" data-action="bk-star-clear">清除</button>' : ''}</span></div>
+        <div class="field">評分<span class="star-row">${starsHTML(b.rating || 0, true)}<b>${b.rating || '未評分'}</b>${b.rating ? '<button type="button" class="btn small ghost clr" data-action="bk-star-clear">清除</button>' : ''}</span></div>
         <div class="field">閱讀狀態${seg('bk-status', Object.entries(READ_STATUS), b.readStatus || 'unread')}</div>
         ${b.readStatus === 'reading' ? `<label class="field">讀到第幾頁<input type="number" inputmode="numeric" data-field="currentPage" value="${esc(b.currentPage ?? '')}"></label>` : ''}
         <div class="grid2">${dateField('開始日期', 'startDate', b.startDate)}${dateField('完成日期', 'finishDate', b.finishDate)}</div>
@@ -2840,7 +2841,7 @@ async function gbooksSetup() {
 /* ---------- 書籍頁：顯示模式、排序、篩選 ---------- */
 const SORT_KEYS = [
   ['addedAt', '加入日期', 'date'], ['title', '書名', 'text'], ['author', '作者的姓氏', 'text'], ['publisher', '出版商', 'text'],
-  ['publishedDate', '出版日期', 'date'], ['series', '系列與卷', 'text'], ['rating', '評分', 'num'], ['readStatus', '閱讀狀態', 'enum'],
+  ['publishedDate', '出版日期', 'date'], ['series', '系列與卷', 'text'], ['category', '類型', 'text'], ['rating', '評分', 'num'], ['readStatus', '閱讀狀態', 'enum'],
   ['owner', '所有者', 'enum'], ['location', '位置', 'enum'], ['price', '價格', 'num'], ['pages', '頁數', 'num'],
   ['purchaseDate', '購買日期', 'date'], ['updatedAt', '最後修改', 'date']
 ];
