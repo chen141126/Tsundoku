@@ -39,7 +39,16 @@
         {
           "name": "image",
           "accept": [
-            "image/*"
+            "image/*",
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/gif",
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp",
+            ".gif"
           ]
         }
       ]

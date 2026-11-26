@@ -1,5 +1,5 @@
 // 吋讀 Tsundoku service worker：讓網站可以安裝到手機，並在離線時打開
-const CACHE = 'tsundoku-shell-0.5.1';
+const CACHE = 'tsundoku-shell-0.5.2';
 const SHARE = 'tsundoku-share';
 const RUNTIME = 'tsundoku-runtime';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './logo-mark.png', './favicon-64.png', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
@@ -25,14 +25,34 @@ self.addEventListener('fetch', e => {
   if (req.method === 'POST' && url.origin === location.origin && url.pathname.endsWith('/share-target')) {
     e.respondWith((async () => {
       const back = q => Response.redirect(new URL('./?share=' + q, self.registration.scope).href, 303);
+      const info = { at: new Date().toISOString(), fields: [], texts: {} };
+      let c = null;
       try {
+        c = await caches.open(SHARE);
         const form = await req.formData();
-        const file = form.getAll('image').find(f => f && typeof f === 'object' && String(f.type).startsWith('image/'));
-        if (!file) return back('none');
-        const c = await caches.open(SHARE);
-        await c.put('./shared-image', new Response(file, { headers: { 'content-type': file.type } }));
-        return back('1');
-      } catch (err) { return back('error'); }
+        let file = null;
+        // 不管欄位叫什麼，只要有檔案就收；有些 App 分享的圖片沒有標格式
+        for (const [k, v] of form.entries()) {
+          if (v && typeof v === 'object' && 'size' in v) {
+            info.fields.push({ k, file: true, type: v.type || '', size: v.size, name: v.name || '' });
+            if (!file && v.size > 0 && (!v.type || v.type.startsWith('image/') || v.type === 'application/octet-stream')) file = v;
+          } else {
+            const t = String(v || '');
+            info.fields.push({ k, text: t.slice(0, 400) });
+            if (t) info.texts[k] = t;
+          }
+        }
+        await c.put('./share-info', new Response(JSON.stringify(info), { headers: { 'content-type': 'application/json' } }));
+        if (file) {
+          await c.put('./shared-image', new Response(file, { headers: { 'content-type': file.type || 'application/octet-stream' } }));
+          return back('1');
+        }
+        return back(Object.keys(info.texts).length ? 'text' : 'none');
+      } catch (err) {
+        info.error = String((err && err.message) || err);
+        try { if (c) await c.put('./share-info', new Response(JSON.stringify(info), { headers: { 'content-type': 'application/json' } })); } catch (e2) {}
+        return back('error');
+      }
     })());
     return;
   }

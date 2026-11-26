@@ -373,6 +373,9 @@ button.star{width:34px;height:34px}
 .loaninfo{display:flex;align-items:center;gap:12px}
 .loaninfo .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .status.warn{color:var(--orange)}
+.shareinfo{margin-top:10px;font-size:13px}
+.shareinfo summary{color:var(--brown);font-weight:700;cursor:pointer}
+.shareinfo p{margin:6px 0 0;word-break:break-all;background:var(--soft);padding:8px 10px;border-radius:10px}
 .dclear{border:0;background:transparent;color:var(--brown);font-size:13px;font-weight:700;padding:2px 4px;border-radius:6px}
 .readline{display:flex;align-items:flex-start;gap:8px;margin:12px 2px 0;font-size:14px;color:var(--ink)}
 .readline>.rl{display:flex;flex-direction:column;gap:2px}
@@ -589,7 +592,7 @@ button.star{width:34px;height:34px}
 <div id="toasts" aria-live="polite"></div>
 <script type="module">
 /* ========= 吋讀 Tsundoku · 第一階段：地基、書櫃編輯器、匯出備份 ========= */
-const VERSION = '0.5.1';
+const VERSION = '0.5.2';
 const SCHEMA_VERSION = 1;
 const FB_VERSION = '10.12.2';
 const COLS = ['rooms', 'cabinets', 'categories', 'books'];
@@ -3674,9 +3677,10 @@ function rememberRecent(id) {
 }
 function saveDraftForLater() {
   const d = app.bookDraft;
-  if (!d || d.origin === 'scan' || !cur() || cur().name !== 'bookEdit') return;
+  if (!d || !cur() || cur().name !== 'bookEdit') return;
   const slim = { ...d, pin: null, photos: d.photos.map(p => p.isNew ? p : { id: p.id, kind: p.kind, isNew: false }) };
-  const rec = { at: nowISO(), d: slim, orig: app.bookDraftOrig, dirty: draftSig(d) !== app.bookDraftOrig };
+  const m = $('#main');
+  const rec = { at: nowISO(), d: slim, orig: app.bookDraftOrig, dirty: draftSig(d) !== app.bookDraftOrig, scroll: m ? m.scrollTop : 0 };
   try { localStorage.setItem(DRAFT_KEY, JSON.stringify(rec)); }
   catch (e) { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...rec, d: { ...slim, photos: slim.photos.filter(p => !p.isNew) } })); } catch (e2) {} }
 }
@@ -3691,9 +3695,14 @@ async function restoreDraft(saved) {
     d.photos = [...ps.filter(p => keep.has(p.id) && !p.trashedAt).map(p => ({ ...p, isNew: false })), ...d.photos.filter(p => p.isNew)];
   }
   app.bookDraft = d; app.bookDraftOrig = saved.orig;
-  switchTab('books');
-  if (d.isNew) go({ name: 'bookEdit' });
-  else { go({ name: 'book', id: d.book.id }); go({ name: 'bookEdit', id: d.book.id }); }
+  if (d.origin === 'scan') { switchTab('scan'); app.scan.status = 'draft'; go({ name: 'bookEdit' }); }
+  else {
+    switchTab('books');
+    if (d.isNew) go({ name: 'bookEdit' });
+    else { go({ name: 'book', id: d.book.id }); go({ name: 'bookEdit', id: d.book.id }); }
+  }
+  const y = saved.scroll || 0;
+  requestAnimationFrame(() => { const m = $('#main'); if (m) m.scrollTop = y; });
   return true;
 }
 async function takeSharedImage() {
@@ -3704,6 +3713,50 @@ async function takeSharedImage() {
     return blob;
   } catch (e) { return null; }
 }
+async function takeShareInfo() {
+  try {
+    const c = await caches.open('tsundoku-share'), r = await c.match('./share-info');
+    if (!r) return null;
+    const j = await r.json(); await c.delete('./share-info');
+    return j;
+  } catch (e) { return null; }
+}
+// 分享進來的是網址時，盡量找出圖片：Google 的 imgres 連結裡有 imgurl，網站允許的話直接下載
+async function imageFromShareText(info) {
+  const all = Object.values((info && info.texts) || {}).join(' ');
+  const urls = [...all.matchAll(/https?:\/\/[^\s"'<>]+/g)].map(m => m[0]);
+  for (let u of urls) {
+    try { const x = new URL(u); const iu = x.searchParams.get('imgurl') || x.searchParams.get('mediaurl'); if (iu) u = iu; } catch (e) {}
+    try {
+      const r = await fetch(u, { mode: 'cors' }), t = r.headers.get('content-type') || '';
+      if (r.ok && t.startsWith('image/')) return { blob: await r.blob(), url: u };
+    } catch (e) {}
+    if (/\.(jpe?g|png|webp|gif)(\?|$)/i.test(u) || /encrypted-tbn\d*\.gstatic\.com|\/images\?q=tbn/.test(u)) return { url: u, linkOnly: true };
+  }
+  return null;
+}
+function shareInfoHTML(info) {
+  if (!info) return '<p class="small muted">沒有收到任何內容。</p>';
+  const rows = (info.fields || []).map(f => f.file ? `${esc(f.k)}：檔案（${esc(f.type || '不明格式')}，${Math.round((f.size || 0) / 1024)} KB）` : `${esc(f.k)}：${esc(String(f.text || '').slice(0, 160))}`);
+  if (info.error) rows.push(`錯誤：${esc(info.error)}`);
+  return `<details class="shareinfo"><summary>吋讀收到的內容</summary><p class="small mono">${rows.length ? rows.join('<br>') : '（空的）'}</p></details>`;
+}
+async function sharedLinkAsCover(url, restored) {
+  const ok = await confirmBox('收到的是圖片網址', '這張圖片的網站不讓吋讀直接下載，可以先用網址當封面（要連網才看得到，之後也能再換）。', '用網址當封面');
+  if (!ok) return;
+  if (restored && app.bookDraft) { app.bookDraft.book.coverUrl = url; app.bookDraft.book.cover = ''; render(); toast('封面已換好，記得儲存'); return; }
+  return chooseBookForImage(null, url);
+}
+async function handleSharedNonImage(kind, info, restored) {
+  if (kind === 'text') {
+    const got = await imageFromShareText(info);
+    if (got && got.blob) return restored ? sharedToDraft(got.blob) : chooseBookForImage(got.blob);
+    if (got && got.url) return sharedLinkAsCover(got.url, restored);
+  }
+  infoBox(kind === 'text' ? '收到的是網址，不是圖片' : '沒有收到圖片', `<p>分享時要分享<b>圖片本身</b>：</p>
+    <ol class="gb-steps"><li>在 Google 圖片要先點開大圖。</li><li>長按大圖本身，選「分享圖片」。</li><li>不要按 Google 圖片下面的「分享」按鈕，那個分享的是網址。</li></ol>
+    <p class="small muted">還是不行的話，可以改用「複製圖片」再到吋讀按「貼上圖片」，或把下面收到的內容截圖給我看。</p>${shareInfoHTML(info)}`);
+}
 async function sharedToDraft(blob) {
   let cv; try { cv = await loadImageFile(blob); } catch (e) { toast('這張圖片打不開', 'err'); return; }
   const r = await cropEditor(cv, 'cover');
@@ -3711,9 +3764,10 @@ async function sharedToDraft(blob) {
   app.bookDraft.book.cover = r.data; app.bookDraft.book.coverUrl = '';
   toast('封面已換好，記得儲存'); render();
 }
-async function chooseBookForImage(blob) {
-  let cv; try { cv = await loadImageFile(blob); } catch (e) { toast('這張圖片打不開', 'err'); return; }
-  const preview = cv.toDataURL('image/jpeg', 0.8);
+async function chooseBookForImage(blob, linkUrl = '') {
+  let cv = null;
+  if (blob) { try { cv = await loadImageFile(blob); } catch (e) { toast('這張圖片打不開', 'err'); return; } }
+  const preview = cv ? cv.toDataURL('image/jpeg', 0.8) : linkUrl;
   const recent = (LS.get(RECENT_KEY) || []).map(id => B().cache.books[id]).filter(Boolean);
   const res = await dialog({
     title: '收到一張圖片', sheet: true, focus: false,
@@ -3734,13 +3788,13 @@ async function chooseBookForImage(blob) {
     }
   });
   if (!res) return;
-  const r = await cropEditor(cv, 'cover'); if (!r) return;
+  const r = cv ? await cropEditor(cv, 'cover') : { data: '', url: linkUrl }; if (!r) return;
   if (res.add) {
-    const dd = draftFromData({}, 'list'); dd.lookup = null; dd.book.cover = r.data; setDraft(dd);
+    const dd = draftFromData({}, 'list'); dd.lookup = null; dd.book.cover = r.data; dd.book.coverUrl = r.data ? '' : linkUrl; setDraft(dd);
     switchTab('books'); go({ name: 'bookEdit' }); toast('先填書名，再儲存'); return;
   }
   const b = B().cache.books[res.id]; if (!b) return;
-  B().put('books', { ...b, cover: r.data, coverUrl: '' });
+  B().put('books', { ...b, cover: r.data, coverUrl: r.data ? '' : linkUrl });
   switchTab('books'); go({ name: 'book', id: b.id }); toast('封面已換好');
 }
 async function shareCheck() {
@@ -3783,13 +3837,16 @@ async function afterEnterMain() {
   if (share !== null) { try { history.replaceState({ tsundoku: true }, '', location.pathname); } catch (e) {} }
   const saved = app.savedDraft; app.savedDraft = null;
   const fresh = saved && saved.d && Date.now() - new Date(saved.at).getTime() < 864e5;
-  if (share === '1') {
-    const blob = await takeSharedImage();
-    if (!blob) { toast('沒有收到圖片', 'err'); return; }
-    if (fresh && await restoreDraft(saved)) return sharedToDraft(blob);
-    return chooseBookForImage(blob);
+  if (share !== null) {
+    // 分享會讓 App 重新打開：剛剛在編輯的書先放回去，不管有沒有改過
+    const restored = !!(saved && saved.d && Date.now() - new Date(saved.at).getTime() < 3 * 3600e3) && await restoreDraft(saved);
+    if (share === '1') {
+      const blob = await takeSharedImage(); takeShareInfo();
+      if (blob) return restored ? sharedToDraft(blob) : chooseBookForImage(blob);
+      return handleSharedNonImage('none', null, restored);
+    }
+    return handleSharedNonImage(share, await takeShareInfo(), restored);
   }
-  if (share === 'none' || share === 'error') toast('只收得到圖片，請分享圖片本身', 'err');
   if (fresh && saved.dirty && await confirmBox('繼續上次還沒儲存的編輯？', `《${saved.d.book.title || '書名待補'}》有還沒儲存的修改。`, '繼續編輯')) { restoreDraft(saved); return; }
   setTimeout(() => { if (!openDialogs.length && cur() && cur().name !== 'bookEdit') offerHantFix(); }, 800);
 }
