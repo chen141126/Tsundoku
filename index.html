@@ -592,7 +592,7 @@ button.star{width:34px;height:34px}
 <div id="toasts" aria-live="polite"></div>
 <script type="module">
 /* ========= 吋讀 Tsundoku · 第一階段：地基、書櫃編輯器、匯出備份 ========= */
-const VERSION = '0.5.3';
+const VERSION = '0.5.4';
 const SCHEMA_VERSION = 1;
 const FB_VERSION = '10.12.2';
 const COLS = ['rooms', 'cabinets', 'categories', 'books'];
@@ -3220,24 +3220,36 @@ async function clipboardImage() {
   for (const it of items) if (it.types.includes('text/plain')) { const s = (await (await it.getType('text/plain')).text()).trim(); if (/^https?:\/\//.test(s)) return { url: s }; }
   return { err: 'empty' };
 }
-async function webCover() {
-  const d = app.bookDraft; if (!d) return;
-  const b = d.book, firstAuthor = ((b.authors || []).find(a => a.name) || {}).name || '';
-  const q0 = [b.title, firstAuthor].filter(Boolean).join(' ');
-  let picked = null;
+// opt.share：分享沒收到圖片時用同一個畫面補救；opt.back 是分享進來的網頁網址，可以回去複製
+async function webCover(opt = {}) {
+  const d = app.bookDraft; if (!d && !opt.share) return;
+  let backQ = ''; try { const bu = new URL(opt.back); if (/(^|\.)google\./.test(bu.hostname)) backQ = bu.searchParams.get('q') || ''; } catch (e) {}
+  const b = d ? d.book : {}, firstAuthor = ((b.authors || []).find(a => a.name) || {}).name || '';
+  const q0 = [b.title, firstAuthor].filter(Boolean).join(' ') || backQ;
+  const backIsImg = /(^|\.)google\.[^/]+\/search/.test(String(opt.back || '').replace(/^https?:\/\//, '')) || /[#&](sv|imgrc)=/.test(opt.back || '');
+  let picked = null, pickedBlob = null;
+  const shareNote = !opt.share ? '' : opt.back
+    ? `<p class="small" style="margin-top:0">吋讀只收到網頁網址，沒收到圖片（Android 版 Chrome 目前會把分享給網頁 App 的圖片弄丟，吋讀這邊沒辦法修）。改用複製的方式：</p>
+      <button type="button" class="btn primary wide" id="wc-back">${ICON.globe}${backIsImg ? '回到剛才的圖片' : '回到剛才的網頁'}</button>
+      <ol class="gb-steps" style="margin-top:12px"><li>按上面的按鈕，回到剛才的${backIsImg ? '圖片' : '網頁'}。</li><li><b>長按圖片 →「複製圖片」</b>（不要選「分享圖片」）。</li><li>回到吋讀，圖片會自動貼上。第一次要按「貼上圖片」，並允許讀取剪貼簿。</li></ol>
+      <p class="small muted" style="margin:14px 0 6px">或重新搜尋：</p>`
+    : `<p class="small" style="margin-top:0">吋讀收到的分享是空的：Android 版 Chrome 目前會把分享給網頁 App 的圖片弄丟，吋讀這邊沒辦法補救。改用<b>複製圖片</b>的方式：</p>`;
   const res = await dialog({
-    title: '上網找封面', sheet: true, focus: false,
-    body: `<label class="field"><span>搜尋字</span><input id="wc-q" type="search" value="${esc(q0)}" placeholder="書名 作者"></label>
+    title: !opt.share ? '上網找封面' : opt.back ? '圖片沒有傳過來' : 'Chrome 把圖片弄丟了', sheet: true, focus: false,
+    body: `${shareNote}<label class="field"><span>搜尋字</span><input id="wc-q" type="search" value="${esc(q0)}" placeholder="書名 作者"></label>
       <div class="grid2"><button type="button" class="btn soft" data-site="google">${ICON.search}Google 圖片</button><button type="button" class="btn soft" data-site="books">${ICON.search}博客來</button></div>
-      <ol class="gb-steps" style="margin-top:12px"><li>按上面的按鈕，會開新分頁搜尋。</li><li>找到對的封面，<b>長按圖片 →「複製圖片」</b>。</li><li>回到吋讀，圖片會自動貼上。第一次要按「貼上圖片」，並允許讀取剪貼簿。</li></ol>
+      ${opt.back ? '' : `<ol class="gb-steps" style="margin-top:12px"><li>按上面的按鈕，會開新分頁搜尋。</li><li>找到對的封面，<b>長按圖片 →「複製圖片」</b>${opt.share ? '（不要選「分享圖片」）' : ''}。</li><li>回到吋讀，圖片會自動貼上。第一次要按「貼上圖片」，並允許讀取剪貼簿。</li></ol>`}
       <div class="wc-preview" id="wc-prev"><span class="small muted">複製的圖片會出現在這裡</span></div>
-      <div class="grid2"><button type="button" class="btn" id="wc-paste">${ICON.paste}貼上圖片</button><button type="button" class="btn" id="wc-file">${ICON.image}從相簿選</button></div>`,
+      <div class="grid2"><button type="button" class="btn" id="wc-paste">${ICON.paste}貼上圖片</button><button type="button" class="btn" id="wc-file">${ICON.image}從相簿選</button></div>
+      ${opt.share ? shareInfoHTML(opt.info) : ''}`,
     actions: [{ label: '取消', kind: 'ghost', value: null }, { label: '確定', kind: 'primary', get: () => ({ ok: true }), validate: () => { if (!picked) toast('還沒有圖片', 'err'); return !!picked; } }],
     onOpen: el => {
       const prev = el.querySelector('#wc-prev');
+      const backBtn = el.querySelector('#wc-back');
+      if (backBtn) backBtn.addEventListener('click', () => window.open(opt.back, '_blank', 'noopener'));
       const show = async blob => {
         try {
-          picked = await loadImageFile(blob);
+          picked = await loadImageFile(blob); pickedBlob = blob;
           prev.innerHTML = `<img src="${picked.toDataURL('image/jpeg', 0.85)}" alt="準備用的封面">`;
           prev.classList.add('has');
         } catch (e) { toast('這張圖片打不開，換一張試試', 'err'); }
@@ -3279,10 +3291,11 @@ async function webCover() {
       });
     }
   });
-  if (!res || !picked || !app.bookDraft) return;
+  if (!res || !picked) return;
+  if (!app.bookDraft) return opt.share && pickedBlob ? chooseBookForImage(pickedBlob) : undefined;
   const r = await cropEditor(picked, 'cover');
   if (!r || !app.bookDraft) return;
-  d.book.cover = r.data; d.book.coverUrl = '';
+  app.bookDraft.book.cover = r.data; app.bookDraft.book.coverUrl = '';
   toast('封面已換好，記得儲存'); render();
 }
 
@@ -3739,7 +3752,7 @@ async function imageFromShareText(info) {
   const all = Object.values((info && info.texts) || {}).join(' ');
   const urls = [...all.matchAll(/https?:\/\/[^\s"'<>]+/g)].map(m => m[0]);
   for (let u of urls) {
-    try { const x = new URL(u); const iu = x.searchParams.get('imgurl') || x.searchParams.get('mediaurl'); if (iu) u = iu; } catch (e) {}
+    try { const x = new URL(u); const iu = x.searchParams.get('imgurl') || x.searchParams.get('mediaurl'); if (iu) u = iu; else if (/(^|\.)google\./.test(x.hostname) && x.pathname === '/search') continue; } catch (e) {}
     try {
       const r = await fetch(u, { mode: 'cors' }), t = r.headers.get('content-type') || '';
       if (r.ok && t.startsWith('image/')) return { blob: await r.blob(), url: u };
@@ -3765,18 +3778,16 @@ async function sharedLinkAsCover(url, restored) {
 const chromeVer = () => (navigator.userAgent.match(/Chrome\/(\d+)/) || [])[1] || '';
 async function handleSharedNonImage(kind, info, restored) {
   // Android 版 Chrome 的問題：分享的檔案在送進網頁 App 前就被丟掉，只剩空的內容
-  if (kind === 'none' && info && !(info.fields || []).length && (info.bytes === undefined || info.bytes < 300)) {
-    return infoBox('Chrome 把圖片弄丟了', `<p>吋讀收到的分享是空的。這是 Android 版 Chrome 的問題：分享給網頁 App 的圖片，在送進來之前就被丟掉了，吋讀這邊沒辦法補救。</p>
-      <p><b>先改用複製的方式：</b></p>
-      <ol class="gb-steps"><li>編輯頁按「上網找封面」→「Google 圖片」。</li><li>長按圖片 →「複製圖片」。</li><li>關掉分頁回到吋讀，圖片會自動貼上（第一次要按「貼上圖片」並允許讀取剪貼簿）。</li><li>按「確定」。</li></ol>
-      <p class="small muted">Chrome 更新修好之後，分享就能直接用了。</p>${shareInfoHTML(info)}`);
-  }
+  if (kind === 'none' && info && !(info.fields || []).length && (info.bytes === undefined || info.bytes < 300)) return webCover({ share: true, info });
   if (kind === 'text') {
     const got = await imageFromShareText(info);
     if (got && got.blob) return restored ? sharedToDraft(got.blob) : chooseBookForImage(got.blob);
     if (got && got.url) return sharedLinkAsCover(got.url, restored);
+    // 只收到網頁網址（Chrome 長按「分享圖片」時，圖片被丟掉、只剩網址）：讓她回去改用複製
+    const page = (Object.values((info && info.texts) || {}).join(' ').match(/https?:\/\/[^\s"'<>]+/) || [])[0];
+    if (page) return webCover({ share: true, info, back: page });
   }
-  infoBox(kind === 'text' ? '收到的是網址，不是圖片' : '沒有收到圖片', `<p>分享時要分享<b>圖片本身</b>：</p>
+  infoBox(kind === 'text' ? '收到的是文字，不是圖片' : '沒有收到圖片', `<p>分享時要分享<b>圖片本身</b>：</p>
     <ol class="gb-steps"><li>在 Google 圖片要先點開大圖。</li><li>長按大圖本身，選「分享圖片」。</li><li>不要按 Google 圖片下面的「分享」按鈕，那個分享的是網址。</li></ol>
     <p class="small muted">還是不行的話，可以改用「複製圖片」再到吋讀按「貼上圖片」，或把下面收到的內容截圖給我看。</p>${shareInfoHTML(info)}`);
 }
