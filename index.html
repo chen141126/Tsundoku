@@ -630,7 +630,7 @@ button.star{width:34px;height:34px}
 <div id="toasts" aria-live="polite"></div>
 <script type="module">
 /* ========= 吋讀 Tsundoku · 第一階段：地基、書櫃編輯器、匯出備份 ========= */
-const VERSION = '0.6.2';
+const VERSION = '0.6.3';
 const SCHEMA_VERSION = 1;
 const FB_VERSION = '10.12.2';
 const COLS = ['rooms', 'cabinets', 'categories', 'books'];
@@ -2244,7 +2244,7 @@ class LibraryBase {
     if (!this.canEdit) return this._denied();
     Object.assign(this.meta, clone(patch)); this._setMeta(clone(patch)); this._emit();
   }
-  /* --- 小圈圈：大家平等；被邀請的人要按接受；成員完全一樣的只能有一個 --- */
+  /* --- 小圈圈：大家平等；被邀請的人要按接受；可以只有自己；成員一樣的會提醒（不擋） --- */
   dupCircle(uids, exceptId) {
     return Object.values(this.circles).find(c => c.id !== exceptId && sameSet([...(c.members || []), ...(c.pending || [])], uids));
   }
@@ -5760,7 +5760,7 @@ async function bookBinManage() {
 }
 
 /* ---------- 第六階段：小圈圈 ---------- */
-// 大家平等；被邀請的人要按接受；成員完全一樣的小圈圈只能有一個；管理者看不到有哪些小圈圈
+// 大家平等；被邀請的人要按接受；可以只有自己一個人；成員一樣的小圈圈會提醒；管理者看不到有哪些小圈圈
 function circlesHTML() {
   const b = B(), mine = b.myCircles().sort((x, y) => zhColl.compare(x.name || '', y.name || '')), inv = b.myInvites();
   const names = c => (c.members || []).map(personName).join('、');
@@ -5768,27 +5768,27 @@ function circlesHTML() {
   return `<section class="group"><h2>小圈圈</h2><div class="list">
     ${inv.map(c => `<div class="row"><span class="ic">${ICON.lock}</span><span class="tx"><b>「${esc(c.name)}」邀請你加入</b><span>${esc(names(c))}</span></span><span class="binacts"><button type="button" class="btn small primary" data-action="circle-accept" data-id="${c.id}">接受</button><button type="button" class="btn small ghost" data-action="circle-decline" data-id="${c.id}">拒絕</button></span></div>`).join('')}
     ${mine.map(c => `<button type="button" class="row" data-action="circle-open" data-id="${c.id}"><span class="ic">${ICON.lock}</span><span class="tx"><b>${esc(c.name)}</b><span>${esc(names(c))}${(c.pending || []).length ? `・${c.pending.length} 人邀請中` : ''}・${count(c.id)} 本</span></span>${ICON.chev}</button>`).join('')}
-    <button type="button" class="row" data-action="circle-new"><span class="ic">${ICON.plus}</span><span class="tx"><b>新增小圈圈</b><span>跟幾個家人共用一些書，其他人（包括管理者）看不到</span></span>${ICON.chev}</button>
+    <button type="button" class="row" data-action="circle-new"><span class="ic">${ICON.plus}</span><span class="tx"><b>新增小圈圈</b><span>自己一個人或跟幾個家人共用一些書，其他人（包括管理者）看不到</span></span>${ICON.chev}</button>
   </div></section>`;
 }
 // 從家人名冊挑人（打勾）
-function pickPeople(title, exclude, hint = '') {
+function pickPeople(title, exclude, hint = '', allowNone = false) {
   const b = B(), people = Object.entries(b.directory || {}).filter(([uid]) => uid !== b.me.uid && !exclude.includes(uid)).sort((x, y) => zhColl.compare(x[1], y[1]));
   return dialog({
     title, focus: false,
     body: `${hint}${people.length ? `<div class="list pickrows">${people.map(([uid, n]) => `<label class="row"><input type="checkbox" value="${esc(uid)}"><span class="tx"><b>${esc(n || '家人')}</b></span></label>`).join('')}</div>` : '<p class="hint">還沒有可以選的人。家人要先登入吋讀一次，才會出現在這裡。</p>'}
-      <p class="hint" style="margin:10px 0 0">對方要按「接受」才會加入。</p>`,
-    actions: [{ label: '取消', kind: 'ghost', value: null }, { label: '邀請', kind: 'primary', get: el => [...el.querySelectorAll('.pickrows input:checked')].map(x => x.value), validate: el => { if (!el.querySelector('.pickrows input:checked')) { toast('至少選一個人', 'err'); return false; } return true; } }]
+      <p class="hint" style="margin:10px 0 0">對方要按「接受」才會加入。${allowNone ? '可以先不邀請，自己一個人用，之後再邀。' : ''}</p>`,
+    actions: [{ label: '取消', kind: 'ghost', value: null }, { label: allowNone ? '建立' : '邀請', kind: 'primary', get: el => [...el.querySelectorAll('.pickrows input:checked')].map(x => x.value), validate: el => { if (!allowNone && !el.querySelector('.pickrows input:checked')) { toast('至少選一個人', 'err'); return false; } return true; } }]
   });
 }
 async function circleNew() {
   const b = B();
   const name = await promptBox('新增小圈圈', '小圈圈的名字', '', '例如：讀書會', 20);
   if (!name) return;
-  const uids = await pickPeople(`邀請誰加入「${name}」？`, []); if (!uids) return;
+  const uids = await pickPeople(`邀請誰加入「${name}」？`, [], '', true); if (!uids) return;
   const dup = b.dupCircle([b.me.uid, ...uids]);
-  if (dup) { infoBox('已經有一樣的小圈圈', `<p>成員完全一樣的小圈圈只能有一個，你們已經有「${esc(dup.name)}」了。</p>`); return; }
-  b.createCircle(name, uids); toast(`已建立「${name}」，等對方接受邀請`); render();
+  if (dup && !(await confirmBox('已經有相同成員的小圈圈', `已經有相同成員的小圈圈「${dup.name}」，確定要再新增一個小圈圈嗎？`, '新增'))) return;
+  b.createCircle(name, uids); toast(uids.length ? `已建立「${name}」，等對方接受邀請` : `已建立「${name}」`); render();
 }
 async function circleOpen(cid) {
   for (;;) {
@@ -5808,7 +5808,7 @@ async function circleOpen(cid) {
     if (r === 'invite') {
       const uids = await pickPeople(`邀請誰加入「${c.name}」？`, [...(c.members || []), ...(c.pending || [])]); if (!uids) continue;
       const dup = b.dupCircle([...(c.members || []), ...(c.pending || []), ...uids], cid);
-      if (dup) { await infoBox('已經有一樣的小圈圈', `<p>這樣邀請之後，成員會跟「${esc(dup.name)}」完全一樣。成員一樣的小圈圈只能有一個。</p>`); continue; }
+      if (dup && !(await confirmBox('已經有相同成員的小圈圈', `這樣邀請之後，成員會跟小圈圈「${dup.name}」一樣，確定要邀請嗎？`, '邀請'))) continue;
       b.inviteToCircle(cid, uids); toast('已送出邀請'); continue;
     }
     if (r === 'leave') { if (await leaveCircleFlow(cid)) { render(); return; } }
