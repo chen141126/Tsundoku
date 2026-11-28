@@ -210,6 +210,14 @@ button.row:hover{background:var(--bg)}
 .card-head{display:flex;align-items:center;gap:10px}
 .card-head h2{margin:0;font-size:18px}
 .stepnum{flex:none;width:28px;height:28px;border-radius:50%;background:var(--peach);font-weight:700;font-size:14px;display:grid;place-items:center}
+.stepnum svg{width:16px;height:16px}
+.row.col{flex-direction:column;align-items:stretch;gap:10px}
+.qrbox{width:min(240px,70vw);margin:4px auto 12px;padding:8px;background:#fff;border-radius:14px;box-shadow:inset 0 0 0 1px var(--line)}
+.qrbox svg{display:block;width:100%;height:auto}
+.rulesbox{width:100%;font-size:11px;line-height:1.45;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--cell);color:var(--ink);resize:vertical}
+.binbooks .row{align-items:center}
+.binbooks .tx{min-width:0}
+.binacts{display:flex;flex-direction:column;gap:6px;flex:none}
 .dashed{display:flex;align-items:center;gap:14px;padding:18px 20px;border-radius:22px;border:1.5px dashed #e4b49b}
 .dashed .tx{flex:1;display:flex;flex-direction:column;gap:3px}
 .dashed .tx b{font-size:16px}
@@ -496,6 +504,28 @@ button.star{width:34px;height:34px}
 .gt{font-size:13px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-all}
 .gbadges{position:absolute;top:6px;left:6px;right:6px;display:flex;flex-wrap:wrap;gap:4px}
 .gbadges .chip{background:var(--white);font-size:11px;padding:2px 7px}
+.gbadges .chip.wish{background:var(--orange);color:#fff;font-weight:700}
+.gbadges .chip.loan{background:var(--peach);color:var(--brown);font-weight:700}
+.gbadges .chip.warn{background:#fbe0d6;color:#b4442c;font-weight:700}
+.tw{position:relative;flex:none;display:flex}
+.btag{position:absolute;top:-5px;left:-7px;font-size:10px;font-weight:700;line-height:1;padding:3px 5px;border-radius:6px;white-space:nowrap;box-shadow:0 1px 3px rgba(52,36,28,.25)}
+.btag.wish{background:var(--orange);color:#fff}
+.btag.loan{background:var(--peach);color:var(--brown)}
+.btag.warn{background:#fbe0d6;color:#b4442c}
+.btag.priv,.gbadges .chip.priv{background:var(--ink);color:#fff;font-weight:700}
+.btag.adult{top:auto;bottom:-5px;background:#b4442c;color:#fff}
+.gbadges .chip.adult{background:#b4442c;color:#fff;font-weight:700}
+.bflags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+.bflags .chip svg{width:14px;height:14px}
+.chip.adult{background:#fbe0d6;color:#b4442c;font-weight:700}
+.swpair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.swcard{background:var(--cell);border-radius:14px;padding:10px 12px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:4px 8px}
+.swcard b{display:flex;align-items:center;gap:6px}
+.swcard b svg{width:16px;height:16px}
+.swcard > .small{grid-column:1 / -1}
+.switch:disabled{opacity:.55}
+.sprout{display:inline-flex;vertical-align:-3px;margin-right:4px;color:#3f8f3a}
+.sprout svg{width:18px;height:18px}
 .gbadges .chip.peach{background:var(--peach)}
 .pickmark{flex:none;display:grid;place-items:center;width:30px}
 .pickmark svg{width:18px;height:18px;color:var(--orange)}
@@ -593,7 +623,7 @@ button.star{width:34px;height:34px}
 <div id="toasts" aria-live="polite"></div>
 <script type="module">
 /* ========= 吋讀 Tsundoku · 第一階段：地基、書櫃編輯器、匯出備份 ========= */
-const VERSION = '0.5.6';
+const VERSION = '0.6.1';
 const SCHEMA_VERSION = 1;
 const FB_VERSION = '10.12.2';
 const COLS = ['rooms', 'cabinets', 'categories', 'books'];
@@ -651,6 +681,7 @@ function newBook(p = {}) {
     rating: null, readStatus: 'unread', currentPage: null, startDate: '', finishDate: '', favorite: false, review: '',
     loan: null,                // { dir: 'out' 借出 / 'in' 借入, person, date, due 預計歸還 }
     photoBin: [],              // 回收桶裡的照片：{ id, kind, at, size }
+    adult: false,              // 限制級：初心者（未成年）看不到
     loanHistory: [], verified: false, addedAt: t, updatedAt: t
   }, p);
 }
@@ -683,6 +714,1275 @@ function langLabel(b) {
   return LANGS[b.language] || b.language;
 }
 
+/* ---------- QR code（邀請家人用） ----------
+   QRCode for JavaScript, Copyright (c) 2009 Kazuhiko Arase, MIT license；取自 qrcode-terminal（Apache-2.0）的整理版 */
+const QRGen = (() => {
+  const F = {}, C = {};
+  const req = n => { n = n.replace(/^\.\//, '').replace(/\.js$/, ''); if (!(n in C)) { const m = { exports: {} }; C[n] = m.exports; F[n](m, m.exports); C[n] = m.exports; } return C[n]; };
+  F['QR8bitByte'] = function (module, exports) {
+var QRMode = req('./QRMode');
+
+function QR8bitByte(data) {
+	this.mode = QRMode.MODE_8BIT_BYTE;
+	this.data = data;
+}
+
+QR8bitByte.prototype = {
+
+	getLength : function() {
+		return this.data.length;
+	},
+	
+	write : function(buffer) {
+		for (var i = 0; i < this.data.length; i++) {
+			// not JIS ...
+			buffer.put(this.data.charCodeAt(i), 8);
+		}
+	}
+};
+
+module.exports = QR8bitByte;
+
+  };
+  F['QRBitBuffer'] = function (module, exports) {
+function QRBitBuffer() {
+	this.buffer = [];
+	this.length = 0;
+}
+
+QRBitBuffer.prototype = {
+
+	get : function(index) {
+		var bufIndex = Math.floor(index / 8);
+		return ( (this.buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+	},
+	
+	put : function(num, length) {
+		for (var i = 0; i < length; i++) {
+			this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+		}
+	},
+	
+	getLengthInBits : function() {
+		return this.length;
+	},
+	
+	putBit : function(bit) {
+	
+		var bufIndex = Math.floor(this.length / 8);
+		if (this.buffer.length <= bufIndex) {
+			this.buffer.push(0);
+		}
+	
+		if (bit) {
+			this.buffer[bufIndex] |= (0x80 >>> (this.length % 8) );
+		}
+	
+		this.length++;
+	}
+};
+
+module.exports = QRBitBuffer;
+
+  };
+  F['QRErrorCorrectLevel'] = function (module, exports) {
+module.exports = {
+	L : 1,
+	M : 0,
+	Q : 3,
+	H : 2
+};
+
+
+  };
+  F['QRMaskPattern'] = function (module, exports) {
+module.exports = {
+	PATTERN000 : 0,
+	PATTERN001 : 1,
+	PATTERN010 : 2,
+	PATTERN011 : 3,
+	PATTERN100 : 4,
+	PATTERN101 : 5,
+	PATTERN110 : 6,
+	PATTERN111 : 7
+};
+
+  };
+  F['QRMath'] = function (module, exports) {
+var QRMath = {
+
+	glog : function(n) {
+	
+		if (n < 1) {
+			throw new Error("glog(" + n + ")");
+		}
+		
+		return QRMath.LOG_TABLE[n];
+	},
+	
+	gexp : function(n) {
+	
+		while (n < 0) {
+			n += 255;
+		}
+	
+		while (n >= 256) {
+			n -= 255;
+		}
+	
+		return QRMath.EXP_TABLE[n];
+	},
+	
+	EXP_TABLE : new Array(256),
+	
+	LOG_TABLE : new Array(256)
+
+};
+	
+for (var i = 0; i < 8; i++) {
+	QRMath.EXP_TABLE[i] = 1 << i;
+}
+for (var i = 8; i < 256; i++) {
+	QRMath.EXP_TABLE[i] = QRMath.EXP_TABLE[i - 4]
+		^ QRMath.EXP_TABLE[i - 5]
+		^ QRMath.EXP_TABLE[i - 6]
+		^ QRMath.EXP_TABLE[i - 8];
+}
+for (var i = 0; i < 255; i++) {
+	QRMath.LOG_TABLE[QRMath.EXP_TABLE[i] ] = i;
+}
+
+module.exports = QRMath;
+
+  };
+  F['QRMode'] = function (module, exports) {
+module.exports = {
+    MODE_NUMBER :       1 << 0,
+    MODE_ALPHA_NUM :    1 << 1,
+    MODE_8BIT_BYTE :    1 << 2,
+    MODE_KANJI :        1 << 3
+};
+
+  };
+  F['QRPolynomial'] = function (module, exports) {
+var QRMath = req('./QRMath');
+
+function QRPolynomial(num, shift) {
+	if (num.length === undefined) {
+		throw new Error(num.length + "/" + shift);
+	}
+
+	var offset = 0;
+
+	while (offset < num.length && num[offset] === 0) {
+		offset++;
+	}
+
+	this.num = new Array(num.length - offset + shift);
+	for (var i = 0; i < num.length - offset; i++) {
+		this.num[i] = num[i + offset];
+	}
+}
+
+QRPolynomial.prototype = {
+
+	get : function(index) {
+		return this.num[index];
+	},
+	
+	getLength : function() {
+		return this.num.length;
+	},
+	
+	multiply : function(e) {
+	
+		var num = new Array(this.getLength() + e.getLength() - 1);
+	
+		for (var i = 0; i < this.getLength(); i++) {
+			for (var j = 0; j < e.getLength(); j++) {
+				num[i + j] ^= QRMath.gexp(QRMath.glog(this.get(i) ) + QRMath.glog(e.get(j) ) );
+			}
+		}
+	
+		return new QRPolynomial(num, 0);
+	},
+	
+	mod : function(e) {
+	
+		if (this.getLength() - e.getLength() < 0) {
+			return this;
+		}
+	
+		var ratio = QRMath.glog(this.get(0) ) - QRMath.glog(e.get(0) );
+	
+		var num = new Array(this.getLength() );
+		
+		for (var i = 0; i < this.getLength(); i++) {
+			num[i] = this.get(i);
+		}
+		
+		for (var x = 0; x < e.getLength(); x++) {
+			num[x] ^= QRMath.gexp(QRMath.glog(e.get(x) ) + ratio);
+		}
+	
+		// recursive call
+		return new QRPolynomial(num, 0).mod(e);
+	}
+};
+
+module.exports = QRPolynomial;
+
+  };
+  F['QRRSBlock'] = function (module, exports) {
+var QRErrorCorrectLevel = req('./QRErrorCorrectLevel');
+
+function QRRSBlock(totalCount, dataCount) {
+	this.totalCount = totalCount;
+	this.dataCount  = dataCount;
+}
+
+QRRSBlock.RS_BLOCK_TABLE = [
+
+	// L
+	// M
+	// Q
+	// H
+
+	// 1
+	[1, 26, 19],
+	[1, 26, 16],
+	[1, 26, 13],
+	[1, 26, 9],
+	
+	// 2
+	[1, 44, 34],
+	[1, 44, 28],
+	[1, 44, 22],
+	[1, 44, 16],
+
+	// 3
+	[1, 70, 55],
+	[1, 70, 44],
+	[2, 35, 17],
+	[2, 35, 13],
+
+	// 4		
+	[1, 100, 80],
+	[2, 50, 32],
+	[2, 50, 24],
+	[4, 25, 9],
+	
+	// 5
+	[1, 134, 108],
+	[2, 67, 43],
+	[2, 33, 15, 2, 34, 16],
+	[2, 33, 11, 2, 34, 12],
+	
+	// 6
+	[2, 86, 68],
+	[4, 43, 27],
+	[4, 43, 19],
+	[4, 43, 15],
+	
+	// 7		
+	[2, 98, 78],
+	[4, 49, 31],
+	[2, 32, 14, 4, 33, 15],
+	[4, 39, 13, 1, 40, 14],
+	
+	// 8
+	[2, 121, 97],
+	[2, 60, 38, 2, 61, 39],
+	[4, 40, 18, 2, 41, 19],
+	[4, 40, 14, 2, 41, 15],
+	
+	// 9
+	[2, 146, 116],
+	[3, 58, 36, 2, 59, 37],
+	[4, 36, 16, 4, 37, 17],
+	[4, 36, 12, 4, 37, 13],
+	
+	// 10		
+	[2, 86, 68, 2, 87, 69],
+	[4, 69, 43, 1, 70, 44],
+	[6, 43, 19, 2, 44, 20],
+	[6, 43, 15, 2, 44, 16],
+
+	// 11
+	[4, 101, 81],
+	[1, 80, 50, 4, 81, 51],
+	[4, 50, 22, 4, 51, 23],
+	[3, 36, 12, 8, 37, 13],
+
+	// 12
+	[2, 116, 92, 2, 117, 93],
+	[6, 58, 36, 2, 59, 37],
+	[4, 46, 20, 6, 47, 21],
+	[7, 42, 14, 4, 43, 15],
+
+	// 13
+	[4, 133, 107],
+	[8, 59, 37, 1, 60, 38],
+	[8, 44, 20, 4, 45, 21],
+	[12, 33, 11, 4, 34, 12],
+
+	// 14
+	[3, 145, 115, 1, 146, 116],
+	[4, 64, 40, 5, 65, 41],
+	[11, 36, 16, 5, 37, 17],
+	[11, 36, 12, 5, 37, 13],
+
+	// 15
+	[5, 109, 87, 1, 110, 88],
+	[5, 65, 41, 5, 66, 42],
+	[5, 54, 24, 7, 55, 25],
+	[11, 36, 12],
+
+	// 16
+	[5, 122, 98, 1, 123, 99],
+	[7, 73, 45, 3, 74, 46],
+	[15, 43, 19, 2, 44, 20],
+	[3, 45, 15, 13, 46, 16],
+
+	// 17
+	[1, 135, 107, 5, 136, 108],
+	[10, 74, 46, 1, 75, 47],
+	[1, 50, 22, 15, 51, 23],
+	[2, 42, 14, 17, 43, 15],
+
+	// 18
+	[5, 150, 120, 1, 151, 121],
+	[9, 69, 43, 4, 70, 44],
+	[17, 50, 22, 1, 51, 23],
+	[2, 42, 14, 19, 43, 15],
+
+	// 19
+	[3, 141, 113, 4, 142, 114],
+	[3, 70, 44, 11, 71, 45],
+	[17, 47, 21, 4, 48, 22],
+	[9, 39, 13, 16, 40, 14],
+
+	// 20
+	[3, 135, 107, 5, 136, 108],
+	[3, 67, 41, 13, 68, 42],
+	[15, 54, 24, 5, 55, 25],
+	[15, 43, 15, 10, 44, 16],
+
+	// 21
+	[4, 144, 116, 4, 145, 117],
+	[17, 68, 42],
+	[17, 50, 22, 6, 51, 23],
+	[19, 46, 16, 6, 47, 17],
+
+	// 22
+	[2, 139, 111, 7, 140, 112],
+	[17, 74, 46],
+	[7, 54, 24, 16, 55, 25],
+	[34, 37, 13],
+
+	// 23
+	[4, 151, 121, 5, 152, 122],
+	[4, 75, 47, 14, 76, 48],
+	[11, 54, 24, 14, 55, 25],
+	[16, 45, 15, 14, 46, 16],
+
+	// 24
+	[6, 147, 117, 4, 148, 118],
+	[6, 73, 45, 14, 74, 46],
+	[11, 54, 24, 16, 55, 25],
+	[30, 46, 16, 2, 47, 17],
+
+	// 25
+	[8, 132, 106, 4, 133, 107],
+	[8, 75, 47, 13, 76, 48],
+	[7, 54, 24, 22, 55, 25],
+	[22, 45, 15, 13, 46, 16],
+
+	// 26
+	[10, 142, 114, 2, 143, 115],
+	[19, 74, 46, 4, 75, 47],
+	[28, 50, 22, 6, 51, 23],
+	[33, 46, 16, 4, 47, 17],
+
+	// 27
+	[8, 152, 122, 4, 153, 123],
+	[22, 73, 45, 3, 74, 46],
+	[8, 53, 23, 26, 54, 24],
+	[12, 45, 15, 28, 46, 16],
+
+	// 28
+	[3, 147, 117, 10, 148, 118],
+	[3, 73, 45, 23, 74, 46],
+	[4, 54, 24, 31, 55, 25],
+	[11, 45, 15, 31, 46, 16],
+
+	// 29
+	[7, 146, 116, 7, 147, 117],
+	[21, 73, 45, 7, 74, 46],
+	[1, 53, 23, 37, 54, 24],
+	[19, 45, 15, 26, 46, 16],
+
+	// 30
+	[5, 145, 115, 10, 146, 116],
+	[19, 75, 47, 10, 76, 48],
+	[15, 54, 24, 25, 55, 25],
+	[23, 45, 15, 25, 46, 16],
+
+	// 31
+	[13, 145, 115, 3, 146, 116],
+	[2, 74, 46, 29, 75, 47],
+	[42, 54, 24, 1, 55, 25],
+	[23, 45, 15, 28, 46, 16],
+
+	// 32
+	[17, 145, 115],
+	[10, 74, 46, 23, 75, 47],
+	[10, 54, 24, 35, 55, 25],
+	[19, 45, 15, 35, 46, 16],
+
+	// 33
+	[17, 145, 115, 1, 146, 116],
+	[14, 74, 46, 21, 75, 47],
+	[29, 54, 24, 19, 55, 25],
+	[11, 45, 15, 46, 46, 16],
+
+	// 34
+	[13, 145, 115, 6, 146, 116],
+	[14, 74, 46, 23, 75, 47],
+	[44, 54, 24, 7, 55, 25],
+	[59, 46, 16, 1, 47, 17],
+
+	// 35
+	[12, 151, 121, 7, 152, 122],
+	[12, 75, 47, 26, 76, 48],
+	[39, 54, 24, 14, 55, 25],
+	[22, 45, 15, 41, 46, 16],
+
+	// 36
+	[6, 151, 121, 14, 152, 122],
+	[6, 75, 47, 34, 76, 48],
+	[46, 54, 24, 10, 55, 25],
+	[2, 45, 15, 64, 46, 16],
+
+	// 37
+	[17, 152, 122, 4, 153, 123],
+	[29, 74, 46, 14, 75, 47],
+	[49, 54, 24, 10, 55, 25],
+	[24, 45, 15, 46, 46, 16],
+
+	// 38
+	[4, 152, 122, 18, 153, 123],
+	[13, 74, 46, 32, 75, 47],
+	[48, 54, 24, 14, 55, 25],
+	[42, 45, 15, 32, 46, 16],
+
+	// 39
+	[20, 147, 117, 4, 148, 118],
+	[40, 75, 47, 7, 76, 48],
+	[43, 54, 24, 22, 55, 25],
+	[10, 45, 15, 67, 46, 16],
+
+	// 40
+	[19, 148, 118, 6, 149, 119],
+	[18, 75, 47, 31, 76, 48],
+	[34, 54, 24, 34, 55, 25],
+	[20, 45, 15, 61, 46, 16]
+];
+
+QRRSBlock.getRSBlocks = function(typeNumber, errorCorrectLevel) {
+	
+	var rsBlock = QRRSBlock.getRsBlockTable(typeNumber, errorCorrectLevel);
+	
+	if (rsBlock === undefined) {
+		throw new Error("bad rs block @ typeNumber:" + typeNumber + "/errorCorrectLevel:" + errorCorrectLevel);
+	}
+
+	var length = rsBlock.length / 3;
+	
+	var list = [];
+	
+	for (var i = 0; i < length; i++) {
+
+		var count = rsBlock[i * 3 + 0];
+		var totalCount = rsBlock[i * 3 + 1];
+		var dataCount  = rsBlock[i * 3 + 2];
+
+		for (var j = 0; j < count; j++) {
+			list.push(new QRRSBlock(totalCount, dataCount) );	
+		}
+	}
+	
+	return list;
+};
+
+QRRSBlock.getRsBlockTable = function(typeNumber, errorCorrectLevel) {
+
+	switch(errorCorrectLevel) {
+	case QRErrorCorrectLevel.L :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+	case QRErrorCorrectLevel.M :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+	case QRErrorCorrectLevel.Q :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+	case QRErrorCorrectLevel.H :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+	default :
+		return undefined;
+	}
+};
+
+module.exports = QRRSBlock;
+
+  };
+  F['QRUtil'] = function (module, exports) {
+var QRMode = req('./QRMode');
+var QRPolynomial = req('./QRPolynomial');
+var QRMath = req('./QRMath');
+var QRMaskPattern = req('./QRMaskPattern');
+
+var QRUtil = {
+
+    PATTERN_POSITION_TABLE : [
+        [],
+        [6, 18],
+        [6, 22],
+        [6, 26],
+        [6, 30],
+        [6, 34],
+        [6, 22, 38],
+        [6, 24, 42],
+        [6, 26, 46],
+        [6, 28, 50],
+        [6, 30, 54],        
+        [6, 32, 58],
+        [6, 34, 62],
+        [6, 26, 46, 66],
+        [6, 26, 48, 70],
+        [6, 26, 50, 74],
+        [6, 30, 54, 78],
+        [6, 30, 56, 82],
+        [6, 30, 58, 86],
+        [6, 34, 62, 90],
+        [6, 28, 50, 72, 94],
+        [6, 26, 50, 74, 98],
+        [6, 30, 54, 78, 102],
+        [6, 28, 54, 80, 106],
+        [6, 32, 58, 84, 110],
+        [6, 30, 58, 86, 114],
+        [6, 34, 62, 90, 118],
+        [6, 26, 50, 74, 98, 122],
+        [6, 30, 54, 78, 102, 126],
+        [6, 26, 52, 78, 104, 130],
+        [6, 30, 56, 82, 108, 134],
+        [6, 34, 60, 86, 112, 138],
+        [6, 30, 58, 86, 114, 142],
+        [6, 34, 62, 90, 118, 146],
+        [6, 30, 54, 78, 102, 126, 150],
+        [6, 24, 50, 76, 102, 128, 154],
+        [6, 28, 54, 80, 106, 132, 158],
+        [6, 32, 58, 84, 110, 136, 162],
+        [6, 26, 54, 82, 110, 138, 166],
+        [6, 30, 58, 86, 114, 142, 170]
+    ],
+
+    G15 : (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0),
+    G18 : (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0),
+    G15_MASK : (1 << 14) | (1 << 12) | (1 << 10)    | (1 << 4) | (1 << 1),
+
+    getBCHTypeInfo : function(data) {
+        var d = data << 10;
+        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) >= 0) {
+            d ^= (QRUtil.G15 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) ) );    
+        }
+        return ( (data << 10) | d) ^ QRUtil.G15_MASK;
+    },
+
+    getBCHTypeNumber : function(data) {
+        var d = data << 12;
+        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) >= 0) {
+            d ^= (QRUtil.G18 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) ) );    
+        }
+        return (data << 12) | d;
+    },
+
+    getBCHDigit : function(data) {
+
+        var digit = 0;
+
+        while (data !== 0) {
+            digit++;
+            data >>>= 1;
+        }
+
+        return digit;
+    },
+
+    getPatternPosition : function(typeNumber) {
+        return QRUtil.PATTERN_POSITION_TABLE[typeNumber - 1];
+    },
+
+    getMask : function(maskPattern, i, j) {
+        
+        switch (maskPattern) {
+            
+        case QRMaskPattern.PATTERN000 : return (i + j) % 2 === 0;
+        case QRMaskPattern.PATTERN001 : return i % 2 === 0;
+        case QRMaskPattern.PATTERN010 : return j % 3 === 0;
+        case QRMaskPattern.PATTERN011 : return (i + j) % 3 === 0;
+        case QRMaskPattern.PATTERN100 : return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 === 0;
+        case QRMaskPattern.PATTERN101 : return (i * j) % 2 + (i * j) % 3 === 0;
+        case QRMaskPattern.PATTERN110 : return ( (i * j) % 2 + (i * j) % 3) % 2 === 0;
+        case QRMaskPattern.PATTERN111 : return ( (i * j) % 3 + (i + j) % 2) % 2 === 0;
+
+        default :
+            throw new Error("bad maskPattern:" + maskPattern);
+        }
+    },
+
+    getErrorCorrectPolynomial : function(errorCorrectLength) {
+
+        var a = new QRPolynomial([1], 0);
+
+        for (var i = 0; i < errorCorrectLength; i++) {
+            a = a.multiply(new QRPolynomial([1, QRMath.gexp(i)], 0) );
+        }
+
+        return a;
+    },
+
+    getLengthInBits : function(mode, type) {
+
+        if (1 <= type && type < 10) {
+
+            // 1 - 9
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 10;
+            case QRMode.MODE_ALPHA_NUM  : return 9;
+            case QRMode.MODE_8BIT_BYTE  : return 8;
+            case QRMode.MODE_KANJI      : return 8;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else if (type < 27) {
+
+            // 10 - 26
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 12;
+            case QRMode.MODE_ALPHA_NUM  : return 11;
+            case QRMode.MODE_8BIT_BYTE  : return 16;
+            case QRMode.MODE_KANJI      : return 10;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else if (type < 41) {
+
+            // 27 - 40
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 14;
+            case QRMode.MODE_ALPHA_NUM  : return 13;
+            case QRMode.MODE_8BIT_BYTE  : return 16;
+            case QRMode.MODE_KANJI      : return 12;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else {
+            throw new Error("type:" + type);
+        }
+    },
+
+    getLostPoint : function(qrCode) {
+        
+        var moduleCount = qrCode.getModuleCount();
+        var lostPoint = 0;
+        var row = 0; 
+        var col = 0;
+
+        
+        // LEVEL1
+        
+        for (row = 0; row < moduleCount; row++) {
+
+            for (col = 0; col < moduleCount; col++) {
+
+                var sameCount = 0;
+                var dark = qrCode.isDark(row, col);
+
+                for (var r = -1; r <= 1; r++) {
+
+                    if (row + r < 0 || moduleCount <= row + r) {
+                        continue;
+                    }
+
+                    for (var c = -1; c <= 1; c++) {
+
+                        if (col + c < 0 || moduleCount <= col + c) {
+                            continue;
+                        }
+
+                        if (r === 0 && c === 0) {
+                            continue;
+                        }
+
+                        if (dark === qrCode.isDark(row + r, col + c) ) {
+                            sameCount++;
+                        }
+                    }
+                }
+
+                if (sameCount > 5) {
+                    lostPoint += (3 + sameCount - 5);
+                }
+            }
+        }
+
+        // LEVEL2
+
+        for (row = 0; row < moduleCount - 1; row++) {
+            for (col = 0; col < moduleCount - 1; col++) {
+                var count = 0;
+                if (qrCode.isDark(row,     col    ) ) count++;
+                if (qrCode.isDark(row + 1, col    ) ) count++;
+                if (qrCode.isDark(row,     col + 1) ) count++;
+                if (qrCode.isDark(row + 1, col + 1) ) count++;
+                if (count === 0 || count === 4) {
+                    lostPoint += 3;
+                }
+            }
+        }
+
+        // LEVEL3
+
+        for (row = 0; row < moduleCount; row++) {
+            for (col = 0; col < moduleCount - 6; col++) {
+                if (qrCode.isDark(row, col) && 
+                        !qrCode.isDark(row, col + 1) && 
+                         qrCode.isDark(row, col + 2) && 
+                         qrCode.isDark(row, col + 3) && 
+                         qrCode.isDark(row, col + 4) && 
+                        !qrCode.isDark(row, col + 5) && 
+                         qrCode.isDark(row, col + 6) ) {
+                    lostPoint += 40;
+                }
+            }
+        }
+
+        for (col = 0; col < moduleCount; col++) {
+            for (row = 0; row < moduleCount - 6; row++) {
+                if (qrCode.isDark(row, col) &&
+                        !qrCode.isDark(row + 1, col) &&
+                         qrCode.isDark(row + 2, col) &&
+                         qrCode.isDark(row + 3, col) &&
+                         qrCode.isDark(row + 4, col) &&
+                        !qrCode.isDark(row + 5, col) &&
+                         qrCode.isDark(row + 6, col) ) {
+                    lostPoint += 40;
+                }
+            }
+        }
+
+        // LEVEL4
+        
+        var darkCount = 0;
+
+        for (col = 0; col < moduleCount; col++) {
+            for (row = 0; row < moduleCount; row++) {
+                if (qrCode.isDark(row, col) ) {
+                    darkCount++;
+                }
+            }
+        }
+        
+        var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+        lostPoint += ratio * 10;
+
+        return lostPoint;       
+    }
+
+};
+
+module.exports = QRUtil;
+
+  };
+  F['index'] = function (module, exports) {
+//---------------------------------------------------------------------
+// QRCode for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//   http://www.opensource.org/licenses/mit-license.php
+//
+// The word "QR Code" is registered trademark of 
+// DENSO WAVE INCORPORATED
+//   http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+// Modified to work in node for this project (and some refactoring)
+//---------------------------------------------------------------------
+
+var QR8bitByte = req('./QR8bitByte');
+var QRUtil = req('./QRUtil');
+var QRPolynomial = req('./QRPolynomial');
+var QRRSBlock = req('./QRRSBlock');
+var QRBitBuffer = req('./QRBitBuffer');
+
+function QRCode(typeNumber, errorCorrectLevel) {
+	this.typeNumber = typeNumber;
+	this.errorCorrectLevel = errorCorrectLevel;
+	this.modules = null;
+	this.moduleCount = 0;
+	this.dataCache = null;
+	this.dataList = [];
+}
+
+QRCode.prototype = {
+	
+	addData : function(data) {
+		var newData = new QR8bitByte(data);
+		this.dataList.push(newData);
+		this.dataCache = null;
+	},
+	
+	isDark : function(row, col) {
+		if (row < 0 || this.moduleCount <= row || col < 0 || this.moduleCount <= col) {
+			throw new Error(row + "," + col);
+		}
+		return this.modules[row][col];
+	},
+
+	getModuleCount : function() {
+		return this.moduleCount;
+	},
+	
+	make : function() {
+		// Calculate automatically typeNumber if provided is < 1
+		if (this.typeNumber < 1 ){
+			var typeNumber = 1;
+			for (typeNumber = 1; typeNumber < 40; typeNumber++) {
+				var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, this.errorCorrectLevel);
+
+				var buffer = new QRBitBuffer();
+				var totalDataCount = 0;
+				for (var i = 0; i < rsBlocks.length; i++) {
+					totalDataCount += rsBlocks[i].dataCount;
+				}
+
+				for (var x = 0; x < this.dataList.length; x++) {
+					var data = this.dataList[x];
+					buffer.put(data.mode, 4);
+					buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+					data.write(buffer);
+				}
+				if (buffer.getLengthInBits() <= totalDataCount * 8)
+					break;
+			}
+			this.typeNumber = typeNumber;
+		}
+		this.makeImpl(false, this.getBestMaskPattern() );
+	},
+	
+	makeImpl : function(test, maskPattern) {
+		
+		this.moduleCount = this.typeNumber * 4 + 17;
+		this.modules = new Array(this.moduleCount);
+		
+		for (var row = 0; row < this.moduleCount; row++) {
+			
+			this.modules[row] = new Array(this.moduleCount);
+			
+			for (var col = 0; col < this.moduleCount; col++) {
+				this.modules[row][col] = null;//(col + row) % 3;
+			}
+		}
+	
+		this.setupPositionProbePattern(0, 0);
+		this.setupPositionProbePattern(this.moduleCount - 7, 0);
+		this.setupPositionProbePattern(0, this.moduleCount - 7);
+		this.setupPositionAdjustPattern();
+		this.setupTimingPattern();
+		this.setupTypeInfo(test, maskPattern);
+		
+		if (this.typeNumber >= 7) {
+			this.setupTypeNumber(test);
+		}
+	
+		if (this.dataCache === null) {
+			this.dataCache = QRCode.createData(this.typeNumber, this.errorCorrectLevel, this.dataList);
+		}
+	
+		this.mapData(this.dataCache, maskPattern);
+	},
+
+	setupPositionProbePattern : function(row, col)  {
+		
+		for (var r = -1; r <= 7; r++) {
+			
+			if (row + r <= -1 || this.moduleCount <= row + r) continue;
+			
+			for (var c = -1; c <= 7; c++) {
+				
+				if (col + c <= -1 || this.moduleCount <= col + c) continue;
+				
+				if ( (0 <= r && r <= 6 && (c === 0 || c === 6) ) || 
+                     (0 <= c && c <= 6 && (r === 0 || r === 6) ) || 
+                     (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+					this.modules[row + r][col + c] = true;
+				} else {
+					this.modules[row + r][col + c] = false;
+				}
+			}		
+		}		
+	},
+	
+	getBestMaskPattern : function() {
+	
+		var minLostPoint = 0;
+		var pattern = 0;
+	
+		for (var i = 0; i < 8; i++) {
+			
+			this.makeImpl(true, i);
+	
+			var lostPoint = QRUtil.getLostPoint(this);
+	
+			if (i === 0 || minLostPoint >  lostPoint) {
+				minLostPoint = lostPoint;
+				pattern = i;
+			}
+		}
+	
+		return pattern;
+	},
+	
+	createMovieClip : function(target_mc, instance_name, depth) {
+	
+		var qr_mc = target_mc.createEmptyMovieClip(instance_name, depth);
+		var cs = 1;
+	
+		this.make();
+
+		for (var row = 0; row < this.modules.length; row++) {
+			
+			var y = row * cs;
+			
+			for (var col = 0; col < this.modules[row].length; col++) {
+	
+				var x = col * cs;
+				var dark = this.modules[row][col];
+			
+				if (dark) {
+					qr_mc.beginFill(0, 100);
+					qr_mc.moveTo(x, y);
+					qr_mc.lineTo(x + cs, y);
+					qr_mc.lineTo(x + cs, y + cs);
+					qr_mc.lineTo(x, y + cs);
+					qr_mc.endFill();
+				}
+			}
+		}
+		
+		return qr_mc;
+	},
+
+	setupTimingPattern : function() {
+		
+		for (var r = 8; r < this.moduleCount - 8; r++) {
+			if (this.modules[r][6] !== null) {
+				continue;
+			}
+			this.modules[r][6] = (r % 2 === 0);
+		}
+	
+		for (var c = 8; c < this.moduleCount - 8; c++) {
+			if (this.modules[6][c] !== null) {
+				continue;
+			}
+			this.modules[6][c] = (c % 2 === 0);
+		}
+	},
+	
+	setupPositionAdjustPattern : function() {
+	
+		var pos = QRUtil.getPatternPosition(this.typeNumber);
+		
+		for (var i = 0; i < pos.length; i++) {
+		
+			for (var j = 0; j < pos.length; j++) {
+			
+				var row = pos[i];
+				var col = pos[j];
+				
+				if (this.modules[row][col] !== null) {
+					continue;
+				}
+				
+				for (var r = -2; r <= 2; r++) {
+				
+					for (var c = -2; c <= 2; c++) {
+					
+						if (Math.abs(r) === 2 || 
+                            Math.abs(c) === 2 ||
+                            (r === 0 && c === 0) ) {
+							this.modules[row + r][col + c] = true;
+						} else {
+							this.modules[row + r][col + c] = false;
+						}
+					}
+				}
+			}
+		}
+	},
+	
+	setupTypeNumber : function(test) {
+	
+		var bits = QRUtil.getBCHTypeNumber(this.typeNumber);
+        var mod;
+	
+		for (var i = 0; i < 18; i++) {
+			mod = (!test && ( (bits >> i) & 1) === 1);
+			this.modules[Math.floor(i / 3)][i % 3 + this.moduleCount - 8 - 3] = mod;
+		}
+	
+		for (var x = 0; x < 18; x++) {
+			mod = (!test && ( (bits >> x) & 1) === 1);
+			this.modules[x % 3 + this.moduleCount - 8 - 3][Math.floor(x / 3)] = mod;
+		}
+	},
+	
+	setupTypeInfo : function(test, maskPattern) {
+	
+		var data = (this.errorCorrectLevel << 3) | maskPattern;
+		var bits = QRUtil.getBCHTypeInfo(data);
+        var mod;
+	
+		// vertical		
+		for (var v = 0; v < 15; v++) {
+	
+			mod = (!test && ( (bits >> v) & 1) === 1);
+	
+			if (v < 6) {
+				this.modules[v][8] = mod;
+			} else if (v < 8) {
+				this.modules[v + 1][8] = mod;
+			} else {
+				this.modules[this.moduleCount - 15 + v][8] = mod;
+			}
+		}
+	
+		// horizontal
+		for (var h = 0; h < 15; h++) {
+	
+			mod = (!test && ( (bits >> h) & 1) === 1);
+			
+			if (h < 8) {
+				this.modules[8][this.moduleCount - h - 1] = mod;
+			} else if (h < 9) {
+				this.modules[8][15 - h - 1 + 1] = mod;
+			} else {
+				this.modules[8][15 - h - 1] = mod;
+			}
+		}
+	
+		// fixed module
+		this.modules[this.moduleCount - 8][8] = (!test);
+	
+	},
+	
+	mapData : function(data, maskPattern) {
+		
+		var inc = -1;
+		var row = this.moduleCount - 1;
+		var bitIndex = 7;
+		var byteIndex = 0;
+		
+		for (var col = this.moduleCount - 1; col > 0; col -= 2) {
+	
+			if (col === 6) col--;
+	
+			while (true) {
+	
+				for (var c = 0; c < 2; c++) {
+					
+					if (this.modules[row][col - c] === null) {
+						
+						var dark = false;
+	
+						if (byteIndex < data.length) {
+							dark = ( ( (data[byteIndex] >>> bitIndex) & 1) === 1);
+						}
+	
+						var mask = QRUtil.getMask(maskPattern, row, col - c);
+	
+						if (mask) {
+							dark = !dark;
+						}
+						
+						this.modules[row][col - c] = dark;
+						bitIndex--;
+	
+						if (bitIndex === -1) {
+							byteIndex++;
+							bitIndex = 7;
+						}
+					}
+				}
+								
+				row += inc;
+	
+				if (row < 0 || this.moduleCount <= row) {
+					row -= inc;
+					inc = -inc;
+					break;
+				}
+			}
+		}
+		
+	}
+
+};
+
+QRCode.PAD0 = 0xEC;
+QRCode.PAD1 = 0x11;
+
+QRCode.createData = function(typeNumber, errorCorrectLevel, dataList) {
+	
+	var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectLevel);
+	
+	var buffer = new QRBitBuffer();
+	
+	for (var i = 0; i < dataList.length; i++) {
+		var data = dataList[i];
+		buffer.put(data.mode, 4);
+		buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+		data.write(buffer);
+	}
+
+	// calc num max data.
+	var totalDataCount = 0;
+	for (var x = 0; x < rsBlocks.length; x++) {
+		totalDataCount += rsBlocks[x].dataCount;
+	}
+
+	if (buffer.getLengthInBits() > totalDataCount * 8) {
+		throw new Error("code length overflow. (" + 
+            buffer.getLengthInBits() + 
+            ">" +  
+            totalDataCount * 8 + 
+            ")");
+	}
+
+	// end code
+	if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+		buffer.put(0, 4);
+	}
+
+	// padding
+	while (buffer.getLengthInBits() % 8 !== 0) {
+		buffer.putBit(false);
+	}
+
+	// padding
+	while (true) {
+		
+		if (buffer.getLengthInBits() >= totalDataCount * 8) {
+			break;
+		}
+		buffer.put(QRCode.PAD0, 8);
+		
+		if (buffer.getLengthInBits() >= totalDataCount * 8) {
+			break;
+		}
+		buffer.put(QRCode.PAD1, 8);
+	}
+
+	return QRCode.createBytes(buffer, rsBlocks);
+};
+
+QRCode.createBytes = function(buffer, rsBlocks) {
+
+	var offset = 0;
+	
+	var maxDcCount = 0;
+	var maxEcCount = 0;
+	
+	var dcdata = new Array(rsBlocks.length);
+	var ecdata = new Array(rsBlocks.length);
+	
+	for (var r = 0; r < rsBlocks.length; r++) {
+
+		var dcCount = rsBlocks[r].dataCount;
+		var ecCount = rsBlocks[r].totalCount - dcCount;
+
+		maxDcCount = Math.max(maxDcCount, dcCount);
+		maxEcCount = Math.max(maxEcCount, ecCount);
+		
+		dcdata[r] = new Array(dcCount);
+		
+		for (var i = 0; i < dcdata[r].length; i++) {
+			dcdata[r][i] = 0xff & buffer.buffer[i + offset];
+		}
+		offset += dcCount;
+		
+		var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+		var rawPoly = new QRPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+		var modPoly = rawPoly.mod(rsPoly);
+		ecdata[r] = new Array(rsPoly.getLength() - 1);
+		for (var x = 0; x < ecdata[r].length; x++) {
+            var modIndex = x + modPoly.getLength() - ecdata[r].length;
+			ecdata[r][x] = (modIndex >= 0)? modPoly.get(modIndex) : 0;
+		}
+
+	}
+	
+	var totalCodeCount = 0;
+	for (var y = 0; y < rsBlocks.length; y++) {
+		totalCodeCount += rsBlocks[y].totalCount;
+	}
+
+	var data = new Array(totalCodeCount);
+	var index = 0;
+
+	for (var z = 0; z < maxDcCount; z++) {
+		for (var s = 0; s < rsBlocks.length; s++) {
+			if (z < dcdata[s].length) {
+				data[index++] = dcdata[s][z];
+			}
+		}
+	}
+
+	for (var xx = 0; xx < maxEcCount; xx++) {
+		for (var t = 0; t < rsBlocks.length; t++) {
+			if (xx < ecdata[t].length) {
+				data[index++] = ecdata[t][xx];
+			}
+		}
+	}
+
+	return data;
+
+};
+
+module.exports = QRCode;
+
+  };
+  return { QRCode: req('index'), ECL: req('QRErrorCorrectLevel') };
+})();
+function qrSVG(text) {
+  const q = new QRGen.QRCode(-1, QRGen.ECL.L); q.addData(text); q.make();
+  const n = q.getModuleCount(), pad = 3; let d = '';
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) d += `M${c + pad} ${r + pad}h1v1h-1z`;
+  return `<svg viewBox="0 0 ${n + pad * 2} ${n + pad * 2}" shape-rendering="crispEdges" role="img" aria-label="邀請用的 QR code"><rect width="100%" height="100%" fill="#ffffff"/><path d="${d}" fill="#34241c"/></svg>`;
+}
+
 /* ---------- 示範資料 ---------- */
 function demoSeed() {
   const r1 = newRoom('書房一', 1), r2 = newRoom('書房二', 2), r3 = newRoom('我的房間', 3);
@@ -700,43 +2000,363 @@ function demoSeed() {
   return { schemaVersion: SCHEMA_VERSION, rooms: [r1, r2, r3], cabinets: [c1, c2, c3, c4], categories: [], books, photos: [], settings: defaultMeta() };
 }
 
+/* ---------- 共用書庫與個人資料（第六階段） ---------- */
+// 書的資料全家共用；閱讀狀態、讀到第幾頁、日期、評分、最愛、心得跟著人走，願望清單也是每人一份
+// 隱私書籍放在自己名下（people/{uid}/private），連管理者都看不到；限制級（adult）的書，初心者（未成年）看不到
+const PERSONAL = ['readStatus', 'currentPage', 'startDate', 'finishDate', 'rating', 'favorite', 'review'];
+const personalDefaults = () => ({ readStatus: 'unread', currentPage: null, startDate: '', finishDate: '', rating: null, favorite: false, review: '' });
+function pickPersonal(b) { const o = {}; if (b) PERSONAL.forEach(k => { if (b[k] !== undefined) o[k] = b[k]; }); return o; }
+function omitPersonal(b) { const o = { ...b }; PERSONAL.forEach(k => { delete o[k]; }); delete o.private; return o; }
+function stableStr(v) {
+  if (Array.isArray(v)) return '[' + v.map(stableStr).join(',') + ']';
+  if (v && typeof v === 'object') return '{' + Object.keys(v).filter(k => v[k] !== undefined && k !== 'updatedAt').sort().map(k => JSON.stringify(k) + ':' + stableStr(v[k])).join(',') + '}';
+  return JSON.stringify(v === undefined ? null : v);
+}
+const sameDoc = (a, b) => stableStr(a) === stableStr(b);
+const hasPersonal = b => { const d = personalDefaults(); return PERSONAL.some(k => b[k] !== undefined && stableStr(b[k] ?? d[k]) !== stableStr(d[k])); };
+// 舊格式：閱讀資料寫在書上、願望清單混在書裡、或還沒有 adult 欄位（初心者要靠它過濾）
+const isLegacyBook = b => (b.ownership === 'wishlist' && !b.deletedAt) || PERSONAL.some(k => k in b) || typeof b.adult !== 'boolean';
+const ROLE_LABEL = { admin: '管理者', editor: '可修改', viewer: '只能檢視' };
+const LIB_KEY = 'tsundoku-library';          // 用邀請連結加入時，記住要連哪一個書庫 { lib, owner }
+const lowerEmail = e => String(e || '').trim().toLowerCase();
+const PERSON_KINDS = ['reading', 'wishlist', 'private', 'privateBin', 'privatePhotos'];
+
+class LibraryBase {
+  constructor() {
+    this.raw = { rooms: {}, cabinets: {}, categories: {}, books: {} };   // 共用資料（書含回收桶裡的）
+    this.mine = { reading: {}, wishlist: {}, private: {} };              // 目前這個人的資料
+    this.cache = { rooms: {}, cabinets: {}, categories: {}, books: {} }; // 畫面用：書已經合併好自己的閱讀資料
+    this.trash = {}; this.privTrash = {}; this.meta = defaultMeta(); this.listeners = new Set();
+    this.role = 'admin'; this.minor = false; this.me = { uid: '', email: '', name: '' }; this.members = {};
+  }
+  get canEdit() { return this.role === 'admin' || this.role === 'editor'; }
+  get isAdmin() { return this.role === 'admin'; }
+  onChange(fn) { this.listeners.add(fn); }
+  _emit() { this.listeners.forEach(f => f()); }
+  _denied() { if (this.onWriteError) this.onWriteError({ code: 'permission-denied' }); }
+  _run(ops) { if (ops.length) this._batch(ops).catch(e => this.onWriteError && this.onWriteError(e)); }
+  isPrivate(id) { return !!this.mine.private[id]; }
+  // 自己的書（隱私書籍、願望清單）的照片放在自己名下
+  _photoPriv(id) { return !!(this.mine.private[id] || this.mine.wishlist[id]); }
+  rebuild() {
+    for (const c of ['rooms', 'cabinets', 'categories']) this.cache[c] = this.raw[c];
+    const books = {}, trash = {}, hide = b => this.minor && b.adult === true;
+    for (const [id, b] of Object.entries(this.raw.books)) {
+      if (hide(b)) continue;
+      if (b.deletedAt) { trash[id] = { ...omitPersonal(b), id }; continue; }
+      if (b.ownership === 'wishlist' && !this.isAdmin) continue;   // 還沒升級的舊願望清單，只有管理者看得到（升級後會變成管理者自己的）
+      const legacy = this.isAdmin && !this.mine.reading[id] ? pickPersonal(b) : {};
+      books[id] = { ...omitPersonal(b), ...personalDefaults(), ...legacy, ...pickPersonal(this.mine.reading[id]), id };
+    }
+    for (const [id, w] of Object.entries(this.mine.wishlist)) if (!hide(w)) books[id] = { ...personalDefaults(), ...w, id, ownership: 'wishlist' };
+    for (const [id, p] of Object.entries(this.mine.private)) {
+      if (hide(p)) continue;
+      const v = { ...personalDefaults(), ...p, id, private: true };
+      if (p.deletedAt) trash[id] = v; else books[id] = v;
+    }
+    this.cache.books = books; this.trash = trash;
+  }
+  put(col, obj) {
+    if (col === 'books') return this.putBook(obj);
+    if (!this.canEdit) return this._denied();
+    obj = clone(obj); obj.updatedAt = nowISO();
+    this.raw[col][obj.id] = obj; this._setShared(col, obj.id, obj); this.rebuild(); this._emit();
+  }
+  remove(col, id) {
+    if (col === 'books') return this.binBook(id);
+    if (!this.isAdmin) return this._denied();
+    delete this.raw[col][id]; this._delShared(col, id); this.rebuild(); this._emit();
+  }
+  _binned(id, reason) { return { ...this.raw.books[id], deletedAt: nowISO(), deletedBy: this.me.name || this.me.email || '', deleteReason: reason, updatedAt: nowISO() }; }
+  putBook(obj) {
+    obj = clone(obj);
+    const id = obj.id, now = nowISO(), s0 = this.raw.books[id], live0 = s0 && !s0.deletedAt;
+    const wasWish = !!this.mine.wishlist[id], wasPriv = !!this.mine.private[id];
+    const wantPriv = !!obj.private && obj.ownership !== 'wishlist';
+    delete obj.private; obj.adult = !!obj.adult;
+    const ops = [];
+    if (obj.ownership === 'wishlist') {
+      const w = { ...obj, updatedAt: now };
+      this.mine.wishlist[id] = w; ops.push(['mine', 'wishlist', id, w]);
+      if (this.mine.reading[id]) { delete this.mine.reading[id]; ops.push(['delMine', 'reading', id]); }
+      if (wasPriv) { delete this.mine.private[id]; ops.push(['delMine', 'private', id]); }
+      if (live0 && this.canEdit) { const b = this._binned(id, 'wish'); this.raw.books[id] = b; ops.push(['shared', 'books', id, b]); this._movePhotosLater(id, false, true); }   // 從共用書庫拿掉的書都先進回收桶
+    } else if (wantPriv) {
+      if (!wasPriv && live0 && !this.canEdit) return this._denied();
+      const pv = { ...obj, updatedAt: now };
+      this.mine.private[id] = pv; ops.push(['mine', 'private', id, pv]);
+      if (wasWish) { delete this.mine.wishlist[id]; ops.push(['delMine', 'wishlist', id]); }
+      if (!wasPriv && live0) {   // 家裡的書改成隱私：搬到自己名下，照片也一起搬
+        delete this.raw.books[id]; ops.push(['delShared', 'books', id]);
+        if (this.mine.reading[id]) { delete this.mine.reading[id]; ops.push(['delMine', 'reading', id]); }
+        this._movePhotosLater(id, false, true);
+      }
+    } else {
+      if (!live0 && !this.canEdit) return this._denied();
+      if (wasWish) { delete this.mine.wishlist[id]; ops.push(['delMine', 'wishlist', id]); this._movePhotosLater(id, true, false); }   // 願望清單買到了：照片放回共用
+      const shared = omitPersonal(obj);
+      if (this.canEdit && (!live0 || wasPriv || !sameDoc(omitPersonal(s0), shared))) { shared.updatedAt = now; this.raw.books[id] = shared; ops.push(['shared', 'books', id, shared]); }
+      const p0 = { ...personalDefaults(), ...pickPersonal(this.mine.reading[id]) }, p1 = { ...personalDefaults(), ...pickPersonal(obj) };
+      if (!sameDoc(p0, p1)) { const st = { ...p1, id, updatedAt: now }; this.mine.reading[id] = st; ops.push(['mine', 'reading', id, st]); }
+      if (wasPriv) { delete this.mine.private[id]; ops.push(['delMine', 'private', id]); this._movePhotosLater(id, true, false); }   // 取消隱私：放回家裡的書
+    }
+    this._run(ops); this.rebuild(); this._emit();
+  }
+  // 照片跟著書搬家（家裡的書 ↔ 隱私）
+  _movePhotosLater(id, fromPriv, toPriv) {
+    (async () => {
+      let ps = []; try { ps = await this._photosAt(id, fromPriv); } catch (e) { return; }
+      if (!ps.length) return;
+      const ops = [];
+      ps.forEach(p => {
+        ops.push(toPriv ? ['mine', 'privatePhotos', p.id, p] : ['photo', p.id, p]);
+        ops.push(fromPriv ? ['delMine', 'privatePhotos', p.id] : ['delPhoto', p.id]);
+      });
+      await this._batch(ops);
+    })().catch(e => this.onWriteError && this.onWriteError(e));
+  }
+  // 刪書：自己的願望清單直接刪；隱私書籍和家裡的書都先進回收桶，只有管理者能永久刪除
+  binBook(id, reason = 'del') {
+    if (this.mine.wishlist[id]) {
+      delete this.mine.wishlist[id];
+      (async () => {
+        let ps = []; try { ps = await this._photosAt(id, true); } catch (e) {}
+        await this._batch([['delMine', 'wishlist', id], ...ps.map(p => ['delMine', 'privatePhotos', p.id])]);
+      })().catch(e => this.onWriteError && this.onWriteError(e));
+    }
+    else if (this.mine.private[id]) {
+      const at = nowISO(), p = { ...this.mine.private[id], deletedAt: at, updatedAt: at };
+      this.mine.private[id] = p;
+      (async () => {
+        let ids = []; try { ids = (await this._photosAt(id, true)).map(x => x.id); } catch (e) {}
+        await this._batch([['mine', 'private', id, p], ['mine', 'privateBin', id, { id, deletedAt: at, photoIds: ids }]]);   // 回收桶的紀錄沒有書名，管理者只看得到「有一本」
+      })().catch(e => this.onWriteError && this.onWriteError(e));
+    }
+    else if (this.raw.books[id] && this.canEdit) { const b = this._binned(id, reason); this.raw.books[id] = b; this._run([['shared', 'books', id, b]]); }
+    else return this._denied();
+    this.rebuild(); this._emit();
+  }
+  restoreBook(id) {
+    const pv = this.mine.private[id];
+    if (pv && pv.deletedAt) {
+      const p = { ...pv, updatedAt: nowISO() }; delete p.deletedAt;
+      this.mine.private[id] = p; this._run([['mine', 'private', id, p], ['delMine', 'privateBin', id]]);
+    } else {
+      const b0 = this.raw.books[id]; if (!b0 || !this.canEdit) return this._denied();
+      const b = { ...b0, updatedAt: nowISO() }; delete b.deletedAt; delete b.deletedBy; delete b.deleteReason;
+      this.raw.books[id] = b; const ops = [['shared', 'books', id, b]];
+      if (this.mine.wishlist[id]) { delete this.mine.wishlist[id]; ops.push(['delMine', 'wishlist', id]); }
+      this._run(ops);
+    }
+    this.rebuild(); this._emit();
+  }
+  // 永久刪除（只有管理者）。uid：別人的隱私書籍，管理者看不到內容，只照回收桶紀錄刪
+  async purgeBook(id, uid) {
+    if (!this.isAdmin) return this._denied();
+    const ops = [];
+    if (uid && uid !== this.me.uid) {
+      const t = this.privTrash[uid + '/' + id]; if (!t) return;
+      (t.photoIds || []).forEach(pid => ops.push(['delMine', 'privatePhotos', pid, null, uid]));
+      ops.push(['delMine', 'private', id, null, uid], ['delMine', 'privateBin', id, null, uid]);
+      delete this.privTrash[uid + '/' + id];
+    } else if (this.mine.private[id]) {
+      let ps = []; try { ps = await this._photosAt(id, true); } catch (e) {}
+      ps.forEach(p => ops.push(['delMine', 'privatePhotos', p.id]));
+      ops.push(['delMine', 'private', id], ['delMine', 'privateBin', id]);
+      delete this.mine.private[id];
+    } else {
+      if (!this.raw.books[id]) return;
+      let ps = []; try { ps = await this._photosAt(id, false); } catch (e) {}
+      ps.forEach(p => ops.push(['delPhoto', p.id]));
+      ops.push(['delShared', 'books', id]);
+      if (this.mine.reading[id]) { delete this.mine.reading[id]; ops.push(['delMine', 'reading', id]); }
+      delete this.raw.books[id];
+    }
+    await this._batch(ops); this.rebuild(); this._emit();
+  }
+  photosFor(bookId) { return this._photosAt(bookId, this._photoPriv(bookId)); }
+  putMeta(patch) {
+    if (!this.canEdit) return this._denied();
+    Object.assign(this.meta, clone(patch)); this._setMeta(clone(patch)); this._emit();
+  }
+  // 舊資料（閱讀狀態寫在書上、願望清單混在書裡、沒有限制級欄位）整理好，閱讀資料歸到管理者名下，只做一次
+  async migrateLegacy() {
+    if (!this.isAdmin) return 0;
+    const list = Object.values(this.raw.books).filter(isLegacyBook); if (!list.length) return 0;
+    const ops = [];
+    for (const b of list) {
+      if (b.ownership === 'wishlist' && !b.deletedAt) {
+        if (!this.mine.wishlist[b.id]) { const w = { ...b, adult: !!b.adult, updatedAt: b.updatedAt || nowISO() }; this.mine.wishlist[b.id] = w; ops.push(['mine', 'wishlist', b.id, w]); }
+        delete this.raw.books[b.id]; ops.push(['delShared', 'books', b.id]);
+        this._movePhotosLater(b.id, false, true);
+      } else {
+        if (hasPersonal(b) && !this.mine.reading[b.id]) { const st = { ...personalDefaults(), ...pickPersonal(b), id: b.id, updatedAt: nowISO() }; this.mine.reading[b.id] = st; ops.push(['mine', 'reading', b.id, st]); }
+        const s = { ...omitPersonal(b), adult: !!b.adult }; this.raw.books[b.id] = s; ops.push(['shared', 'books', b.id, s]);
+      }
+    }
+    await this._batch(ops); this.rebuild(); this._emit();
+    return list.length;
+  }
+  // 還原備份：舊格式（沒有 people）的閱讀資料和願望清單歸到現在的管理者；別人的隱私書籍管理者本來就拿不到
+  splitImport(data) {
+    const shared = { rooms: data.rooms || [], cabinets: data.cabinets || [], categories: data.categories || [], books: [], photos: data.photos || [] };
+    const people = {};
+    const P = uid => people[uid] || (people[uid] = { reading: [], wishlist: [], private: [], privatePhotos: [] });
+    if (data.people && typeof data.people === 'object') {
+      for (const [uid0, p] of Object.entries(data.people)) {
+        const uid = uid0 === data.libraryOwner ? this.me.uid : uid0;
+        for (const k of ['reading', 'wishlist', 'private', 'privatePhotos']) P(uid)[k].push(...(p[k] || []));
+        if (p.email) P(uid).email = p.email;
+      }
+    }
+    for (const b of data.books || []) {
+      if (b.ownership === 'wishlist' && !b.deletedAt) { P(this.me.uid).wishlist.push(b); continue; }
+      if (hasPersonal(b) && !P(this.me.uid).reading.some(r => r.id === b.id)) P(this.me.uid).reading.push({ ...personalDefaults(), ...pickPersonal(b), id: b.id });
+      shared.books.push({ ...omitPersonal(b), adult: !!b.adult });
+    }
+    return { shared, people, members: Array.isArray(data.members) ? data.members : [] };
+  }
+  inviteLink() {
+    const c = this.cfg || {}, payload = { a: c.apiKey, d: c.authDomain, p: c.projectId, i: c.appId, l: this.lib || this.me.uid, n: this.me.name || this.me.email };
+    const bytes = new TextEncoder().encode(JSON.stringify(payload));
+    let bin = ''; bytes.forEach(x => { bin += String.fromCharCode(x); });
+    return location.origin + location.pathname.replace(/[^/]*$/, '') + '?invite=' + btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+}
+function parseInvite(s) {
+  try {
+    const bin = atob(String(s).replace(/-/g, '+').replace(/_/g, '/'));
+    const o = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0))));
+    if (!o.a || !o.p || !o.i || !o.l) return null;
+    return { cfg: { apiKey: o.a, authDomain: o.d || o.p + '.firebaseapp.com', projectId: o.p, appId: o.i }, lib: o.l, owner: o.n || '' };
+  } catch (e) { return null; }
+}
+
 /* ---------- 資料來源：示範模式（存在這台裝置） ---------- */
-class LocalBackend {
-  constructor() { this.kind = 'demo'; this.cache = {}; this.photos = {}; this.meta = defaultMeta(); this.listeners = new Set(); }
+// 示範模式可以切換身分，看看家人登入後看到的畫面
+const DEMO_USERS = { admin: { uid: 'demo-me', email: 'me@demo', name: '我' }, editor: { uid: 'demo-editor', email: 'editor@demo', name: '家人（可修改）' }, viewer: { uid: 'demo-viewer', email: 'viewer@demo', name: '家人（只能檢視）' } };
+class LocalBackend extends LibraryBase {
+  constructor() { super(); this.kind = 'demo'; this.photos = {}; this.people = {}; this.lib = 'demo-me'; }
   async init() {
     const saved = LS.get('tsundoku-demo-data');
     this._load(saved && saved.schemaVersion === SCHEMA_VERSION ? saved : demoSeed());
+    this._identity();
     this._save();
   }
+  _person(uid) {
+    const P = this.people[uid] || (this.people[uid] = {});
+    PERSON_KINDS.forEach(k => { if (!P[k]) P[k] = {}; });
+    return P;
+  }
+  _identity() {
+    const r = LS.get('tsundoku-demo-as'); this.role = DEMO_USERS[r] ? r : 'admin';
+    this.me = { ...DEMO_USERS[this.role] };
+    this.minor = this.role !== 'admin' && !!(this.members[this.me.email] || {}).minor;
+    this.mine = this._person(this.me.uid);
+    this.rebuild();
+  }
+  rebuild() {
+    this.privTrash = {};
+    if (this.isAdmin) for (const [uid, P] of Object.entries(this.people)) if (uid !== this.me.uid) Object.values(P.privateBin || {}).forEach(t => { this.privTrash[uid + '/' + t.id] = { ...t, uid }; });
+    super.rebuild();
+  }
+  setDemoRole(r) { LS.set('tsundoku-demo-as', r); this._identity(); this._emit(); }
   _load(d) {
-    for (const c of COLS) { this.cache[c] = {}; (d[c] || []).forEach(x => { this.cache[c][x.id] = x; }); }
+    for (const c of COLS) { this.raw[c] = {}; (d[c] || []).forEach(x => { this.raw[c][x.id] = x; }); }
     this.photos = {}; (d.photos || []).forEach(p => { this.photos[p.id] = p; });
     this.meta = Object.assign(defaultMeta(), d.settings || {});
+    this.people = {};
+    for (const [uid, p] of Object.entries(d.people || {})) { const P = this._person(uid); PERSON_KINDS.forEach(k => (p[k] || []).forEach(x => { P[k][x.id] = x; })); }
+    this.members = {}; (d.members || []).forEach(m => { this.members[lowerEmail(m.email)] = m; });
+    if (d.members === undefined) ['editor', 'viewer'].forEach(r => { const u = DEMO_USERS[r]; this.members[u.email] = { email: u.email, role: r, name: u.name, addedAt: nowISO(), uid: u.uid }; });
+    this._migrateLocal();
   }
-  _dump() { const o = { schemaVersion: SCHEMA_VERSION }; for (const c of COLS) o[c] = Object.values(this.cache[c]); o.photos = Object.values(this.photos); o.settings = clone(this.meta); return o; }
+  // 示範資料（或測試直接寫進去的舊格式）一律歸到示範的管理者，舊格式的值為準
+  _migrateLocal() {
+    const P = this._person(DEMO_USERS.admin.uid);
+    for (const b of Object.values(this.raw.books)) {
+      if (!isLegacyBook(b)) continue;
+      if (b.ownership === 'wishlist' && !b.deletedAt) {
+        P.wishlist[b.id] = { ...b, adult: !!b.adult }; delete P.reading[b.id]; delete this.raw.books[b.id];
+        Object.values(this.photos).filter(x => x.bookId === b.id).forEach(x => { P.privatePhotos[x.id] = x; delete this.photos[x.id]; });
+        continue;
+      }
+      if (PERSONAL.some(k => k in b)) P.reading[b.id] = { ...personalDefaults(), ...pickPersonal(b), id: b.id };
+      this.raw.books[b.id] = { ...omitPersonal(b), adult: !!b.adult };
+    }
+  }
+  _personOut(uid, all) {
+    const P = this._person(uid), o = { email: (Object.values(DEMO_USERS).find(u => u.uid === uid) || {}).email || '', reading: Object.values(P.reading), wishlist: Object.values(P.wishlist) };
+    if (all) PERSON_KINDS.slice(2).forEach(k => { o[k] = Object.values(P[k]); });
+    return o;
+  }
+  _dump() {
+    const o = { schemaVersion: SCHEMA_VERSION };
+    for (const c of COLS) o[c] = Object.values(this.raw[c]);
+    o.photos = Object.values(this.photos); o.settings = clone(this.meta);
+    o.people = {}; for (const uid of Object.keys(this.people)) o.people[uid] = this._personOut(uid, true);
+    o.members = Object.values(this.members);
+    o.libraryOwner = DEMO_USERS.admin.uid;
+    return o;
+  }
   _save() { LS.set('tsundoku-demo-data', this._dump()); }
-  onChange(fn) { this.listeners.add(fn); }
-  _emit() { this.listeners.forEach(f => f()); }
-  put(col, obj) { obj = clone(obj); obj.updatedAt = nowISO(); this.cache[col][obj.id] = obj; this._save(); this._emit(); }
-  remove(col, id) { delete this.cache[col][id]; this._save(); this._emit(); }
-  putMeta(patch) { Object.assign(this.meta, clone(patch)); this._save(); this._emit(); }
-  async exportAll() { return this._dump(); }
-  async importAll(data, mode) {
-    if (mode === 'replace') { for (const c of COLS) this.cache[c] = {}; this.photos = {}; }
-    for (const c of COLS) (data[c] || []).forEach(x => { this.cache[c][x.id] = x; });
-    (data.photos || []).forEach(p => { this.photos[p.id] = p; });
-    if (data.settings) Object.assign(this.meta, data.settings);
-    this._save(); this._emit();
+  _setShared() { this._save(); }
+  _delShared() { this._save(); }
+  _setMeta() { this._save(); }
+  _apply(op) {
+    const [k, a, b, c, uid] = op;
+    if (k === 'shared') this.raw[a][b] = c;
+    else if (k === 'delShared') delete this.raw[a][b];
+    else if (k === 'mine') this._person(uid || this.me.uid)[a][b] = c;
+    else if (k === 'delMine') delete this._person(uid || this.me.uid)[a][b];
+    else if (k === 'photo') this.photos[a] = b;
+    else if (k === 'delPhoto') delete this.photos[a];
+    else if (k === 'member') this.members[a] = { ...(this.members[a] || {}), ...b };
+    else if (k === 'meta') Object.assign(this.meta, a);
   }
-  putPhoto(p) { this.photos[p.id] = clone(p); this._save(); }
-  removePhoto(id) { delete this.photos[id]; this._save(); }
-  async photosFor(bookId) { return Object.values(this.photos).filter(p => p.bookId === bookId).map(clone); }
-  resetDemo() { this._load(demoSeed()); this._save(); this._emit(); }
+  async _batch(ops) { ops.forEach(op => this._apply(clone(op))); this.mine = this._person(this.me.uid); this.rebuild(); this._save(); }
+  // 備份：自己的（含隱私書籍）全部；管理者另外帶每個人的閱讀紀錄和願望清單，但不含別人的隱私書籍
+  async exportAll() {
+    const o = { schemaVersion: SCHEMA_VERSION };
+    for (const c of COLS) o[c] = Object.values(this.raw[c]);
+    o.photos = Object.values(this.photos); o.settings = clone(this.meta);
+    o.people = { [this.me.uid]: this._personOut(this.me.uid, true) };
+    if (this.isAdmin) { for (const uid of Object.keys(this.people)) if (uid !== this.me.uid) o.people[uid] = this._personOut(uid, false); o.members = Object.values(this.members); }
+    o.libraryOwner = DEMO_USERS.admin.uid;
+    return o;
+  }
+  async importAll(data, mode) {
+    if (!this.isAdmin) return this._denied();
+    const { shared, people, members } = this.splitImport(data);
+    if (mode === 'replace') { for (const c of COLS) this.raw[c] = {}; this.photos = {}; }
+    for (const c of COLS) shared[c].forEach(x => { this.raw[c][x.id] = x; });
+    shared.photos.forEach(p => { this.photos[p.id] = p; });
+    for (const [uid, p] of Object.entries(people)) {
+      const mineToo = uid === this.me.uid, P = this._person(uid);
+      const kinds = mineToo ? ['reading', 'wishlist', 'private', 'privatePhotos'] : ['reading', 'wishlist'];
+      kinds.forEach(k => { if (mode === 'replace') P[k] = {}; (p[k] || []).forEach(x => { P[k][x.id] = x; }); });
+    }
+    members.forEach(m => { if (m.email) this.members[lowerEmail(m.email)] = m; });
+    if (data.settings) Object.assign(this.meta, data.settings);
+    this._migrateLocal(); this.mine = this._person(this.me.uid);
+    this.rebuild(); this._save(); this._emit();
+  }
+  putPhoto(p) { (this._photoPriv(p.bookId) ? this.mine.privatePhotos : this.photos)[p.id] = clone(p); this._save(); }
+  removePhoto(id, bookId) {
+    if (bookId && this._photoPriv(bookId)) { delete this.mine.privatePhotos[id]; this._save(); return; }
+    if (!this.isAdmin) return this._denied();
+    delete this.photos[id]; this._save();
+  }
+  async _photosAt(bookId, priv) { return Object.values(priv ? this._person(this.me.uid).privatePhotos : this.photos).filter(p => p.bookId === bookId).map(clone); }
+  async setMember(email, data) { if (!this.isAdmin) return this._denied(); email = lowerEmail(email); this.members[email] = { ...(this.members[email] || {}), ...data, email }; this._save(); this._emit(); }
+  async removeMember(email) { if (!this.isAdmin) return this._denied(); delete this.members[lowerEmail(email)]; this._save(); this._emit(); }
+  resetDemo() { this._load(demoSeed()); this._identity(); this._save(); this._emit(); }
 }
 
 /* ---------- 資料來源：Firebase ---------- */
-class FirebaseBackend {
-  constructor(cfg) { this.kind = 'firebase'; this.cfg = cfg; this.cache = {}; COLS.forEach(c => { this.cache[c] = {}; }); this.meta = defaultMeta(); this.listeners = new Set(); this.unsubs = []; this.user = null; }
+// 書庫放在管理者的 users/{管理者 uid} 底下；家人用自己的 Google 帳號登入，靠 members 名單決定權限
+class FirebaseBackend extends LibraryBase {
+  constructor(cfg) { super(); this.kind = 'firebase'; this.cfg = cfg; this.unsubs = []; this.binUnsubs = {}; this.user = null; this.lib = ''; }
   async init() {
     const base = `https://www.gstatic.com/firebasejs/${FB_VERSION}/`;
     const [appM, authM, fsM] = await Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-firestore.js')]);
@@ -757,71 +2377,168 @@ class FirebaseBackend {
       throw e;
     }
   }
-  async signOut() { this.unsubs.forEach(u => u()); this.unsubs = []; await this.A.signOut(this.auth); this.user = null; }
-  col(c) { return this.F.collection(this.db, 'users', this.user.uid, c); }
-  ref(c, id) { return this.F.doc(this.db, 'users', this.user.uid, c, id); }
+  async signOut() { this.unsubs.forEach(u => u()); this.unsubs = []; Object.values(this.binUnsubs).forEach(u => u()); this.binUnsubs = {}; await this.A.signOut(this.auth); this.user = null; }
+  dref(...p) { return this.F.doc(this.db, 'users', this.lib, ...p); }
+  dcol(...p) { return this.F.collection(this.db, 'users', this.lib, ...p); }
+  // 登入後先決定：連哪個書庫、我是誰、有什麼權限、是不是初心者
+  async resolveRole() {
+    const u = this.user, email = lowerEmail(u.email), inv = LS.get(LIB_KEY);
+    this.lib = inv && inv.lib ? inv.lib : u.uid;
+    this.me = { uid: u.uid, email, name: u.displayName || email };
+    const roleKey = `tsundoku-role-${this.lib}-${u.uid}`;
+    if (this.lib === u.uid) {
+      try { await this.F.getDoc(this.dref('meta', 'settings')); }
+      catch (e) { if (e.code === 'permission-denied') return 'denied'; }
+      this.role = 'admin'; this.minor = false; return 'admin';
+    }
+    let snap;
+    try { snap = await this.F.getDoc(this.dref('members', email)); }
+    catch (e) {
+      if (e.code === 'permission-denied') return 'nomember';
+      const cached = LS.get(roleKey); if (cached) { this.role = cached.role; this.minor = !!cached.minor; this.me.name = cached.name || this.me.name; return this.role; }
+      throw e;
+    }
+    if (!snap.exists()) return 'nomember';
+    const m = snap.data();
+    this.role = m.role === 'editor' ? 'editor' : 'viewer'; this.minor = !!m.minor; this.me.name = m.name || this.me.name;
+    LS.set(roleKey, { role: this.role, minor: this.minor, name: m.name || '' });
+    this.F.setDoc(this.dref('members', email), { uid: u.uid, gname: u.displayName || '', lastSeen: nowISO() }, { merge: true }).catch(() => {});
+    return this.role;
+  }
   startSync(onError) {
-    const F = this.F; let pending = COLS.length + 1;
+    const F = this.F, me = this.me.uid;
+    // 初心者：限制級的書在資料庫那層就不會傳過來
+    const booksRef = this.minor ? F.query(this.dcol('books'), F.where('adult', '==', false)) : this.dcol('books');
+    const jobs = [...COLS.map(c => ['shared', c, c === 'books' ? booksRef : this.dcol(c)]), ...['reading', 'wishlist', 'private'].map(k => ['mine', k, this.dcol('people', me, k)])];
+    let pending = jobs.length + 1 + (this.isAdmin ? 0 : 1);
     return new Promise(resolve => {
-      const done = () => { if (--pending === 0) resolve(); };
-      for (const c of COLS) {
+      const done = () => { if (--pending === 0) { this.rebuild(); resolve(); } };
+      for (const [kind, c, ref] of jobs) {
         let first = true;
-        this.unsubs.push(F.onSnapshot(this.col(c), snap => {
+        this.unsubs.push(F.onSnapshot(ref, snap => {
           const m = {}; snap.forEach(d => { m[d.id] = { ...d.data(), id: d.id }; });
-          this.cache[c] = m;
-          if (first) { first = false; done(); } else this._emit();
+          if (kind === 'shared') this.raw[c] = m; else this.mine[c] = m;
+          if (first) { first = false; done(); } else { this.rebuild(); this._emit(); }
         }, err => { onError(err); if (first) { first = false; done(); } }));
       }
       let firstM = true;
-      this.unsubs.push(F.onSnapshot(this.ref('meta', 'settings'), d => {
-        this.meta = Object.assign(defaultMeta(), d.exists() ? d.data() : {});
+      this.unsubs.push(F.onSnapshot(this.dref('meta', 'settings'), d => {
+        this.meta = Object.assign(defaultMeta(), d.exists() ? d.data() : {}); this.metaExists = d.exists();
         if (firstM) { firstM = false; done(); } else this._emit();
       }, err => { onError(err); if (firstM) { firstM = false; done(); } }));
+      if (this.isAdmin) {
+        this.unsubs.push(F.onSnapshot(this.dcol('members'), snap => {
+          const m = {}; snap.forEach(d => { m[d.id] = { ...d.data(), email: d.id }; }); this.members = m;
+          this._watchPrivateBins(); this._emit();
+        }, () => {}));
+      } else {
+        // 管理者改了我的權限、初心者設定，或把我移出名單，馬上生效
+        let firstR = true;
+        this.unsubs.push(F.onSnapshot(this.dref('members', this.me.email), d => {
+          const was = this.role, wasMinor = this.minor;
+          if (!d.exists()) this.role = null; else { const m = d.data(); this.role = m.role === 'editor' ? 'editor' : 'viewer'; this.minor = !!m.minor; this.me.name = m.name || this.me.name; }
+          if (firstR) { firstR = false; done(); return; }
+          if (wasMinor !== this.minor && this.role) { LS.set(`tsundoku-role-${this.lib}-${me}`, { role: this.role, minor: this.minor, name: this.me.name }); if (this.onRoleChange) this.onRoleChange(this.role, 'minor'); return; }
+          if (was !== this.role) { this.rebuild(); this._emit(); if (this.onRoleChange) this.onRoleChange(this.role); }
+        }, () => { if (firstR) { firstR = false; done(); } }));
+      }
     });
   }
-  onChange(fn) { this.listeners.add(fn); }
-  _emit() { this.listeners.forEach(f => f()); }
-  _w(p) { p.catch(e => this.onWriteError && this.onWriteError(e)); }
-  put(col, obj) { obj = clone(obj); obj.updatedAt = nowISO(); this.cache[col][obj.id] = obj; this._emit(); this._w(this.F.setDoc(this.ref(col, obj.id), obj)); }
-  remove(col, id) { delete this.cache[col][id]; this._emit(); this._w(this.F.deleteDoc(this.ref(col, id))); }
-  putMeta(patch) { Object.assign(this.meta, clone(patch)); this._emit(); this._w(this.F.setDoc(this.ref('meta', 'settings'), clone(patch), { merge: true })); }
-  putPhoto(p) { this._w(this.F.setDoc(this.ref('photos', p.id), clone(p))); }
-  removePhoto(id) { this._w(this.F.deleteDoc(this.ref('photos', id))); }
-  async photosFor(bookId) {
-    const snap = await this.F.getDocs(this.F.query(this.col('photos'), this.F.where('bookId', '==', bookId)));
-    return snap.docs.map(d => ({ ...d.data(), id: d.id }));
-  }
-  async exportAll() {
-    const o = { schemaVersion: SCHEMA_VERSION };
-    for (const c of COLS) o[c] = Object.values(this.cache[c]);
-    const ps = await this.F.getDocs(this.col('photos'));
-    o.photos = ps.docs.map(d => ({ ...d.data(), id: d.id }));
-    o.settings = clone(this.meta);
-    return o;
-  }
-  async importAll(data, mode) {
-    const F = this.F, ops = [], incoming = new Set();
-    for (const c of [...COLS, 'photos']) (data[c] || []).forEach(x => incoming.add(c + '/' + x.id));
-    if (mode === 'replace') {
-      for (const c of COLS) Object.keys(this.cache[c]).forEach(id => { if (!incoming.has(c + '/' + id)) ops.push(['del', c, id]); });
-      const ps = await F.getDocs(this.col('photos'));
-      ps.docs.forEach(d => { if (!incoming.has('photos/' + d.id)) ops.push(['del', 'photos', d.id]); });
+  // 管理者：看得到每個家人的隱私回收桶「有幾本」（沒有書名），才能幫忙永久刪除
+  _watchPrivateBins() {
+    const uids = new Set(Object.values(this.members).map(m => m.uid).filter(u => u && u !== this.me.uid));
+    for (const uid of Object.keys(this.binUnsubs)) if (!uids.has(uid)) { this.binUnsubs[uid](); delete this.binUnsubs[uid]; Object.keys(this.privTrash).forEach(k => { if (k.startsWith(uid + '/')) delete this.privTrash[k]; }); }
+    for (const uid of uids) {
+      if (this.binUnsubs[uid]) continue;
+      this.binUnsubs[uid] = this.F.onSnapshot(this.dcol('people', uid, 'privateBin'), snap => {
+        Object.keys(this.privTrash).forEach(k => { if (k.startsWith(uid + '/')) delete this.privTrash[k]; });
+        snap.forEach(d => { this.privTrash[uid + '/' + d.id] = { ...d.data(), id: d.id, uid }; });
+        this._emit();
+      }, () => {});
     }
-    for (const c of [...COLS, 'photos']) (data[c] || []).forEach(x => ops.push(['set', c, x.id, x]));
-    if (data.settings) ops.push(['meta', data.settings]);
-    const commits = [];
+  }
+  _w(p) { p.catch(e => this.onWriteError && this.onWriteError(e)); }
+  _setShared(col, id, obj) { this._w(this.F.setDoc(this.dref(col, id), obj)); }
+  _delShared(col, id) { this._w(this.F.deleteDoc(this.dref(col, id))); }
+  _setMeta(patch) { this._w(this.F.setDoc(this.dref('meta', 'settings'), patch, { merge: true })); }
+  async _batch(ops) {
+    const F = this.F, commits = [];
     for (let i = 0; i < ops.length; i += 400) {
       const b = F.writeBatch(this.db);
       ops.slice(i, i + 400).forEach(op => {
-        if (op[0] === 'del') b.delete(this.ref(op[1], op[2]));
-        else if (op[0] === 'set') b.set(this.ref(op[1], op[2]), clone(op[3]));
-        else b.set(this.ref('meta', 'settings'), clone(op[1]), { merge: true });
+        if (op[0] === 'shared') b.set(this.dref(op[1], op[2]), clone(op[3]));
+        else if (op[0] === 'delShared') b.delete(this.dref(op[1], op[2]));
+        else if (op[0] === 'mine') b.set(this.dref('people', op[4] || this.me.uid, op[1], op[2]), clone(op[3]));
+        else if (op[0] === 'delMine') b.delete(this.dref('people', op[4] || this.me.uid, op[1], op[2]));
+        else if (op[0] === 'member') b.set(this.dref('members', op[1]), clone(op[2]), { merge: true });
+        else if (op[0] === 'meta') b.set(this.dref('meta', 'settings'), clone(op[1]), { merge: true });
+        else if (op[0] === 'photo') b.set(this.dref('photos', op[1]), clone(op[2]));
+        else if (op[0] === 'delPhoto') b.delete(this.dref('photos', op[1]));
       });
       commits.push(b.commit());
     }
     // 離線時寫入會先存在本機，連線後才送出，所以最多等 8 秒
     await Promise.race([Promise.all(commits), sleep(8000)]);
   }
+  putPhoto(p) { this._w(this.F.setDoc(this._photoPriv(p.bookId) ? this.dref('people', this.me.uid, 'privatePhotos', p.id) : this.dref('photos', p.id), clone(p))); }
+  removePhoto(id, bookId) {
+    if (bookId && this._photoPriv(bookId)) { this._w(this.F.deleteDoc(this.dref('people', this.me.uid, 'privatePhotos', id))); return; }
+    if (!this.isAdmin) return this._denied();
+    this._w(this.F.deleteDoc(this.dref('photos', id)));
+  }
+  async _photosAt(bookId, priv) {
+    const col = priv ? this.dcol('people', this.me.uid, 'privatePhotos') : this.dcol('photos');
+    const snap = await this.F.getDocs(this.F.query(col, this.F.where('bookId', '==', bookId)));
+    return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+  }
+  async personData(uid) {
+    if (uid === this.me.uid) {
+      const pp = await this.F.getDocs(this.dcol('people', uid, 'privatePhotos'));
+      return { reading: Object.values(this.mine.reading), wishlist: Object.values(this.mine.wishlist), private: Object.values(this.mine.private), privatePhotos: pp.docs.map(d => ({ ...d.data(), id: d.id })) };
+    }
+    const [r, w] = await Promise.all([this.F.getDocs(this.dcol('people', uid, 'reading')), this.F.getDocs(this.dcol('people', uid, 'wishlist'))]);
+    return { reading: r.docs.map(d => ({ ...d.data(), id: d.id })), wishlist: w.docs.map(d => ({ ...d.data(), id: d.id })) };
+  }
+  async exportAll() {
+    const o = { schemaVersion: SCHEMA_VERSION };
+    for (const c of COLS) o[c] = Object.values(this.raw[c]);
+    const ps = await this.F.getDocs(this.dcol('photos'));
+    o.photos = ps.docs.map(d => ({ ...d.data(), id: d.id }));
+    o.settings = clone(this.meta);
+    o.people = {};
+    const who = [[this.me.uid, this.me.email]];
+    if (this.isAdmin) Object.values(this.members).forEach(m => { if (m.uid && m.uid !== this.me.uid) who.push([m.uid, m.email]); });
+    for (const [uid, email] of who) { try { o.people[uid] = { email, ...(await this.personData(uid)) }; } catch (e) {} }
+    if (this.isAdmin) o.members = Object.values(this.members);
+    o.libraryOwner = this.lib;
+    return o;
+  }
+  async importAll(data, mode) {
+    if (!this.isAdmin) return this._denied();
+    const { shared, people, members } = this.splitImport(data);
+    const F = this.F, ops = [], incoming = new Set();
+    for (const c of [...COLS, 'photos']) shared[c].forEach(x => incoming.add(c + '/' + x.id));
+    if (mode === 'replace') {
+      for (const c of COLS) Object.keys(this.raw[c]).forEach(id => { if (!incoming.has(c + '/' + id)) ops.push(['delShared', c, id]); });
+      const ps = await F.getDocs(this.dcol('photos'));
+      ps.docs.forEach(d => { if (!incoming.has('photos/' + d.id)) ops.push(['delPhoto', d.id]); });
+    }
+    for (const c of COLS) shared[c].forEach(x => ops.push(['shared', c, x.id, x]));
+    shared.photos.forEach(p => ops.push(['photo', p.id, p]));
+    for (const [uid, p] of Object.entries(people)) {
+      const kinds = uid === this.me.uid ? ['reading', 'wishlist', 'private', 'privatePhotos'] : ['reading', 'wishlist'];   // 別人的隱私書籍管理者寫不進去
+      if (mode === 'replace') {
+        let cur = {}; try { cur = await this.personData(uid); } catch (e) {}
+        kinds.forEach(k => { const keep = new Set((p[k] || []).map(x => x.id)); (cur[k] || []).forEach(x => { if (!keep.has(x.id)) ops.push(['delMine', k, x.id, null, uid]); }); });
+      }
+      kinds.forEach(k => (p[k] || []).forEach(x => ops.push(['mine', k, x.id, x, uid])));
+    }
+    members.forEach(m => { if (m.email && lowerEmail(m.email) !== this.me.email) ops.push(['member', lowerEmail(m.email), { email: lowerEmail(m.email), role: m.role === 'editor' ? 'editor' : 'viewer', minor: !!m.minor, name: m.name || '', addedAt: m.addedAt || nowISO() }]); });
+    if (data.settings) ops.push(['meta', data.settings]);
+    await this._batch(ops);
+  }
+  async setMember(email, data) { if (!this.isAdmin) return this._denied(); email = lowerEmail(email); this.members[email] = { ...(this.members[email] || {}), ...data, email }; this._emit(); this._w(this.F.setDoc(this.dref('members', email), { ...data, email }, { merge: true })); }
+  async removeMember(email) { if (!this.isAdmin) return this._denied(); email = lowerEmail(email); delete this.members[email]; this._emit(); this._w(this.F.deleteDoc(this.dref('members', email))); }
 }
 
 /* ---------- App 狀態 ---------- */
@@ -831,6 +2548,13 @@ const app = { screen: 'loading', mode: null, B: null, tab: 'shelf', stack: [], d
   gb: { status: '', keyBad: false }, bookCat: '', bookAdv: {}, bookShow: 150 };
 const B = () => app.B;
 const cur = () => app.stack[app.stack.length - 1];
+// 權限：管理者（書庫的主人）、可修改、只能檢視
+const canEdit = () => !B() || B().canEdit;
+const isAdmin = () => !B() || B().isAdmin;
+const myRole = () => (B() && B().role) || 'viewer';
+const isMinorMe = () => !!(B() && B().minor);
+// 這本書我能不能改：家裡的書要有修改權限；自己的願望清單、隱私書籍隨時能改
+const mayEditBook = b => canEdit() || !!(b && (b.private || b.ownership === 'wishlist'));
 const viewKey = v => v ? v.name + ':' + (v.id || '') : '';
 
 /* ---------- 圖示 ---------- */
@@ -877,6 +2601,10 @@ const ICON = {
   image: svg('<rect x="4" y="4.5" width="16" height="15" rx="2"/><circle cx="9" cy="9.5" r="1.6"/><path d="M5 18l5-5 3 3 2.5-2.5L20 18"/>', 1.8),
   globe: svg('<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.3 3.6 5 3.6 8s-1.1 5.7-3.6 8c-2.5-2.3-3.6-5-3.6-8S9.5 6.3 12 4z"/>', 1.7),
   ai: svg('<path d="M12 3.5l1.9 5.1L19 10.5l-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>', 1.6),
+  share: svg('<circle cx="17.5" cy="5.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><circle cx="17.5" cy="18.5" r="2.5"/><path d="M8.7 10.8l6.6-4M8.7 13.2l6.6 4"/>', 1.8),
+  sprout: svg('<path d="M12 20.5v-8"/><path d="M12 12.5C12 8.9 9.1 6 5.5 6H4.5v1c0 3.6 2.9 6.5 6.5 6.5H12"/><path d="M12 10.5c0-3 2.5-5.5 5.5-5.5h1.5v1.2c0 3-2.5 5.3-5.5 5.3H12"/>', 1.8),
+  lock: svg('<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>', 1.8),
+  shield: svg('<path d="M12 3.5l7 2.6v5.3c0 4.4-2.9 7.8-7 9.1-4.1-1.3-7-4.7-7-9.1V6.1z"/><path d="M9 12l2.2 2.2L15.2 10"/>', 1.8),
   search: svg('<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>', 1.8),
   layers: svg('<path d="M4 9l8-4 8 4-8 4z"/><path d="M4 13l8 4 8-4"/><path d="M4 17l8 4 8-4" opacity=".6"/>')
 };
@@ -923,7 +2651,7 @@ function toast(msg, kind = '') {
 function errMsg(e) {
   const c = (e && e.code) || '';
   const map = {
-    'permission-denied': '沒有讀寫權限：請確認 firestore.rules 裡的 Email 和登入的 Google 帳號相同。',
+    'permission-denied': B() && B().role && !B().isAdmin ? `你的權限是「${ROLE_LABEL[B().role] || '只能檢視'}」，沒辦法做這件事。` : '沒有讀寫權限：請確認 firestore.rules 是最新版，而且裡面的 Email 和登入的 Google 帳號相同。',
     'auth/unauthorized-domain': `這個網址（${location.hostname}）還不在 Firebase 的授權網域裡：到 Authentication → 設定 → 授權網域，把它加進去。`,
     'auth/operation-not-allowed': 'Firebase 還沒開啟 Google 登入：到 Authentication → 登入方式，啟用 Google。',
     'auth/network-request-failed': '網路連線失敗，請確認網路後再試一次。',
@@ -1066,7 +2794,7 @@ function bannersHTML() {
   if (app.mode === 'demo') h += `<div class="banner"><p>${app.preview ? '預覽中' : '示範模式'}：畫面上是範例資料，只存在這台裝置的瀏覽器裡。</p><button type="button" class="link" data-action="tab" data-tab="settings">資料設定</button></div>`;
   if (app.syncError) h += `<div class="banner err"><p>${esc(app.syncError)}</p></div>`;
   const st = bookStats();
-  if (app.mode === 'firebase' && st.owned > 0 && daysSince(B().meta.lastBackupAt) > 30) h += `<div class="banner warn"><p>${B().meta.lastBackupAt ? `上次備份是 ${daysSince(B().meta.lastBackupAt)} 天前` : '還沒有備份過'}，建議匯出一份存到雲端硬碟。</p><button type="button" class="btn small primary" data-action="export-json">立即備份</button></div>`;
+  if (app.mode === 'firebase' && isAdmin() && st.owned > 0 && daysSince(B().meta.lastBackupAt) > 30) h += `<div class="banner warn"><p>${B().meta.lastBackupAt ? `上次備份是 ${daysSince(B().meta.lastBackupAt)} 天前` : '還沒有備份過'}，建議匯出一份存到雲端硬碟。</p><button type="button" class="btn small primary" data-action="export-json">立即備份</button></div>`;
   return h;
 }
 const nfmt = n => Number(n || 0).toLocaleString('zh-TW');
@@ -1084,26 +2812,26 @@ const V = {
       const strip = cabs.map(c => miniHTML(c, st.byCell[c.id] || {}, miniSize(c, 110, 62, 10))).join('') || '<span class="small muted">還沒有書櫃，點進去新增</span>';
       return `<button type="button" class="card room" data-action="open-room" data-id="${r.id}"><span class="room-top"><span><span class="room-name">${esc(r.name)}</span><span class="small muted">${meta}</span></span><span class="bignum"><b>${nfmt(n)}</b><span>本</span></span></span><span class="shelfstrip">${strip}</span></button>`;
     }).join('')}</div>` : emptyHTML('還沒有房間', '先新增一個放書的房間，例如「書房一」。');
-    body += addRow('add-room', '新增房間');
+    if (canEdit()) body += addRow('add-room', '新增房間');
     return { body };
   },
   room(v) {
     const r = B().cache.rooms[v.id]; if (!r) return gone();
     const st = bookStats(), cabs = roomCabs(r.id);
     const n = cabs.reduce((s, c) => s + (st.byCab[c.id] || 0), 0), p = cabs.reduce((s, c) => s + (st.pendByCab[c.id] || 0), 0);
-    let body = head({ back: true, title: esc(r.name), sub: `${cabs.length} 座書櫃 · ${nfmt(n)} 本${p ? ` · ${p} 本待補資料` : ''}`, actions: `<button type="button" class="icon-btn" data-action="room-menu" data-id="${r.id}" aria-label="房間選項">${ICON.more}</button>` });
+    let body = head({ back: true, title: esc(r.name), sub: `${cabs.length} 座書櫃 · ${nfmt(n)} 本${p ? ` · ${p} 本待補資料` : ''}`, actions: canEdit() ? `<button type="button" class="icon-btn" data-action="room-menu" data-id="${r.id}" aria-label="房間選項">${ICON.more}</button>` : '' });
     body += cabs.length ? `<div class="stack">${cabs.map(c => {
       const cn = st.byCab[c.id] || 0, cp = st.pendByCab[c.id] || 0;
       return `<button type="button" class="card cab" data-action="open-cab" data-id="${c.id}"><span class="cabthumb">${miniHTML(c, st.byCell[c.id] || {}, miniSize(c, 92, 84, 16))}</span><span class="cabinfo"><span class="t"><b>${c.code} 號櫃</b>${c.name ? `<span class="small muted">${esc(c.name)}</span>` : ''}</span><span class="chips"><span class="chip">${c.rows} × ${c.cols} 格</span><span class="chip">深 ${c.defaultDepth} 層</span></span><span class="n"><b>${nfmt(cn)}</b><span class="small muted">本${cp ? ` · ${cp} 本待補` : ''}</span></span></span>${ICON.chev}</button>`;
     }).join('')}</div>` : emptyHTML('這個房間還沒有書櫃', '新增書櫃時，可以像劃電影院座位一樣設定它的格子。');
-    body += addRow('add-cab', '新增書櫃', `data-room="${r.id}"`);
+    if (canEdit()) body += addRow('add-cab', '新增書櫃', `data-room="${r.id}"`);
     return { body };
   },
   cabinet(v) {
     const c = B().cache.cabinets[v.id]; if (!c) return gone();
     const room = B().cache.rooms[c.roomId] || { name: '?' };
     const st = bookStats(), counts = st.byCell[c.id] || {}, n = st.byCab[c.id] || 0, p = st.pendByCab[c.id] || 0;
-    let body = head({ back: true, title: `${c.code} 號櫃`, nick: esc(c.name), sub: esc(room.name), actions: `<button type="button" class="btn small soft" data-action="edit-cab" data-id="${c.id}">${ICON.pencil}編輯書櫃</button>` });
+    let body = head({ back: true, title: `${c.code} 號櫃`, nick: esc(c.name), sub: esc(room.name), actions: canEdit() ? `<button type="button" class="btn small soft" data-action="edit-cab" data-id="${c.id}">${ICON.pencil}編輯書櫃</button>` : '' });
     body += `<div class="chips" style="padding:0 4px"><span class="chip code">${esc(room.name)}-${c.code}</span><span class="chip">${activeCount(c)} 格 · 深 ${c.defaultDepth} 層</span><span class="chip">${nfmt(n)} 本</span>${p ? `<span class="chip">${p} 本待補</span>` : ''}${c.numbering === 'bottom' ? '<span class="chip">A 在最下面</span>' : ''}</div>`;
     body += `<div class="board-wrap">${boardHTML(c, { counts })}</div>`;
     body += `<p class="legend"><span class="sp" aria-hidden="true"><i style="height:14px;background:#905333"></i><i style="height:18px;background:#ff8d22"></i><i style="height:11px;background:#7a5642"></i></span>一條線是一本書，右上角是本數。點格子可以看裡面每一層深度的書。</p>`;
@@ -1137,7 +2865,7 @@ const V = {
       <div class="board-wrap">${boardHTML(d, { editor: true })}</div>
       <p class="summary">${activeCount(d)} 格可用 · ${tallN} 格高格 · ${depthN} 格另設深度</p>
       <p class="summary">第一格的編號：<span class="chip code">${esc(room.name)}-${esc(d.code)}-A1-1</span></p>
-      ${v.id ? '<button type="button" class="btn danger wide" data-action="del-cab">刪除這座書櫃</button>' : ''}`;
+      ${v.id && isAdmin() ? '<button type="button" class="btn danger wide" data-action="del-cab">刪除這座書櫃</button>' : ''}`;
     return { body, noTabs: true, after: bindEditor };
   },
   books() {
@@ -1154,24 +2882,30 @@ const V = {
     return { body };
   },
   settings() {
-    const b = B(), m = b.meta, days = daysSince(m.lastBackupAt);
+    const b = B(), m = b.meta, days = daysSince(m.lastBackupAt), role = myRole(), lib = LS.get(LIB_KEY);
+    const roleChip = `<span class="status${role === 'admin' ? '' : ' demo'}">${ROLE_LABEL[role] || ''}</span>`;
     const src = b.kind === 'demo'
       ? `<div class="row"><span class="ic">${ICON.device}</span><span class="tx"><b>${app.preview ? '預覽中' : '示範模式'}</b><span>資料只存在這台裝置的瀏覽器裡</span></span><span class="status demo">範例資料</span></div>
+         <div class="row col"><span class="tx"><b>試用身分</b><span>看看家人登入後的畫面；每個身分有自己的閱讀紀錄和願望清單</span></span>${seg('demo-role', [['admin', '管理者'], ['editor', '可修改'], ['viewer', '只能檢視']], role)}</div>
          <button type="button" class="row" data-action="to-firebase"><span class="ic">${ICON.cloud}</span><span class="tx"><b>改用 Firebase</b><span>正式使用，手機和電腦同步</span></span>${ICON.chev}</button>
-         <button type="button" class="row" data-action="reset-demo"><span class="tx"><b>重設示範資料</b></span>${ICON.chev}</button>`
-      : `<div class="row"><span class="ic">${ICON.cloud}</span><span class="tx"><b>Firebase 專案</b><span class="mono">${esc(b.cfg.projectId)}</span></span><span class="status">${navigator.onLine === false ? '離線中' : '已連線'}</span></div>
-         <div class="row"><span class="ic">${ICON.user}</span><span class="tx"><b>登入帳號</b><span>${esc(b.user && b.user.email)}</span></span><button type="button" class="btn small soft" data-action="sign-out">登出</button></div>
+         ${isAdmin() ? `<button type="button" class="row" data-action="reset-demo"><span class="tx"><b>重設示範資料</b></span>${ICON.chev}</button>` : ''}`
+      : `<div class="row"><span class="ic">${ICON.cloud}</span><span class="tx"><b>${lib && !isAdmin() ? `${esc(lib.owner || '家人')}的書庫` : 'Firebase 專案'}</b><span class="mono">${esc(b.cfg.projectId)}</span></span><span class="status">${navigator.onLine === false ? '離線中' : '已連線'}</span></div>
+         <div class="row"><span class="ic">${ICON.user}</span><span class="tx"><b>${esc(b.me.name || '登入帳號')}</b><span>${esc(b.user && b.user.email)}</span></span>${roleChip}<button type="button" class="btn small soft" data-action="sign-out">登出</button></div>
          <button type="button" class="row" data-action="change-config"><span class="tx"><b>更換 Firebase 設定</b></span>${ICON.chev}</button>`;
+    const minorNote = isMinorMe() ? `<p class="hint" style="margin:8px 6px 0"><span class="sprout">${ICON.sprout}</span>你是初心者：限制級的書不會出現。</p>` : '';
+    const roleNote = minorNote + (role === 'viewer' ? '<p class="hint" style="margin:8px 6px 0">你是「只能檢視」：可以看所有的書，記自己的閱讀狀態、評分、心得和願望清單；不能新增、修改或刪除家裡的書。</p>'
+      : role === 'editor' ? '<p class="hint" style="margin:8px 6px 0">你是「可修改」：可以新增、修改書和登記借閱。刪掉的書會進回收桶，可以還原；永久刪除只有管理者能做。</p>' : '');
     let body = head({ title: '設定' });
-    body += `<section class="group"><h2>資料</h2><div class="list">${src}</div></section>
-      <section class="group"><h2>所有者</h2><div class="card"><div class="hint-row"><p class="hint">登記書籍時可以選的所有者。</p><button type="button" class="add-chip" data-action="edit-owners">編輯</button></div>
+    body += `<section class="group"><h2>資料</h2><div class="list">${src}</div>${roleNote}</section>`;
+    if (isAdmin()) body += membersHTML();
+    if (canEdit()) body += `<section class="group"><h2>所有者</h2><div class="card"><div class="hint-row"><p class="hint">登記書籍時可以選的所有者。</p><button type="button" class="add-chip" data-action="edit-owners">編輯</button></div>
         <div class="owners chips">${(m.owners || []).length ? m.owners.map(o => `<span class="owner static">${esc(o)}</span>`).join('') : '<span class="small muted">還沒有所有者，按「編輯」新增。</span>'}</div></div></section>
       <section class="group"><h2>選單項目</h2><div class="list">
         <button type="button" class="row" data-action="manage-publishers"><span class="tx"><b>出版商</b><span>${publisherList().length} 個</span></span>${ICON.chev}</button>
         <button type="button" class="row" data-action="manage-categories"><span class="tx"><b>類型</b><span>${Object.keys(b.cache.categories || {}).length} 個</span></span>${ICON.chev}</button>
         <button type="button" class="row" data-action="manage-languages"><span class="tx"><b>自訂語言</b><span>${(m.languages || []).length ? esc(m.languages.join('、')) : '還沒有'}</span></span>${ICON.chev}</button>
-      </div></section>
-      <section class="group"><h2>書目查詢</h2><div class="list">
+      </div></section>`;
+    body += `<section class="group"><h2>書目查詢</h2><div class="list">
         <button type="button" class="row" data-action="gbooks-setup"><span class="tx"><b>Google Books</b><span>${esc(gbSourceText())}</span></span>${gbStatusHTML()}${ICON.chev}</button>
       </div></section>
       <section class="group"><h2>AI 讀圖</h2><div class="list">
@@ -1179,18 +2913,19 @@ const V = {
       </div></section>
       <section class="group"><h2>分享到吋讀</h2><div class="list">
         <button type="button" class="row" data-action="share-check"><span class="tx"><b>從別的 App 分享圖片進來</b><span>Android 才有，要先把吋讀裝到主畫面</span></span>${ICON.chev}</button>
-      </div></section>
-      <section class="group"><h2>照片回收桶</h2><div class="list">
-        <button type="button" class="row" data-action="bin-open"><span class="tx"><b>回收桶</b><span>${esc(binSummary())}</span></span>${ICON.chev}</button>
-        <div class="row"><span class="tx"><b>確認資料後，照片移到回收桶</b><span>版權頁、藏書章、封底文案</span></span><button type="button" class="switch" role="switch" aria-checked="${binOn()}" aria-label="確認資料後照片移到回收桶" data-action="bin-toggle"></button></div>
-        <button type="button" class="row" data-action="bin-days"><span class="tx"><b>保留天數</b><span>過了就自動清除</span></span><span class="status">${binDays()} 天</span>${ICON.chev}</button>
-      </div></section>
-      <section class="group"><h2>備份與還原</h2><div class="card">
-        <div class="backup-status"><span style="flex:1"><span class="small muted">上次備份</span><b>${m.lastBackupAt ? (days <= 0 ? '今天' : `${days} 天前`) : '還沒有備份'}</b></span><span class="small muted" style="text-align:right">房間、書櫃、書籍、照片、<br>出版商和類型都在裡面</span></div>
+      </div></section>`;
+    if (canEdit() || binEntries().length || binAll().length) body += `<section class="group"><h2>回收桶</h2><div class="list">
+        <button type="button" class="row" data-action="book-bin"><span class="tx"><b>刪掉的書</b><span>${esc(bookBinSummary())}</span></span>${ICON.chev}</button>
+        <button type="button" class="row" data-action="bin-open"><span class="tx"><b>照片</b><span>${esc(binSummary())}</span></span>${ICON.chev}</button>
+        ${isAdmin() ? `<div class="row"><span class="tx"><b>確認資料後，照片移到回收桶</b><span>版權頁、藏書章、封底文案</span></span><button type="button" class="switch" role="switch" aria-checked="${binOn()}" aria-label="確認資料後照片移到回收桶" data-action="bin-toggle"></button></div>
+        <button type="button" class="row" data-action="bin-days"><span class="tx"><b>照片保留天數</b><span>過了就自動清除；刪掉的書不會自動清除</span></span><span class="status">${binDays()} 天</span>${ICON.chev}</button>` : ''}
+      </div></section>`;
+    body += `<section class="group"><h2>備份與還原</h2><div class="card">
+        <div class="backup-status"><span style="flex:1"><span class="small muted">上次備份</span><b>${m.lastBackupAt ? (days <= 0 ? '今天' : `${days} 天前`) : '還沒有備份'}</b></span><span class="small muted" style="text-align:right">${isAdmin() ? '書、照片、設定，<br>還有每個人的閱讀紀錄' : '家裡的書，<br>和你自己的閱讀紀錄'}</span></div>
         <button type="button" class="btn primary wide" data-action="export-json">${ICON.download}匯出完整備份</button>
-        <div class="grid2" style="margin-top:8px"><button type="button" class="btn" data-action="export-csv">匯出書目 CSV</button><button type="button" class="btn" data-action="import">從備份還原</button></div>
+        <div class="grid2" style="margin-top:8px"><button type="button" class="btn" data-action="export-csv">匯出書目 CSV</button>${isAdmin() ? '<button type="button" class="btn" data-action="import">從備份還原</button>' : ''}</div>
         <input type="file" id="import-file" accept=".json,application/json" hidden></div></section>
-      <section class="group"><h2>關於</h2><div class="card about"><b>吋讀 Tsundoku</b><span class="small muted">版本 ${VERSION} · 第五階段 · 資料格式 v${SCHEMA_VERSION}</span></div></section>`;
+      <section class="group"><h2>關於</h2><div class="card about"><b>吋讀 Tsundoku</b><span class="small muted">版本 ${VERSION} · 第六階段 · 資料格式 v${SCHEMA_VERSION}</span></div></section>`;
     return { body };
   }
 };
@@ -1210,13 +2945,31 @@ const SCREENS = {
     <section class="dashed"><span class="tx"><b>先看看示範</b><span class="small muted">用範例書櫃試玩，資料只存在這台裝置。</span></span><button type="button" class="btn soft" data-action="use-demo">試用</button></section>
     <p class="footnote">買了不讀的書，也值得一個好位置。</p>
   </div></div>`,
-  login: () => `<div class="center-screen"><div class="setup">
-    ${HERO(`已連接 Firebase 專案：${esc(B().cfg.projectId)}`)}
-    <section class="card form"><div class="card-head"><span class="stepnum">2</span><h2>登入</h2></div><p class="hint">請用 firestore.rules 裡設定的那個 Google 帳號登入。</p>
+  login: () => { const lib = LS.get(LIB_KEY); return `<div class="center-screen"><div class="setup">
+    ${HERO(lib ? `${esc(lib.owner || '家人')}的書庫` : `已連接 Firebase 專案：${esc(B().cfg.projectId)}`)}
+    <section class="card form"><div class="card-head"><span class="stepnum">2</span><h2>登入</h2></div><p class="hint">${lib ? '用你自己的 Google 帳號登入。管理者要先把你的 Gmail 加進名單，登入後才看得到書。' : '管理者請用 firestore.rules 裡設定的那個 Google 帳號登入；家人請用管理者給的邀請連結打開。'}</p>
       ${app.loginError ? `<div class="banner err"><p>${esc(app.loginError)}</p></div>` : ''}
       <button type="button" class="btn primary wide" data-action="sign-in">${ICON.user}用 Google 帳號登入</button></section>
     <button type="button" class="btn ghost" data-action="change-config">更換 Firebase 設定</button>
-  </div></div>`,
+  </div></div>`; },
+  invite: () => { const inv = app.invite || {}, curLib = LS.get(LIB_KEY), curCfg = LS.get('tsundoku-firebase-config'), other = LS.get('tsundoku-mode') && (!curCfg || curCfg.projectId !== inv.cfg.projectId || (curLib && curLib.lib !== inv.lib)); return `<div class="center-screen"><div class="setup">
+    ${HERO('家人共用的書庫')}
+    <section class="card form"><div class="card-head"><span class="stepnum">${ICON.user}</span><h2>${esc(inv.owner || '家人')}邀請你一起用吋讀</h2></div>
+      <p class="hint">用你自己的 Google 帳號登入就好，不用知道別人的密碼。管理者把你的 Gmail 加進名單後，就能看到家裡的書；閱讀狀態、評分、心得和願望清單都是你自己的。</p>
+      ${/\bLine\/|FBAN|FBAV|Instagram/i.test(navigator.userAgent) ? '<div class="banner warn"><p>你是在 LINE（或其他 App）裡打開的，這裡沒辦法用 Google 登入。請點右上角的選單，選「用預設瀏覽器開啟」，再接受邀請。</p></div>' : ''}
+      ${other ? '<div class="banner warn"><p>這台裝置現在連著別的書庫或示範資料，接受邀請會換過去（原本的資料不會被刪掉）。</p></div>' : ''}
+      <button type="button" class="btn primary wide" data-action="accept-invite">${ICON.user}接受邀請，用 Google 帳號登入</button></section>
+    <button type="button" class="btn ghost" data-action="decline-invite">先不要</button>
+  </div></div>`; },
+  nomember: () => { const b = B(), email = (b && (b.me.email || (b.user && b.user.email))) || '', lib = LS.get(LIB_KEY), k = app.noMemberKind;
+    const [t, msg] = k === 'denied' ? ['這個帳號沒有權限', `<b>${esc(email)}</b> 不是這個書庫的管理者。如果你是家人，請用管理者傳給你的邀請連結打開吋讀。`]
+      : k === 'removed' ? ['你已經不在名單上', `${esc((lib && lib.owner) || '管理者')}把 <b>${esc(email)}</b> 移出了家人名單。需要的話請他再加你一次。`]
+      : ['還沒被加進名單', `請${esc((lib && lib.owner) || '管理者')}到「設定 › 家人與權限」加入 <b>${esc(email)}</b>，加好之後按「重新整理」。`];
+    return `<div class="center-screen"><div class="setup">${HERO(lib ? `${esc(lib.owner || '家人')}的書庫` : '吋讀')}
+    <section class="card form"><div class="card-head"><span class="stepnum">${ICON.user}</span><h2>${t}</h2></div><p class="hint">${msg}</p>
+      <div class="grid2"><button type="button" class="btn primary" data-action="reload">重新整理</button><button type="button" class="btn" data-action="switch-account">換一個帳號</button></div></section>
+    <button type="button" class="btn ghost" data-action="change-config">更換 Firebase 設定</button>
+  </div></div>`; },
   loading: () => `<div class="center-screen"><div class="setup" style="justify-content:center">${HERO(esc(app.loadingMsg || '載入中…'))}<div class="spinner" role="status" aria-label="載入中"></div></div></div>`,
   error: () => `<div class="center-screen"><div class="setup">${HERO('無法啟動')}<section class="card form"><div class="banner err"><p>${esc(app.error)}</p></div><div class="grid2"><button type="button" class="btn primary" data-action="reload">重新整理</button><button type="button" class="btn" data-action="change-config">更換 Firebase 設定</button></div></section></div></div>`
 };
@@ -1360,7 +3113,7 @@ async function addRoom() {
 }
 async function roomMenu(id) {
   const r = B().cache.rooms[id]; if (!r) return;
-  const choice = await dialog({ title: r.name, sheet: true, vertical: true, actions: [{ label: '改名', value: 'rename' }, { label: '往前移', value: 'up' }, { label: '往後移', value: 'down' }, { label: '刪除房間', value: 'del', kind: 'danger' }, { label: '取消', kind: 'ghost', value: null }] });
+  const choice = await dialog({ title: r.name, sheet: true, vertical: true, actions: [{ label: '改名', value: 'rename' }, { label: '往前移', value: 'up' }, { label: '往後移', value: 'down' }, ...(isAdmin() ? [{ label: '刪除房間', value: 'del', kind: 'danger' }] : []), { label: '取消', kind: 'ghost', value: null }] });
   if (choice === 'rename') {
     const name = await promptBox('房間改名', '房間名稱', r.name);
     if (name && name !== r.name) { B().put('rooms', { ...r, name }); toast('已改名'); }
@@ -1389,8 +3142,7 @@ function openCell(cabId, k) {
   const c = B().cache.cabinets[cabId]; if (!c) return;
   const room = B().cache.rooms[c.roomId] || { name: '?' };
   const [r, col] = splitKey(k), d = cellDepth(c, k), label = cellLabel(c, r, col);
-  const cellBooks = () => Object.values(B().cache.books).filter(b => b.ownership !== 'wishlist' && b.location && b.location.cabinetId === cabId && b.location.r === r && b.location.c === col)
-    .sort(shelfOrder);
+  const cellBooks = () => shelfSort(Object.values(B().cache.books).filter(b => b.ownership !== 'wishlist' && b.location && b.location.cabinetId === cabId && b.location.r === r && b.location.c === col));
   const layerName = i => d === 1 ? '這一格' : i === 1 ? '外層' : i === d ? '內層' : '中間';
   const layerNote = i => d === 1 ? '只有一層' : `第 ${i} 層${i === 1 ? '，靠近你' : i === d ? '，在最後面' : ''}`;
   let layer = 1, picking = false;
@@ -1406,12 +3158,12 @@ function openCell(cabId, k) {
         el.querySelector('#cell-sub').textContent = `${room.name} · ${c.code} 號櫃 · 共 ${books.length} 本`;
         el.querySelector('#cell-tabs').innerHTML = d > 1 ? `<div class="seg depth-tabs" role="tablist" aria-label="深度">${Array.from({ length: d }, (_, j) => { const i = j + 1, n = books.filter(b => (b.location.depth || 1) === i).length; return `<button type="button" role="tab" aria-selected="${i === layer}" data-layer="${i}">${layerName(i)} · ${n} 本<small>${layerNote(i)}</small></button>`; }).join('')}</div>` : '';
         const rows = bs.map(b => `<li><button type="button" class="cb-row${sel.has(b.id) ? ' on' : ''}" data-book="${b.id}" aria-pressed="${picking ? sel.has(b.id) : 'false'}">${picking ? `<span class="check">${sel.has(b.id) ? ICON.check : ''}</span>` : ''}${coverThumb(b, 'thumb')}<span class="binfo"><b>${esc(b.title || '書名待補')}</b><span>${esc(authorsText(b) || '作者待補')}</span></span><span class="chips" style="flex:none;flex-direction:column;align-items:flex-end">${b.owner ? `<span class="chip">${esc(b.owner)}</span>` : ''}${b.verified ? '' : '<span class="chip line">待補</span>'}</span>${picking ? '' : ICON.chev}</button></li>`).join('');
-        el.querySelector('#cell-panel').innerHTML = `<div class="cell-tools"><span class="chip code">${esc(room.name)}-${c.code}-${label}-${layer}</span><span class="small muted" style="flex:1">${picking ? `已選 ${sel.size} 本` : '這一層的位置編號'}</span>${books.length ? `<button type="button" class="link" data-pickmode>${picking ? '完成' : '選取'}</button>` : ''}</div>`
+        el.querySelector('#cell-panel').innerHTML = `<div class="cell-tools"><span class="chip code">${esc(room.name)}-${c.code}-${label}-${layer}</span><span class="small muted" style="flex:1">${picking ? `已選 ${sel.size} 本` : '這一層的位置編號'}</span>${books.length && canEdit() ? `<button type="button" class="link" data-pickmode>${picking ? '完成' : '選取'}</button>` : ''}</div>`
           + (bs.length ? `<ul class="booklist cellbooks">${rows}</ul>` : '<p class="emptylayer">這一層還沒有登記書</p>');
         const allOn = bs.length && bs.every(b => sel.has(b.id));
         el.querySelector('#cell-foot').innerHTML = picking
           ? `<div class="movebar"><button type="button" class="btn ghost" data-all${bs.length ? '' : ' disabled'}>${allOn ? '這一層全不選' : '這一層全選'}</button><button type="button" class="btn primary" data-move${sel.size ? '' : ' disabled'}>${ICON.move || ''}移到別的位置${sel.size ? `（${sel.size}）` : ''}</button></div>`
-          : `<button type="button" class="btn primary wide" style="margin-top:16px" data-soon>${ICON.scan}在這一格登記新書</button>`;
+          : canEdit() ? `<button type="button" class="btn primary wide" style="margin-top:16px" data-soon>${ICON.scan}在這一格登記新書</button>` : '';
       };
       draw();
       el.addEventListener('click', ev => {
@@ -1426,7 +3178,7 @@ function openCell(cabId, k) {
           const ids = cellBooks().filter(b => (b.location.depth || 1) === layer).map(b => b.id);
           close(null); app.bookNav = { ids }; go({ name: 'book', id: t.dataset.book });
         } else if ('soon' in t.dataset) {
-          app.session = { location: { cabinetId: cabId, r, c: col, depth: layer }, owner: (app.session && app.session.owner) || firstOwner() }; saveSession();
+          app.session = { ...(app.session || {}), location: { cabinetId: cabId, r, c: col, depth: layer }, owner: (app.session && app.session.owner) || firstOwner(), mode: 'shelf' }; saveSession();
           close(null); switchTab('scan');
         }
       });
@@ -1850,6 +3602,35 @@ function sessionLoc() {
   return cab && locValid(cab, s.location) ? s.location : null;
 }
 function saveSession() { LS.set('tsundoku-session', app.session); }
+// 連續登記的目的地：書櫃的某一格，或是願望清單、借閱（這兩種不放書櫃）
+const sessionMode = () => { if (!canEdit()) return 'wish'; const m = app.session && app.session.mode; return m === 'wish' || m === 'loan' ? m : 'shelf'; };
+const sessionLoanDir = () => app.session && app.session.loan && app.session.loan.dir === 'out' ? 'out' : 'in';
+const sessionReady = () => sessionMode() !== 'shelf' || !!sessionLoc();
+function sessionTargetLabel() {
+  const m = sessionMode();
+  if (m === 'wish') return '願望清單';
+  if (m === 'loan') { const who = String((app.session.loan || {}).person || '').trim(); return sessionLoanDir() === 'in' ? `借入${who ? '・跟 ' + who + ' 借' : ''}` : `借出${who ? '・借給 ' + who : ''}`; }
+  return locLabel(sessionLoc());
+}
+function sessionExtra() {
+  const s = app.session || {}, m = sessionMode(), owner = s.owner || firstOwner();
+  if (m === 'wish') return { owner, location: null, ownership: 'wishlist', loan: null };
+  if (m === 'loan') { const dir = sessionLoanDir(); return { owner, location: null, ownership: dir === 'in' ? 'borrowed' : 'owned', loan: { dir, person: String((s.loan || {}).person || '').trim(), date: todayStr() } }; }
+  return { owner, location: clone(sessionLoc()), ownership: 'owned', loan: null };
+}
+function applyExtra(book, x) {
+  book.owner = x.owner || book.owner || ''; book.location = x.location ? clone(x.location) : null;
+  if (x.ownership) book.ownership = x.ownership;
+  book.loan = x.loan ? clone(x.loan) : null;
+}
+function sessionCountText() {
+  const m = sessionMode(), all = Object.values(B().cache.books);
+  if (m === 'wish') return `願望清單有 ${all.filter(b => b.ownership === 'wishlist').length} 本`;
+  if (m === 'loan') { const dir = sessionLoanDir(); return `${dir === 'in' ? '借入' : '借出'}中 ${all.filter(b => b.loan && b.loan.dir === dir).length} 本`; }
+  const loc = sessionLoc(); return loc ? `這一格已登記 ${cellBookCount(loc)} 本` : '';
+}
+// 換了目的地，掃描畫面上還沒存的那本也跟著換
+function retargetScanDraft() { const d = app.bookDraft; if (d && d.origin === 'scan' && d.isNew) applyExtra(d.book, sessionExtra()); }
 function locLabel(loc) {
   if (!loc) return '';
   const cab = B().cache.cabinets[loc.cabinetId]; if (!cab) return '';
@@ -1871,6 +3652,9 @@ const draftSig = d => d ? JSON.stringify({ b: d.book, p: d.photos.map(p => p.id)
 const bookDirty = () => !!app.bookDraft && draftSig(app.bookDraft) !== app.bookDraftOrig;
 function draftFromData(data, origin, extra = {}) {
   const book = newBook({ owner: extra.owner ?? firstOwner(), location: extra.location ?? null });
+  if (extra.ownership) book.ownership = extra.ownership;
+  if (extra.loan) book.loan = clone(extra.loan);
+  if (!canEdit()) { book.ownership = 'wishlist'; book.location = null; book.loan = null; }   // 只能檢視的人只能加到自己的願望清單
   fillEmpty(book, data);
   if (data.isbn) book.isbn = data.isbn;
   return { book, photos: [], removed: [], origin, isNew: true, filled: countFilled(data), lookup: null, dup: [] };
@@ -1882,7 +3666,7 @@ async function attachCover(book) {
 }
 async function handleISBN(isbn, origin) {
   const dup = Object.values(B().cache.books).filter(b => b.isbn === isbn);
-  const extra = origin === 'scan' ? { owner: (app.session && app.session.owner) || firstOwner(), location: clone(sessionLoc()) } : {};
+  const extra = origin === 'scan' ? sessionExtra() : {};
   if (origin === 'scan') { app.scan.status = 'looking'; app.scan.looking = isbn; updateScanSheet(); }
   else toast('查詢書目中…');
   const res = await lookupISBN(isbn);
@@ -1897,7 +3681,7 @@ async function handleISBN(isbn, origin) {
   else go({ name: 'bookEdit' });
 }
 function startNoBarcode() {
-  const extra = { owner: (app.session && app.session.owner) || firstOwner(), location: clone(sessionLoc()) };
+  const extra = sessionExtra();
   const d = draftFromData({}, 'scan', extra); d.lookup = 'nobarcode'; d.filled = 0;
   setDraft(d); app.scan.status = 'draft'; updateScanSheet();
 }
@@ -1911,9 +3695,14 @@ function commitDraft() {
   rememberPublisher(b.publisher);
   const was = B().cache.books[b.id], wasV = !!(was && was.verified);
   if (was) b.photoBin = was.photoBin || [];
+  // 刪掉的照片（照書原本放的地方處理）：自己的書直接刪；家裡的書管理者直接刪，可修改的人先放進照片回收桶
+  const removedP = (d.removedP || []).filter(p => d.removed.includes(p.id)), ownOld = !d.isNew && B()._photoPriv(b.id);
+  if (ownOld) removedP.forEach(p => B().removePhoto(p.id, b.id));
+  else if (isAdmin()) d.removed.forEach(id => B().removePhoto(id));
+  const binned = !ownOld && !isAdmin() && canEdit() ? removedP : [];
+  if (binned.length) { const at = nowISO(); b.photoBin = [...(b.photoBin || []), ...binned.map(p => ({ id: p.id, kind: p.kind, at, size: Math.round(String(p.data || '').length * 0.75) }))]; binned.forEach(p => { const { isNew, ...rest } = p; B().putPhoto({ ...rest, trashedAt: at }); }); }
   B().put('books', b);
   d.photos.filter(p => p.isNew).forEach(p => B().putPhoto({ id: p.id, bookId: b.id, kind: p.kind, data: p.data, w: p.w, h: p.h, createdAt: nowISO(), trashedAt: null }));
-  d.removed.forEach(id => B().removePhoto(id));
   delete app.photoCache[b.id];
   if (b.verified && !wasV) binBookPhotos(b.id).then(n => { if (n) toast(`${n} 張照片移到回收桶，${binDays()} 天後清除`); });
   else if (!b.verified && wasV) restoreBookPhotos(b.id);
@@ -2015,7 +3804,7 @@ async function searchByText(q, origin) {
   });
   if (pick === null || pick === undefined) return;
   const data = results[pick];
-  const extra = origin === 'scan' ? { owner: (app.session && app.session.owner) || firstOwner(), location: clone(sessionLoc()) } : {};
+  const extra = origin === 'scan' ? sessionExtra() : {};
   const d = draftFromData(data, origin, extra); d.lookup = 'ok';
   d.dup = data.isbn ? Object.values(B().cache.books).filter(b => b.isbn === data.isbn) : [];
   await attachCover(d.book);
@@ -2059,17 +3848,17 @@ function scanTipText() {
 function updateScanTip() { const t = $('#scan-tip'); if (t) t.textContent = scanTipText(); const s = $('#scan-sheet'); if (s && app.scan.status === 'idle') s.innerHTML = scanSheetHTML(); }
 function updateScanSheet() { const s = $('#scan-sheet'); if (s) s.innerHTML = scanSheetHTML(); const c = $('#session-chip'); if (c) c.outerHTML = sessionChipHTML(); }
 function sessionChipHTML() {
-  const loc = sessionLoc(), owner = (app.session && app.session.owner) || firstOwner();
-  return `<button type="button" class="session-chip" id="session-chip" data-action="pick-session"><span class="dot${loc ? '' : ' off'}"></span><span class="tx"><span>${loc ? '連續登記到' : '還沒選位置'}</span><b>${loc ? esc(locLabel(loc)) : '點這裡選一格'}${owner ? ' · ' + esc(owner) : ''}</b></span><span class="chg">${loc ? '更換' : '選擇'}</span></button>`;
+  const ok = sessionReady(), owner = (app.session && app.session.owner) || firstOwner();
+  return `<button type="button" class="session-chip" id="session-chip" data-action="pick-session"><span class="dot${ok ? '' : ' off'}"></span><span class="tx"><span>${ok ? '連續登記到' : '還沒選位置'}</span><b>${ok ? esc(sessionTargetLabel()) : '點這裡選一格'}${owner ? ' · ' + esc(owner) : ''}</b></span><span class="chg">${ok ? '更換' : '選擇'}</span></button>`;
 }
 function scanSheetHTML() {
-  const s = app.scan, loc = sessionLoc(), n = cellBookCount(loc);
+  const s = app.scan, ok = sessionReady(), cnt = sessionCountText();
   if (s.status === 'looking') return `<div class="looking"><div class="spinner"></div><p class="hint">查詢書目中…<br><span class="mono">${esc(s.looking || '')}</span></p></div>`;
   if (s.status === 'draft' && app.bookDraft) {
     const d = app.bookDraft, b = d.book;
     const meta = [authorsText(b), b.publisher, (b.publishedDate || '').slice(0, 4)].filter(Boolean).join(' · ');
     const dupBox = d.dup.length ? `<div class="banner warn"><p>這本已經登記過${d.dup.length > 1 ? ` ${d.dup.length} 次` : ''}：${esc(locLabel(d.dup[0].location) || '還沒放到書櫃')}。儲存的話會再多一本。</p></div>` : '';
-    return `<div class="sheet-row"><b class="small">${b.isbn ? '剛剛掃到' : '沒有條碼的書'}</b><span class="small muted">這一格已登記 ${n} 本</span></div>${dupBox}
+    return `<div class="sheet-row"><b class="small">${b.isbn ? '剛剛掃到' : '沒有條碼的書'}</b><span class="small muted">${esc(cnt)}</span></div>${dupBox}
       <div class="result">${coverThumb(b, 'rcover')}<div class="rinfo"><b>${esc(b.title || '書名待補')}</b><span>${esc(meta || (b.isbn ? 'ISBN ' + b.isbn : '可以之後再補資料'))}</span>${draftChip(d)}</div></div>
       ${d.lookup === 'nobarcode'
         ? `<div class="grid-wide"><label class="field">書名（可以之後再補）<input type="text" data-field="title" value="${esc(b.title)}" placeholder="先拍照也可以"></label><label class="field">頁數<input type="number" inputmode="numeric" data-field="pages" value="${esc(b.pages ?? '')}" placeholder="320"></label></div>`
@@ -2078,22 +3867,36 @@ function scanSheetHTML() {
       <div class="save-row"><button type="button" class="btn" data-action="draft-edit">修改資料</button><button type="button" class="btn accent" data-action="draft-save">儲存，掃下一本</button></div>
       <button type="button" class="btn ghost small wide" data-action="draft-discard">不要這本</button>`;
   }
-  return `${loc ? '' : '<div class="banner warn"><p>還沒選要登記到哪一格。選好之後，每一本掃到的書都會自動放進那一格。</p><button type="button" class="btn small primary" data-action="pick-session">選擇位置</button></div>'}
-    <div class="sheet-row"><b class="small">連續登記中</b><span class="small muted">${loc ? `這一格已登記 ${n} 本` : ''}</span></div>
+  return `${ok ? '' : '<div class="banner warn"><p>還沒選要登記到哪裡。可以選書櫃的一格，或是願望清單、借閱，之後掃到的書都會自動登記進去。</p><button type="button" class="btn small primary" data-action="pick-session">選擇位置</button></div>'}
+    <div class="sheet-row"><b class="small">連續登記中</b><span class="small muted">${esc(cnt)}</span></div>
     ${s.lastSaved ? `<p class="saved">${ICON.check}剛存好：${esc(s.lastSaved)}</p>` : ''}
     ${app.scan.camera === 'on' ? '' : `<p class="hint">${esc(scanTipText())}</p>`}
     <div class="grid2"><button type="button" class="btn" data-action="scan-photo">${ICON.camera}拍條碼照片</button><button type="button" class="btn" data-action="scan-manual">手動輸入</button></div>`;
 }
 
 /* ---------- 第二階段：書籍清單 ---------- */
+// 書籍頁上面那排：全部（含願望清單、借閱）/ 持有（自己的書，含借出去的；不含借入、願望清單）/ 待補 / 所有者 / 願望清單 / 借閱
+const TOP_FILTERS = ['all', 'own', 'pending', 'wish', 'loan'];
+function topFilterMatch(b, f) {
+  if (f === 'all') return true;
+  if (f === 'own') return (b.ownership || 'owned') === 'owned';
+  if (f === 'pending') return !b.verified;
+  if (f === 'wish') return b.ownership === 'wishlist';
+  if (f === 'loan') return !!b.loan;
+  return b.owner === f;
+}
+// 卡片左上角的標籤：願望清單、借入、借出（逾期變紅）
+function bookTag(b, cls) {
+  if (b.ownership === 'wishlist') return app.bookFilter === 'wish' ? '' : `<span class="${cls} wish">願望</span>`;
+  if (b.loan) return `<span class="${cls} ${overdueDays(b.loan) > 0 ? 'warn' : 'loan'}">${overdueDays(b.loan) > 0 ? '逾期' : b.loan.dir === 'in' ? '借入' : '借出'}</span>`;
+  if (b.private) return `<span class="${cls} priv">隱私</span>`;
+  return '';
+}
+const adultTag = (b, cls) => b.adult ? `<span class="${cls} adult">18+</span>` : '';
 function filteredBooks() {
   const q = String(app.bookQuery || '').trim().toLowerCase(), f = app.bookFilter || 'all';
   return sortBooks(Object.values(B().cache.books).filter(b => {
-    if (f === 'pending' && b.verified) return false;
-    if (f === 'wish' && b.ownership !== 'wishlist') return false;
-    if (f === 'loan' && !b.loan) return false;
-    if (!['all', 'pending', 'wish', 'loan'].includes(f) && b.owner !== f) return false;
-    if (f === 'all' && b.ownership === 'wishlist') return false;
+    if (!topFilterMatch(b, f)) return false;
     if (app.bookCat && !bookInCat(b, app.bookCat)) return false;
     if (!advMatch(b, app.bookAdv)) return false;
     if (!q) return true;
@@ -2107,15 +3910,15 @@ function bookListHTML() {
   if (!list.length) return emptyHTML(q ? '找不到符合的書' : '這裡還沒有書', q ? '你的書裡沒有這本。要新增的話，可以上網查書目。' : '按右上角的「新增」，或用中間的掃描鈕開始登記。') + (q ? `<button type="button" class="btn soft wide" data-action="web-search">${ICON.search}上網搜尋「${esc(q)}」</button>` : '');
   const count = `<p class="small muted countline">${nfmt(list.length)} 本${filtered ? '<button type="button" class="link" data-action="clear-book-filters">清除類型和篩選</button>' : ''}</p>`;
   const more = list.length > shown.length ? `<button type="button" class="btn soft wide" data-action="book-more">再顯示 ${nfmt(Math.min(BOOK_PAGE, list.length - shown.length))} 本（還有 ${nfmt(list.length - shown.length)} 本）</button>` : '';
-  if (bookView() === 'grid') return count + `<div class="bgrid">${shown.map(b => `<button type="button" class="gcell" data-action="open-book" data-id="${b.id}">${coverThumb(b, 'gcover')}${b.loan || !b.verified ? `<span class="gbadges">${b.loan ? `<span class="chip ${overdueDays(b.loan) > 0 ? 'warn' : 'peach'}">${overdueDays(b.loan) > 0 ? '逾期' : b.loan.dir === 'in' ? '借入' : '借出'}</span>` : ''}${b.verified ? '' : '<span class="chip line">待補</span>'}</span>` : ''}<span class="gt">${esc(b.title || '書名待補')}${b.volume ? ` ${esc(b.volume)}` : ''}</span></button>`).join('')}</div>` + more;
-  return count + `<div class="list booklist2">${shown.map(b => `<button type="button" class="row brow" data-action="open-book" data-id="${b.id}">${coverThumb(b, 'thumb')}<span class="tx"><b>${esc(b.title || '書名待補')}</b><span>${esc(authorsText(b) || (b.isbn ? 'ISBN ' + b.isbn : '作者待補'))}</span>${b.location ? `<span class="mono loc">${esc(locLabel(b.location))}</span>` : ''}</span><span class="chips" style="flex:none;flex-direction:column;align-items:flex-end">${b.loan ? `<span class="chip peach">${b.loan.dir === 'in' ? '借入' : '借出'}</span>${overdueDays(b.loan) > 0 ? `<span class="chip warn">逾期 ${overdueDays(b.loan)} 天</span>` : ''}` : ''}${b.verified ? '' : '<span class="chip line">待補</span>'}</span></button>`).join('')}</div>` + more;
+  if (bookView() === 'grid') return count + `<div class="bgrid">${shown.map(b => `<button type="button" class="gcell" data-action="open-book" data-id="${b.id}">${coverThumb(b, 'gcover')}${bookTag(b, 'chip') || b.adult || !b.verified ? `<span class="gbadges">${bookTag(b, 'chip')}${adultTag(b, 'chip')}${b.verified ? '' : '<span class="chip line">待補</span>'}</span>` : ''}<span class="gt">${esc(b.title || '書名待補')}${b.volume ? ` ${esc(b.volume)}` : ''}</span></button>`).join('')}</div>` + more;
+  return count + `<div class="list booklist2">${shown.map(b => `<button type="button" class="row brow" data-action="open-book" data-id="${b.id}"><span class="tw">${coverThumb(b, 'thumb')}${bookTag(b, 'btag')}${adultTag(b, 'btag')}</span><span class="tx"><b>${esc(b.title || '書名待補')}</b><span>${esc(authorsText(b) || (b.isbn ? 'ISBN ' + b.isbn : '作者待補'))}</span>${b.location ? `<span class="mono loc">${esc(locLabel(b.location))}</span>` : ''}</span><span class="chips" style="flex:none;flex-direction:column;align-items:flex-end">${b.loan && overdueDays(b.loan) > 0 ? `<span class="chip warn">逾期 ${overdueDays(b.loan)} 天</span>` : ''}${b.verified ? '' : '<span class="chip line">待補</span>'}</span></button>`).join('')}</div>` + more;
 }
 
 /* ---------- 第二階段：頁面 ---------- */
 Object.assign(V, {
   books() {
     const st = bookStats(), owners = B().meta.owners || [], f = app.bookFilter || 'all';
-    const filters = [['all', '全部'], ['pending', '待補資料'], ...owners.map(o => [o, o]), ['wish', '願望清單'], ['loan', '借閱']];
+    const filters = [['all', '全部'], ['own', '持有'], ['pending', '待補資料'], ...owners.map(o => [o, o]), ['wish', '願望清單'], ['loan', '借閱']];
     const grid = bookView() === 'grid', sorted = JSON.stringify(bookSortLv()) !== JSON.stringify(DEFAULT_SORT);
     const tools = `<button type="button" class="icon-btn" data-action="book-view" aria-label="${grid ? '改成清單' : '改成封面牆'}">${grid ? ICON.list : ICON.grid}</button><button type="button" class="icon-btn${sorted ? ' on' : ''}" data-action="book-sort" aria-label="排序">${ICON.sort}</button>`;
     let body = head({ title: '書籍', sub: `收藏 ${nfmt(st.owned)} 本 · ${nfmt(st.pending)} 本待補資料`, actions: `<button type="button" class="btn small primary" data-action="add-book">${ICON.plus}新增</button>`, tools });
@@ -2155,8 +3958,8 @@ Object.assign(V, {
     const status = seg('bk-quick-status', Object.entries(READ_STATUS), b.readStatus || 'unread');
     const navIds = bookNavIds(b.id), navI = navIds ? navIds.indexOf(b.id) : -1, prevId = neighborId(b.id, -1), nextId = neighborId(b.id, 1);
     const slide = app.slideDir ? (app.slideDir > 0 ? ' slide-n' : ' slide-p') : ''; app.slideDir = 0;
-    let body = `${navIds ? `<button type="button" class="navarrow prev" data-action="book-prev" aria-label="上一本"${prevId ? '' : ' disabled'}>${ICON.back}</button><button type="button" class="navarrow next" data-action="book-next" aria-label="下一本"${nextId ? '' : ' disabled'}>${ICON.chev}</button>` : ''}<div class="bookpane${slide}"><header class="page-head"><div class="toprow"><button type="button" class="icon-btn" data-action="back" aria-label="返回">${ICON.back}</button>${navIds && navIds.length > 1 ? `<span class="mid navpos" aria-label="第 ${navI + 1} 本，共 ${navIds.length} 本">${navI + 1} / ${navIds.length}</span>` : ''}<span class="acts"><button type="button" class="icon-btn fav${b.favorite ? ' on' : ''}" data-action="toggle-fav" aria-pressed="${!!b.favorite}" aria-label="${b.favorite ? '取消最愛' : '加到最愛'}">${ICON.heart}</button><button type="button" class="btn small soft" data-action="edit-book" data-id="${b.id}">${ICON.pencil}編輯</button></span></div></header>
-      <div class="bhero">${coverThumb(b, 'bigcover')}<h1 class="title">${esc(b.title || '書名待補')}</h1>${b.subtitle ? `<p class="sub">${esc(b.subtitle)}</p>` : ''}${b.originalTitle ? `<p class="sub">原著名：${esc(b.originalTitle)}</p>` : ''}${b.series ? `<p class="sub">${esc(b.series)}${b.volume ? ` · 卷 ${esc(b.volume)}` : ''}</p>` : ''}<p class="bauthor">${esc(authorsText(b) || '作者待補')}</p>${b.rating ? starsHTML(b.rating) : ''}${b.favorite || !b.verified ? `<span class="chips">${b.favorite ? `<span class="chip peach">${ICON.heart}我的最愛</span>` : ''}${b.verified ? '' : '<span class="chip line">待補資料</span>'}</span>` : ''}</div>
+    let body = `${navIds ? `<button type="button" class="navarrow prev" data-action="book-prev" aria-label="上一本"${prevId ? '' : ' disabled'}>${ICON.back}</button><button type="button" class="navarrow next" data-action="book-next" aria-label="下一本"${nextId ? '' : ' disabled'}>${ICON.chev}</button>` : ''}<div class="bookpane${slide}"><header class="page-head"><div class="toprow"><button type="button" class="icon-btn" data-action="back" aria-label="返回">${ICON.back}</button>${navIds && navIds.length > 1 ? `<span class="mid navpos" aria-label="第 ${navI + 1} 本，共 ${navIds.length} 本">${navI + 1} / ${navIds.length}</span>` : ''}<span class="acts"><button type="button" class="icon-btn fav${b.favorite ? ' on' : ''}" data-action="toggle-fav" aria-pressed="${!!b.favorite}" aria-label="${b.favorite ? '取消最愛' : '加到最愛'}">${ICON.heart}</button><button type="button" class="btn small soft" data-action="edit-book" data-id="${b.id}">${ICON.pencil}${mayEditBook(b) ? '編輯' : '寫紀錄'}</button></span></div></header>
+      <div class="bhero">${coverThumb(b, 'bigcover')}<h1 class="title">${esc(b.title || '書名待補')}</h1>${b.subtitle ? `<p class="sub">${esc(b.subtitle)}</p>` : ''}${b.originalTitle ? `<p class="sub">原著名：${esc(b.originalTitle)}</p>` : ''}${b.series ? `<p class="sub">${esc(b.series)}${b.volume ? ` · 卷 ${esc(b.volume)}` : ''}</p>` : ''}<p class="bauthor">${esc(authorsText(b) || '作者待補')}</p>${b.private || b.adult ? `<div class="bflags">${b.private ? `<span class="chip line">${ICON.lock}隱私・只有你看得到</span>` : ''}${b.adult ? '<span class="chip adult">限制級</span>' : ''}</div>` : ''}${b.rating ? starsHTML(b.rating) : ''}${b.favorite || !b.verified ? `<span class="chips">${b.favorite ? `<span class="chip peach">${ICON.heart}我的最愛</span>` : ''}${b.verified ? '' : '<span class="chip line">待補資料</span>'}</span>` : ''}</div>
       <section class="card">${status}${b.readStatus === 'reading' && b.pages ? `<div class="progress"><div class="sub2"><span>讀到</span><b>${b.currentPage || 0} / ${b.pages} 頁</b></div><div class="bar"><i style="width:${clamp(Math.round((b.currentPage || 0) / b.pages * 100), 0, 100)}%"></i></div></div>` : b.readStatus === 'reading' && b.currentPage ? `<p class="readline">${ICON.book || ''}<span>讀到第 <b>${esc(b.currentPage)}</b> 頁</span></p>` : ''}${readingLine(b)}</section>`;
     body += loanSectionHTML(b);
     body += cab && !isWish ? `<section class="loccard"><span class="small">${b.loan && !loanIn ? '借出前放在' : '放在哪裡'}</span><b class="mono">${esc(locLabel(loc))}</b><span class="small">${esc(locWords(loc))}</span>${b.locationNote ? `<span class="small locnote">補充：${esc(b.locationNote)}</span>` : ''}<button type="button" class="btn small accent" data-action="open-cab" data-id="${cab.id}">在書櫃上看</button></section>`
@@ -2164,8 +3967,8 @@ Object.assign(V, {
     body += rows.length ? `<section class="card infolist"><dl>${rows.map(([k, val]) => `<div><dt>${k}</dt><dd>${Array.isArray(val) ? val.map(esc).join('<br>') : esc(val)}</dd></div>`).join('')}</dl>${(b.refSubjects || []).length ? `<p class="hint" style="margin-top:8px">書目庫的主題：${esc(b.refSubjects.join('、'))}</p>` : ''}</section>` : '';
     if (b.summary) body += `<section class="group"><h2>摘要</h2><p class="prose">${esc(b.summary)}</p></section>`;
     body += `<section class="group"><h2>心得</h2><div class="card"><p class="${b.review ? 'prose' : 'hint'}" style="margin:0">${b.review ? esc(b.review) : '還沒寫心得。'}</p></div></section>`;
-    body += `<section class="group"><h2>整理用的照片</h2><div class="card">${app.photoCache[v.id] === null ? '<p class="hint">讀取中…</p>' : photos.length ? `<div class="photos">${photos.map(p => `<button type="button" class="pthumb" data-action="view-photo" data-id="${p.id}" data-book="${b.id}"><img src="${p.data}" alt="${KIND_LABEL[p.kind] || '照片'}"><span>${KIND_LABEL[p.kind] || '照片'}</span></button>`).join('')}</div>` : '<p class="hint">沒有整理用的照片。</p>'}${(b.photoBin || []).length ? `<p class="hint binnote">${b.photoBin.length} 張照片在回收桶，${binLeft(b.photoBin[0].at)} 天後清除。<button type="button" class="link" data-action="bin-restore-book" data-id="${b.id}">拿回來</button></p>` : ''}
-      <div class="switch-row"><span><b>資料已確認</b><span class="small muted">補完資料後打開，書就不會出現在「待補資料」裡${binOn() ? `；照片會移到回收桶，${binDays()} 天後清除` : ''}。</span></span><button type="button" class="switch" role="switch" aria-checked="${!!b.verified}" aria-label="資料已確認" data-action="toggle-verified" data-id="${b.id}"></button></div></div></section>`;
+    body += `<section class="group"><h2>整理用的照片</h2><div class="card">${app.photoCache[v.id] === null ? '<p class="hint">讀取中…</p>' : photos.length ? `<div class="photos">${photos.map(p => `<button type="button" class="pthumb" data-action="view-photo" data-id="${p.id}" data-book="${b.id}"><img src="${p.data}" alt="${KIND_LABEL[p.kind] || '照片'}"><span>${KIND_LABEL[p.kind] || '照片'}</span></button>`).join('')}</div>` : '<p class="hint">沒有整理用的照片。</p>'}${(b.photoBin || []).length && canEdit() ? `<p class="hint binnote">${b.photoBin.length} 張照片在回收桶，${binLeft(b.photoBin[0].at)} 天後清除。<button type="button" class="link" data-action="bin-restore-book" data-id="${b.id}">拿回來</button></p>` : ''}
+      ${mayEditBook(b) && !isWish ? `<div class="switch-row"><span><b>資料已確認</b><span class="small muted">補完資料後打開，書就不會出現在「待補資料」裡${binOn() ? `；照片會移到回收桶，${binDays()} 天後清除` : ''}。</span></span><button type="button" class="switch" role="switch" aria-checked="${!!b.verified}" aria-label="資料已確認" data-action="toggle-verified" data-id="${b.id}"></button></div>` : ''}</div></section>`;
     if (navIds && navIds.length > 1) body += `<p class="hint navhint">左右滑動可以切換上一本、下一本</p>`;
     body += `</div>`;
     return { body, after: bindBookSwipe };
@@ -2182,6 +3985,21 @@ Object.assign(V, {
     const tabV = b.loan ? 'loan' : b.ownership === 'wishlist' ? 'wishlist' : 'owned';
     const isWish = tabV === 'wishlist', loanIn = tabV === 'loan' && b.loan.dir === 'in';
     const catLines = catRows(b.categories);
+    const personalCard = `<section class="card form">
+        <div class="field">評分<span class="star-row">${starsHTML(b.rating || 0, true)}<b>${b.rating || '未評分'}</b>${b.rating ? '<button type="button" class="btn small ghost clr" data-action="bk-star-clear">清除</button>' : ''}</span></div>
+        <div class="field">閱讀狀態${seg('bk-status', Object.entries(READ_STATUS), b.readStatus || 'unread')}</div>
+        ${b.readStatus === 'reading' ? `<label class="field">讀到第幾頁<input type="number" inputmode="numeric" data-field="currentPage" value="${esc(b.currentPage ?? '')}"></label>` : ''}
+        <div class="grid2">${dateField('開始日期', 'startDate', b.startDate)}${dateField('完成日期', 'finishDate', b.finishDate)}</div>
+        <div class="switch-row"><b>我的最愛</b><button type="button" class="switch" role="switch" aria-checked="${!!b.favorite}" aria-label="我的最愛" data-action="bk-toggle" data-f="favorite"></button></div>
+        <label class="field">心得<textarea rows="4" data-field="review">${esc(b.review)}</textarea></label>
+        <p class="hint" style="margin:0">評分、閱讀狀態、日期、最愛和心得是你自己的，不會影響家人的紀錄。</p>
+      </section>`;
+    if (!mayEditBook(b)) {   // 只能檢視：家裡的書只能寫自己的閱讀紀錄
+      const body = `<header class="page-head"><div class="toprow"><button type="button" class="icon-btn" data-action="back" aria-label="返回">${ICON.close}</button><span class="mid">我的閱讀紀錄</span><button type="button" class="btn small primary" data-action="save-book">儲存</button></div></header>
+        <section class="card"><div class="result">${coverThumb(b, 'rcover')}<div class="rinfo"><b>${esc(b.title || '書名待補')}</b><span>${esc(authorsText(b) || '作者待補')}</span></div></div><p class="hint" style="margin:10px 0 0">書的資料要有修改權限的人才能改。</p></section>
+        ${personalCard}`;
+      return { body, noTabs: true };
+    }
     const sel = (field, opts, val) => `<select data-field="${field}">${opts.map(([ov, ol]) => `<option value="${esc(ov)}"${String(ov) === String(val ?? '') ? ' selected' : ''}>${esc(ol)}</option>`).join('')}</select>`;
     const photos = d.photos;
     let body = `<header class="page-head"><div class="toprow"><button type="button" class="icon-btn" data-action="back" aria-label="返回">${d.origin === 'scan' ? ICON.back : ICON.close}</button><span class="mid">${d.isNew ? '新增書籍' : '編輯書籍'}</span><button type="button" class="btn small primary" data-action="save-book">儲存</button></div></header>${pinnedHTML(d)}
@@ -2205,6 +4023,7 @@ Object.assign(V, {
       </section>
       <section class="card form">
         <div class="field">擁有狀態${seg('bk-ownership', [['owned', '已收藏'], ['wishlist', '願望清單'], ['loan', '借閱']], tabV)}</div>
+        ${visSwitches(d)}
         ${tabV === 'loan' ? `<div class="loanbox">${seg('bk-loan-dir', [['out', '借出'], ['in', '借入']], b.loan.dir)}
           <label class="field">${loanIn ? '跟誰借的' : '借給誰'}<input type="text" data-field="loan-person" list="loan-people" value="${esc(b.loan.person || '')}" placeholder="名字"></label>
           <div class="grid2">${dateField('借閱日期', 'loan-date', b.loan.date)}${dateField('預計歸還', 'loan-due', b.loan.due)}</div>
@@ -2216,27 +4035,32 @@ Object.assign(V, {
         ${isWish || loanIn ? '' : dateField('購買日期', 'purchaseDate', b.purchaseDate)}
         <label class="field">標籤<input type="text" data-field="tagsText" value="${esc((b.tags || []).map(t => '#' + t).join(' '))}" placeholder="#簽名本 #絕版"></label>
       </section>
-      <section class="card form">
-        <div class="field">評分<span class="star-row">${starsHTML(b.rating || 0, true)}<b>${b.rating || '未評分'}</b>${b.rating ? '<button type="button" class="btn small ghost clr" data-action="bk-star-clear">清除</button>' : ''}</span></div>
-        <div class="field">閱讀狀態${seg('bk-status', Object.entries(READ_STATUS), b.readStatus || 'unread')}</div>
-        ${b.readStatus === 'reading' ? `<label class="field">讀到第幾頁<input type="number" inputmode="numeric" data-field="currentPage" value="${esc(b.currentPage ?? '')}"></label>` : ''}
-        <div class="grid2">${dateField('開始日期', 'startDate', b.startDate)}${dateField('完成日期', 'finishDate', b.finishDate)}</div>
-        <div class="switch-row"><b>我的最愛</b><button type="button" class="switch" role="switch" aria-checked="${!!b.favorite}" aria-label="我的最愛" data-action="bk-toggle" data-f="favorite"></button></div>
-        <label class="field">心得<textarea rows="4" data-field="review">${esc(b.review)}</textarea></label>
-      </section>
+      ${personalCard}
       <section class="card form">
         <h2 style="margin:0">整理用的照片</h2>
         ${photos.length ? `<div class="photos">${photos.map(p => `<button type="button" class="pthumb" data-action="view-draft-photo" data-id="${p.id}"><img src="${p.data}" alt="${KIND_LABEL[p.kind] || '照片'}"><span>${KIND_LABEL[p.kind] || '照片'}${d.pin && d.pin.id === p.id ? '・釘在上方' : ''}</span></button>`).join('')}</div><p class="hint" style="margin:0">點照片可以放大、刪除，或釘在畫面上方邊看邊填。</p>` : '<p class="hint">還沒有照片。</p>'}
         <div class="slots">${['copyright', 'stamp', 'blurb'].map(k => `<button type="button" class="slot" data-action="draft-photo" data-kind="${k}">${ICON.camera}<span>拍${KIND_LABEL[k]}</span></button>`).join('')}</div>
-        <div class="switch-row"><span><b>資料已確認</b><span class="small muted">補完資料後打開${binOn() ? `，儲存時照片會移到回收桶，${binDays()} 天後清除` : ''}。</span></span><button type="button" class="switch" role="switch" aria-checked="${!!b.verified}" aria-label="資料已確認" data-action="bk-toggle" data-f="verified"></button></div>
+        ${!isWish ? `<div class="switch-row"><span><b>資料已確認</b><span class="small muted">補完資料後打開${binOn() ? `，儲存時照片會移到回收桶，${binDays()} 天後清除` : ''}。</span></span><button type="button" class="switch" role="switch" aria-checked="${!!b.verified}" aria-label="資料已確認" data-action="bk-toggle" data-f="verified"></button></div>` : ''}
       </section>
       ${(() => { const nid = !d.isNew && d.origin === 'detail' ? neighborId(b.id, 1) : null, nb = nid && B().cache.books[nid]; return nb ? `<button type="button" class="btn soft wide savenext" data-action="save-next"><span>儲存並編輯下一本</span><small>${esc(nb.title || '書名待補')}</small></button>` : ''; })()}
-      ${d.isNew ? '' : '<button type="button" class="btn danger wide" data-action="del-book">刪除這本書</button>'}`;
+      ${d.isNew ? '' : B().mine.wishlist[b.id] ? '<button type="button" class="btn danger wide" data-action="del-book">從願望清單刪除</button>' : canEdit() || B().isPrivate(b.id) ? '<button type="button" class="btn danger wide" data-action="del-book">刪除這本書</button>' : ''}`;
     return { body, noTabs: true, after: restorePin };
   },
   picker(v) {
-    const p = app.pick, rooms = sortedRooms();
-    let body = head({ back: true, title: v.target === 'move' ? '移到哪裡' : '選擇位置', sub: v.target === 'session' ? '接下來掃到的書，都會放進這一格。' : v.target === 'move' ? `把選取的 ${(p.ids || []).length} 本書移到哪一格？` : '這本書放在哪裡？' });
+    const p = app.pick, rooms = sortedRooms(), isSession = v.target === 'session', mode = isSession ? (canEdit() ? p.mode || 'shelf' : 'wish') : 'shelf';
+    let body = head({ back: true, title: v.target === 'move' ? '移到哪裡' : isSession ? '登記到哪裡' : '選擇位置', sub: isSession ? '接下來掃到的書，都會登記到這裡。' : v.target === 'move' ? `把選取的 ${(p.ids || []).length} 本書移到哪一格？` : '這本書放在哪裡？' });
+    if (isSession && canEdit()) body += `<section class="group">${seg('pick-mode', [['shelf', '書櫃'], ['wish', '願望清單'], ['loan', '借閱']], mode)}</section>`;
+    if (isSession && !canEdit()) { p.mode = 'wish'; body += `<section class="card"><p class="hint" style="margin:0">你是「只能檢視」，掃到的書會加進你自己的願望清單。</p></section>`; }
+    if (mode !== 'shelf') {
+      if (mode === 'wish' && canEdit()) body += `<section class="card"><p class="hint" style="margin:0">掃到的書會加進願望清單，不會放進書櫃。買到之後，到書的編輯頁把擁有狀態改成「已收藏」，再選位置。</p></section>`;
+      else body += `<section class="group"><h2>借入還是借出</h2>${seg('pick-loan-dir', [['in', '借入'], ['out', '借出']], p.loanDir === 'out' ? 'out' : 'in')}
+        <label class="field" style="margin-top:12px">${p.loanDir === 'out' ? '借給誰' : '跟誰借的'}（可以之後再填）<input type="text" id="pick-loan-person" list="loan-people" value="${esc(p.loanPerson || '')}" placeholder="名字"></label><datalist id="loan-people">${loanPeople().map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
+        <p class="hint" style="margin:8px 6px 0">借閱日期會記成登記當天，不會放進書櫃。${p.loanDir === 'out' ? '借出的書還回來後，再到編輯頁選原本放的位置。' : ''}</p></section>`;
+      const owners = B().meta.owners || [];
+      if (owners.length) body += `<section class="group"><h2>這批書的所有者</h2>${seg('pick-owner', owners.map(o => [o, esc(o)]), p.owner)}</section>`;
+      body += `<div class="pick-done"><span class="chip code">${mode === 'wish' ? '願望清單' : p.loanDir === 'out' ? '借出' : '借入'}</span><button type="button" class="btn primary" data-action="pick-done">確定</button></div>`;
+      return { body, noTabs: true };
+    }
     if (!rooms.length) return { body: body + emptyHTML('還沒有房間和書櫃', '先到「書架」新增房間和書櫃，再回來選位置。'), noTabs: true };
     body += `<section class="group"><h2>房間</h2><div class="filters">${rooms.map(r => `<button type="button" class="fchip${p.roomId === r.id ? ' on' : ''}" data-action="pick-room" data-id="${r.id}">${esc(r.name)}</button>`).join('')}</div></section>`;
     const cabs = p.roomId ? roomCabs(p.roomId) : [];
@@ -2271,7 +4095,9 @@ function openPicker(target) {
     cabinetId: cab ? cab.id : null,
     key: cab ? cellKey(loc.r, loc.c) : null,
     depth: cab ? loc.depth : 1,
-    owner: (app.session && app.session.owner) || firstOwner()
+    owner: (app.session && app.session.owner) || firstOwner(),
+    mode: target === 'session' ? sessionMode() : 'shelf',
+    loanDir: sessionLoanDir(), loanPerson: (app.session && app.session.loan && app.session.loan.person) || ''
   };
   if (!app.pick.cabinetId && app.pick.roomId) { const cs = roomCabs(app.pick.roomId); if (cs.length === 1) app.pick.cabinetId = cs[0].id; }
   go({ name: 'picker', target });
@@ -2311,7 +4137,7 @@ async function moreAction(a, el) {
   const d = app.bookDraft;
   switch (a) {
     case 'add-book': {
-      const c = await dialog({ title: '新增書籍', sheet: true, vertical: true, actions: [{ label: '掃描條碼', value: 'scan', kind: 'primary' }, { label: '用 ISBN 或書名查詢', value: 'search' }, { label: '手動新增', value: 'manual' }, { label: '取消', kind: 'ghost', value: null }] });
+      const c = await dialog({ title: canEdit() ? '新增書籍' : '加到我的願望清單', sheet: true, vertical: true, actions: [{ label: '掃描條碼', value: 'scan', kind: 'primary' }, { label: '用 ISBN 或書名查詢', value: 'search' }, { label: '手動新增', value: 'manual' }, { label: '取消', kind: 'ghost', value: null }] });
       if (c === 'scan') switchTab('scan');
       else if (c === 'search') manualISBN('list');
       else if (c === 'manual') { const dd = draftFromData({}, 'list'); dd.lookup = null; setDraft(dd); go({ name: 'bookEdit' }); }
@@ -2343,6 +4169,11 @@ async function moreAction(a, el) {
     case 'loan-out': case 'loan-edit': case 'loan-return': loanAction(a, cur().id); break;
     case 'bin-restore-book': { const n = await restoreBookPhotos(el.dataset.id); toast(n ? `已拿回 ${n} 張照片` : '找不到照片，可能已經清除了'); break; }
     case 'bin-open': binManage(); break;
+    case 'book-bin': bookBinManage(); break;
+    case 'member-add': memberDialog(null); break;
+    case 'member-edit': memberDialog(el.dataset.email); break;
+    case 'member-invite': inviteDialog(); break;
+    case 'rules-copy': rulesDialog(); break;
     case 'bin-toggle': B().putMeta({ binOnVerify: !binOn() }); break;
     case 'bin-days': { const v = await dialog({ title: '回收桶保留幾天', vertical: true, actions: [7, 30, 90].map(n => ({ label: `${n} 天${n === binDays() ? '（目前）' : ''}`, kind: n === binDays() ? 'primary' : '', value: n })).concat([{ label: '取消', kind: 'ghost', value: null }]) }); if (v) B().putMeta({ binDays: v }); break; }
     case 'scan-spines': spineScan(); break;
@@ -2399,11 +4230,11 @@ async function moreAction(a, el) {
     case 'bk-star': if (d) { const i = +el.dataset.i; d.book.rating = d.book.rating === i ? i - 0.5 : i; render(); } break;
     case 'bk-star-clear': if (d) { d.book.rating = null; render(); } break;
     case 'bk-toggle': if (d) { d.book[el.dataset.f] = !d.book[el.dataset.f]; render(); } break;
-    case 'photo-del': if (d) { const i = d.photos.findIndex(p => p.id === el.dataset.id); if (i >= 0) { const p = d.photos[i]; d.photos.splice(i, 1); if (!p.isNew) d.removed.push(p.id); render(); } } break;
+    case 'photo-del': if (d) { const i = d.photos.findIndex(p => p.id === el.dataset.id); if (i >= 0) { const p = d.photos[i]; d.photos.splice(i, 1); if (!p.isNew) { d.removed.push(p.id); (d.removedP || (d.removedP = [])).push(p); } render(); } } break;
     case 'pick-book-loc': openPicker('book'); break;
     case 'clear-book-loc': if (d) { d.book.location = null; render(); } break;
     case 'save-next': {
-      if (!d || !(await isbnOkToSave(d))) return;
+      if (!d || !(await isbnOkToSave(d)) || !(await okToMoveToWish(d)) || !(await okToChangeVisibility(d))) return;
       const b = commitDraft(), nid = neighborId(b.id, 1);
       app.bookDraft = null;
       if (!nid) { toast('已儲存，這是最後一本了'); popLevels(1); break; }
@@ -2413,7 +4244,7 @@ async function moreAction(a, el) {
       break;
     }
     case 'save-book': {
-      if (!d || !(await isbnOkToSave(d))) return;
+      if (!d || !(await isbnOkToSave(d)) || !(await okToMoveToWish(d)) || !(await okToChangeVisibility(d))) return;
       const b = commitDraft(), origin = d.origin, isNew = d.isNew;
       app.bookDraft = null; toast('已儲存');
       if (origin === 'scan') { app.scan.lastSaved = b.title || '書名待補'; app.scan.status = 'idle'; popLevels(1); }
@@ -2423,12 +4254,12 @@ async function moreAction(a, el) {
     }
     case 'del-book': {
       if (!d || d.isNew) return;
-      if (!(await confirmBox('刪除這本書？', `確定要刪除《${d.book.title || '書名待補'}》嗎？照片也會一起刪除。`, '刪除', true))) return;
-      const id = d.book.id;
-      let ps = app.photoCache[id]; if (!ps) { try { ps = await B().photosFor(id); } catch (e) { ps = []; } }
-      ps.forEach(p => B().removePhoto(p.id));
+      const id = d.book.id, wish = !!B().mine.wishlist[id], priv = B().isPrivate(id), t = d.book.title || '書名待補';
+      const ok = wish ? await confirmBox('從願望清單刪除？', `確定要刪除《${t}》嗎？`, '刪除', true)
+        : await confirmBox('刪除這本書？', `《${t}》會移到回收桶，${isAdmin() ? '在「設定 › 回收桶」可以還原，或永久刪除。' : priv ? '在「設定 › 回收桶」可以還原。永久刪除只有管理者能做，但他看不到書名。' : '在「設定 › 回收桶」可以還原。'}`, '移到回收桶', true);
+      if (!ok) return;
       B().remove('books', id); delete app.photoCache[id];
-      app.bookDraft = null; toast('已刪除');
+      app.bookDraft = null; toast(wish ? '已刪除' : '已移到回收桶');
       popLevels(app.stack.length >= 3 && app.stack[app.stack.length - 2].name === 'book' ? 2 : 1);
       break;
     }
@@ -2436,9 +4267,15 @@ async function moreAction(a, el) {
     case 'pick-cab': app.pick.cabinetId = el.dataset.id; app.pick.key = null; app.pick.depth = 1; render(); break;
     case 'pick-cell': app.pick.key = el.dataset.key; app.pick.depth = 1; render(); break;
     case 'pick-done': {
-      const p = app.pick, cab = B().cache.cabinets[p.cabinetId]; if (!cab || !p.key) return;
+      const p = app.pick;
+      const loanSet = () => ({ dir: p.loanDir === 'out' ? 'out' : 'in', person: String(p.loanPerson || '').trim() });
+      if (p.target === 'session' && p.mode && p.mode !== 'shelf') {   // 願望清單、借閱：不用選格子，原本選的格子留著，切回書櫃時還在
+        app.session = { location: (app.session && app.session.location) || null, owner: p.owner || '', mode: p.mode, loan: loanSet() };
+        saveSession(); retargetScanDraft(); toast('已設定：' + sessionTargetLabel()); popLevels(1); break;
+      }
+      const cab = B().cache.cabinets[p.cabinetId]; if (!cab || !p.key) return;
       const [r, c] = splitKey(p.key), loc = { cabinetId: cab.id, r, c, depth: p.depth };
-      if (p.target === 'session') { app.session = { location: loc, owner: p.owner || '' }; saveSession(); if (app.bookDraft && app.bookDraft.origin === 'scan' && app.bookDraft.isNew) { app.bookDraft.book.location = clone(loc); app.bookDraft.book.owner = p.owner || app.bookDraft.book.owner; } toast('已設定：' + locLabel(loc)); }
+      if (p.target === 'session') { app.session = { location: loc, owner: p.owner || '', mode: 'shelf', loan: loanSet() }; saveSession(); retargetScanDraft(); toast('已設定：' + locLabel(loc)); }
       else if (p.target === 'move') {
         let n = 0;
         (p.ids || []).forEach(id => { const b = B().cache.books[id]; if (b) { B().put('books', { ...b, location: clone(loc) }); n++; } });
@@ -2455,12 +4292,15 @@ function segExtra(s, v) {
     const b = d.book;
     if (v === 'loan') { if (!b.loan) b.loan = d.loanStash || { dir: 'out', person: '', date: todayStr() }; b.ownership = b.loan.dir === 'in' ? 'borrowed' : 'owned'; }
     else { if (b.loan) d.loanStash = b.loan; b.loan = null; b.ownership = v; }
+    if (!canEdit() && v !== 'wishlist') b.private = true;   // 只能檢視的人自己加的書，不是願望清單就只能是隱私
   }
   else if (s === 'bk-loan-dir' && d && d.book.loan) { d.book.loan.dir = v; d.book.ownership = v === 'in' ? 'borrowed' : 'owned'; }
   else if (s === 'bk-status' && d) { d.book.readStatus = v; if (v === 'reading' && !d.book.startDate) d.book.startDate = todayStr(); if (v === 'done' && !d.book.finishDate) d.book.finishDate = todayStr(); }
   else if (s === 'bk-quick-status') { const b = B().cache.books[cur().id]; if (b) { const nb = { ...b, readStatus: v }; if (v === 'reading' && !nb.startDate) nb.startDate = todayStr(); if (v === 'done' && !nb.finishDate) nb.finishDate = todayStr(); B().put('books', nb); } return; }
   else if (s === 'pick-depth') app.pick.depth = +v;
   else if (s === 'pick-owner') app.pick.owner = v;
+  else if (s === 'pick-mode') app.pick.mode = v;
+  else if (s === 'pick-loan-dir') app.pick.loanDir = v;
   render();
 }
 
@@ -2494,8 +4334,31 @@ function publisherList() {
   (B().meta.publishers || []).forEach(p => { if (!(p in count)) count[p] = 0; });
   return Object.entries(count).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-Hant')).map(([name, n]) => ({ name, n }));
 }
+// 編輯頁把家裡的書改成願望清單：會從共用書庫拿掉（進回收桶），放進自己的願望清單
+// 編輯頁：「限制級」和「隱私」放同一行
+function visSwitches(d) {
+  const b = d.book, isWish = b.ownership === 'wishlist' && !b.loan, s0 = B().raw.books[b.id];
+  const privOn = isWish || !!b.private;
+  // 願望清單本來就只有自己看得到；只能檢視的人沒辦法把書放進家裡的書，所以隱私一定是開的
+  const privLocked = isWish || !canEdit();
+  const privHint = isWish ? '願望清單本來就只有你看得到' : !canEdit() ? '你加的書只有你看得到' : '只有你看得到';
+  const adult = isMinorMe() ? '' : `<div class="swcard"><b>限制級</b><button type="button" class="switch" role="switch" aria-checked="${!!b.adult}" aria-label="限制級" data-action="bk-toggle" data-f="adult"></button><span class="small muted">初心者看不到</span></div>`;
+  const priv = `<div class="swcard"><b>${ICON.lock}隱私</b><button type="button" class="switch" role="switch" aria-checked="${privOn}" aria-label="隱私" data-action="bk-toggle" data-f="private"${privLocked ? ' disabled' : ''}></button><span class="small muted">${privHint}</span></div>`;
+  return `<div class="swpair"${adult ? '' : ' style="grid-template-columns:1fr"'}>${adult}${priv}</div>`;
+}
+async function okToChangeVisibility(d) {
+  const id = d.book.id, s0 = B().raw.books[id], wasPriv = B().isPrivate(id), nowPriv = !!d.book.private && d.book.ownership !== 'wishlist', t = d.book.title || '書名待補';
+  if (!d.isNew && s0 && !s0.deletedAt && nowPriv && !wasPriv) return confirmBox('設成隱私？', `《${t}》會從家裡的書移到只有你看得到的地方，其他人（包括管理者）都看不到。之後把「隱私」關掉就會放回來。`, '設成隱私');
+  if (wasPriv && !nowPriv && d.book.ownership !== 'wishlist') return confirmBox('取消隱私？', `《${t}》會放回家裡的書，家人都看得到。`, '取消隱私');
+  return true;
+}
+async function okToMoveToWish(d) {
+  const s0 = B().raw.books[d.book.id];
+  if (d.isNew || !s0 || s0.deletedAt || d.book.ownership !== 'wishlist') return true;
+  return confirmBox('改成願望清單？', `《${d.book.title || '書名待補'}》會從家裡的書拿掉，放進你自己的願望清單；原本的資料會先放在回收桶。`, '改成願望清單');
+}
 function rememberPublisher(name) {
-  name = String(name || '').trim(); if (!name) return;
+  name = String(name || '').trim(); if (!name || !canEdit()) return;
   const list = B().meta.publishers || [];
   if (!list.includes(name)) B().putMeta({ publishers: [...list, name] });
 }
@@ -2578,7 +4441,7 @@ async function pickCategories(startParent) {
     body: `<label class="search">${ICON.search}<span class="sr">搜尋類型</span><input id="opt-q" type="search" placeholder="搜尋類型" autocomplete="off"></label>
       <nav class="crumbs" id="cat-crumbs" aria-label="目前位置"></nav>
       <div class="list picklist optlist catlist" id="opt-list"></div>
-      <button type="button" class="opt-add" id="opt-add">${ICON.plus}<span>新增類型</span></button>
+      <button type="button" class="opt-add" id="opt-add"${canEdit() ? '' : ' hidden'}>${ICON.plus}<span>新增類型</span></button>
       <div class="cat-preview" id="cat-preview" aria-live="polite"></div>`,
     actions: [{ label: '取消', kind: 'ghost', value: null }, { label: '完成', kind: 'primary', get: () => ({ done: normCats([...sel]) }) }],
     onOpen: (el) => {
@@ -2725,7 +4588,7 @@ async function customLanguage() {
     if (known) { if (known[0].startsWith('zho-')) { d.book.language = 'zho'; d.book.script = known[0].slice(4); } else { d.book.language = known[0]; d.book.script = ''; } }
     else {
       d.book.language = v; d.book.script = '';
-      const l = B().meta.languages || []; if (!l.includes(v)) B().putMeta({ languages: [...l, v] });
+      const l = B().meta.languages || []; if (!l.includes(v) && canEdit()) B().putMeta({ languages: [...l, v] });
     }
   }
   render();
@@ -2759,7 +4622,7 @@ async function manageCategories() {
     Object.values(B().cache.books).forEach(b => (b.categories || []).forEach(id => { used[id] = (used[id] || 0) + 1; }));
     const r = await dialog({
       title: '類型', sheet: true, focus: false,
-      body: `<p class="hint">類型可以分層，例如「文學 › 小說」。刪除時，底下的類型會往上移一層。</p><div class="list picklist optlist mgr">${tree.length ? tree.map(({ c, depth }) => `<div class="row sub" style="--d:${depth}"><span class="tx"><b>${esc(c.name)}</b><span>${used[c.id] ? used[c.id] + ' 本' : '沒有書在用'}</span></span><button type="button" class="btn small soft" data-ren="${c.id}">改名</button><button type="button" class="btn small ghost" data-del="${c.id}">刪除</button></div>`).join('') : '<p class="hint" style="padding:14px;margin:0">還沒有類型。</p>'}</div>`,
+      body: `<p class="hint">類型可以分層，例如「文學 › 小說」。${isAdmin() ? '刪除時，底下的類型會往上移一層。' : '刪除類型只有管理者能做。'}</p><div class="list picklist optlist mgr">${tree.length ? tree.map(({ c, depth }) => `<div class="row sub" style="--d:${depth}"><span class="tx"><b>${esc(c.name)}</b><span>${used[c.id] ? used[c.id] + ' 本' : '沒有書在用'}</span></span><button type="button" class="btn small soft" data-ren="${c.id}">改名</button>${isAdmin() ? `<button type="button" class="btn small ghost" data-del="${c.id}">刪除</button>` : ''}</div>`).join('') : '<p class="hint" style="padding:14px;margin:0">還沒有類型。</p>'}</div>`,
       actions: [{ label: '新增', value: { add: true } }, { label: '完成', kind: 'primary', value: null }],
       onOpen: (el, close) => el.querySelector('.mgr').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b) close(b.dataset.ren ? { ren: b.dataset.ren } : { del: b.dataset.del }); })
     });
@@ -2899,30 +4762,49 @@ function cmpVal(x, y) {
   if (typeof x === 'number' && typeof y === 'number') return x - y;
   return zhColl.compare(String(x ?? ''), String(y ?? ''));
 }
-function sortBooks(list) {
-  const lv = bookSortLv();
-  const keyed = list.map(b => ({ b, k: lv.map(x => sortVal(b, x.key)) }));
+// 「系列與卷」不是把有系列的書另外集中，而是先照其他條件排，再讓續集跟在同系列排最前面的那本（通常是第一集）後面。
+// 排在「系列與卷」前面的作者、出版商、類型、閱讀狀態、所有者、位置會先分開（同名系列但作者不同就不會被拉在一起）；
+// 日期、數字、書名這種會被跨過，續集不管出版日多晚都跟著首集。
+const SERIES_SPLIT = new Set(['author', 'publisher', 'category', 'readStatus', 'owner', 'location']);
+function orderBooks(list, lv) {
+  const si = lv.findIndex(x => x.key === 'series');
+  const base = si < 0 ? lv : lv.filter((_, i) => i !== si);
+  const keyed = list.map(b => ({ b, k: base.map(x => sortVal(b, x.key)) }));
   keyed.sort((p, q) => {
-    for (let i = 0; i < lv.length; i++) {
+    for (let i = 0; i < base.length; i++) {
       const a = p.k[i], c = q.k[i], ea = a === '' || a === undefined, ec = c === '' || c === undefined;
       if (ea && ec) continue;
       if (ea) return 1; if (ec) return -1;          // 沒填的永遠排最後
-      const r = cmpVal(a, c); if (r) return lv[i].dir === 'desc' ? -r : r;
+      const r = cmpVal(a, c); if (r) return base[i].dir === 'desc' ? -r : r;
     }
     return zhColl.compare(p.b.title || '', q.b.title || '');
   });
-  return keyed.map(x => x.b);
-}
-// 書櫃裡的順序：作者的姓 → 類型 → 系列與卷 → 書名，都是正序，沒填的排後面
-function shelfOrder(a, b) {
-  for (const k of ['author', 'category', 'series', 'title']) {
-    const x = sortVal(a, k), y = sortVal(b, k), ex = x === '' || x === undefined, ey = y === '' || y === undefined;
-    if (ex && ey) continue;
-    if (ex) return 1; if (ey) return -1;
-    const c = cmpVal(x, y); if (c) return c;
+  if (si < 0) return keyed.map(x => x.b);
+  const desc = lv[si].dir === 'desc', split = lv.slice(0, si).filter(x => SERIES_SPLIT.has(x.key));
+  const vol = b => { const v = b.volume; return v === null || v === undefined || v === '' || !isFinite(Number(v)) ? null : Number(v); };
+  const groups = new Map();
+  keyed.forEach((x, i) => {
+    x.i = i; const sname = String(x.b.series || '').trim().toLowerCase(); if (!sname) return;
+    x.g = JSON.stringify([sname, ...split.map(l => sortVal(x.b, l.key))]);
+    if (!groups.has(x.g)) groups.set(x.g, []); groups.get(x.g).push(x);
+  });
+  const out = [], done = new Set();
+  for (const x of keyed) {
+    if (!x.g) { out.push(x.b); continue; }
+    if (done.has(x.g)) continue; done.add(x.g);
+    groups.get(x.g).sort((p, q) => {            // 同系列：照卷數，沒寫卷數的跟在後面
+      const a = vol(p.b), c = vol(q.b);
+      if (a === null && c === null) return p.i - q.i;
+      if (a === null) return 1; if (c === null) return -1;
+      return (desc ? c - a : a - c) || p.i - q.i;
+    }).forEach(m => out.push(m.b));
   }
-  return 0;
+  return out;
 }
+function sortBooks(list) { return orderBooks(list, bookSortLv()); }
+// 書櫃裡的順序：作者的姓 → 類型 → 系列與卷 → 書名，都是正序，沒填的排後面
+const SHELF_LV = ['author', 'category', 'series', 'title'].map(key => ({ key, dir: 'asc' }));
+const shelfSort = list => orderBooks(list, SHELF_LV);
 function bookInCat(b, cat) {
   const ids = normCats(b.categories);
   if (cat === '__none') return !ids.length;
@@ -2993,7 +4875,7 @@ async function pickBookSort() {
 
 async function pickCatFilter() {
   const cats = B().cache.categories || {};
-  const books = Object.values(B().cache.books).filter(b => app.bookFilter === 'wish' ? b.ownership === 'wishlist' : b.ownership !== 'wishlist');
+  const books = Object.values(B().cache.books).filter(b => topFilterMatch(b, app.bookFilter || 'all'));
   const cnt = {}; let none = 0;
   books.forEach(b => {
     const ids = normCats(b.categories); if (!ids.length) { none++; return; }
@@ -3131,7 +5013,7 @@ async function editOwners() {
   B().putMeta({ owners: finalNames });
   const fix = v => ren[v] !== undefined ? ren[v] : removed.has(v) ? null : v;
   if (app.session.owner) { const v = fix(app.session.owner); app.session.owner = v || ''; saveSession(); }
-  if (!['all', 'pending', 'wish', 'loan'].includes(app.bookFilter)) app.bookFilter = fix(app.bookFilter) || 'all';
+  if (!TOP_FILTERS.includes(app.bookFilter)) app.bookFilter = fix(app.bookFilter) || 'all';
   toast(n ? `已儲存，更新了 ${n} 本書` : '已儲存');
   render();
 }
@@ -3155,7 +5037,7 @@ function photoViewer(p, mode = 'view') {
   const label = KIND_LABEL[p.kind] || '照片';
   const canAI = mode === 'edit' && (p.kind === 'copyright' || p.kind === 'blurb');
   const actions = mode === 'edit'
-    ? [{ label: '刪除', kind: 'danger ghost', value: 'del' }, ...(canAI ? [{ label: p.kind === 'blurb' ? 'AI 讀文案' : 'AI 讀資料', kind: 'soft', value: 'ai' }] : []), { label: '邊看邊填', kind: 'primary', value: 'pin' }]
+    ? [...(canEdit() || p.isNew ? [{ label: '刪除', kind: 'danger ghost', value: 'del' }] : []), ...(canAI ? [{ label: p.kind === 'blurb' ? 'AI 讀文案' : 'AI 讀資料', kind: 'soft', value: 'ai' }] : []), { label: '邊看邊填', kind: 'primary', value: 'pin' }]
     : [{ label: '關閉', kind: 'primary', value: null }];
   return dialog({
     title: label, hideTitle: true, layerCls: 'full', focus: false,
@@ -3188,7 +5070,7 @@ async function openDraftPhoto(id) {
   if (!app.bookDraft) return;
   if (r === 'del') {
     if (!(await confirmBox(`刪除這張${KIND_LABEL[p.kind] || '照片'}？`, '儲存之後才會真的刪掉。', '刪除', true))) return;
-    const i = d.photos.indexOf(p); if (i >= 0) { d.photos.splice(i, 1); if (!p.isNew) d.removed.push(p.id); }
+    const i = d.photos.indexOf(p); if (i >= 0) { d.photos.splice(i, 1); if (!p.isNew) { d.removed.push(p.id); (d.removedP || (d.removedP = [])).push(p); } }
     if (d.pin && d.pin.id === p.id) d.pin = null;
     render();
   } else if (r === 'pin') { d.pin = { id: p.id, z: 1 }; app.pinScroll = [0, 0]; render(); $('#main').scrollTop = 0; }
@@ -3567,9 +5449,9 @@ async function restoreBookPhotos(bookId) {
 function purgeBin(all = false) {
   const cutoff = Date.now() - binDays() * 864e5; let n = 0;
   Object.values(B().cache.books).forEach(b => {
-    const bin = b.photoBin || []; if (!bin.length) return;
+    const bin = b.photoBin || []; if (!bin.length || !(isAdmin() || b.private)) return;
     const gone = bin.filter(x => all || new Date(x.at).getTime() < cutoff); if (!gone.length) return;
-    gone.forEach(x => B().removePhoto(x.id)); n += gone.length;
+    gone.forEach(x => B().removePhoto(x.id, b.id)); n += gone.length;
     delete app.photoCache[b.id];
     B().put('books', { ...b, photoBin: bin.filter(x => !gone.includes(x)) });
   });
@@ -3584,9 +5466,9 @@ async function binManage() {
   for (;;) {
     const books = Object.values(B().cache.books).filter(b => (b.photoBin || []).length).sort((a, b) => String(a.photoBin[0].at).localeCompare(String(b.photoBin[0].at)));
     const r = await dialog({
-      title: '照片回收桶', sheet: true, focus: false,
+      title: '照片的回收桶', sheet: true, focus: false,
       body: `<p class="hint">書標成「資料已確認」後，版權頁、藏書章、封底文案照片會放在這裡 ${binDays()} 天，時間到自動清除，騰出 Firebase 的空間。</p><div class="list picklist mgr">${books.length ? books.map(b => `<div class="row"><span class="tx"><b>${esc(b.title || '書名待補')}</b><span>${b.photoBin.length} 張・${binLeft(b.photoBin[0].at)} 天後清除</span></span><button type="button" class="btn small soft" data-restore="${b.id}">還原</button></div>`).join('') : '<p class="hint" style="padding:14px;margin:0">回收桶是空的。</p>'}</div>`,
-      actions: [...(books.length ? [{ label: '清空回收桶', kind: 'danger ghost', value: { empty: true } }] : []), { label: '完成', kind: 'primary', value: null }],
+      actions: [...(books.length && isAdmin() ? [{ label: '清空回收桶', kind: 'danger ghost', value: { empty: true } }] : []), { label: '完成', kind: 'primary', value: null }],
       onOpen: (el, close) => el.querySelector('.mgr').addEventListener('click', ev => { const b = ev.target.closest('button[data-restore]'); if (b) close({ restore: b.dataset.restore }); })
     });
     if (!r) { render(); return; }
@@ -3602,6 +5484,127 @@ async function setVerified(id, on) {
   B().put('books', { ...b, verified: on });
   if (on) { const n = await binBookPhotos(id); toast(n ? `已確認，${n} 張照片移到回收桶，${binDays()} 天後清除` : '已標記為資料已確認'); }
   else { const n = await restoreBookPhotos(id); toast(n ? `已改回待補資料，${n} 張照片拿回來了` : '已改回待補資料'); }
+}
+
+/* ---------- 第六階段：書的回收桶 ---------- */
+function memberByUid(uid) { return Object.values(B().members || {}).find(m => m.uid === uid); }
+// 回收桶裡看得到的東西：家裡的書（有權限的人）、自己的隱私書籍；管理者另外看得到家人隱私書籍的「紀錄」（沒有書名）
+function binEntries() {
+  const b = B(), out = [];
+  Object.values(b.trash || {}).forEach(x => { if (x.private || canEdit()) out.push({ kind: x.private ? 'mine' : 'shared', id: x.id, at: x.deletedAt, book: x }); });
+  if (isAdmin()) Object.values(b.privTrash || {}).forEach(t => out.push({ kind: 'other', id: t.id, uid: t.uid, at: t.deletedAt }));
+  return out.sort((x, y) => String(y.at).localeCompare(String(x.at)));
+}
+function bookBinSummary() {
+  const n = binEntries().length;
+  return n ? `${n} 本，${isAdmin() ? '可以還原或永久刪除' : '可以還原'}` : '是空的';
+}
+async function bookBinManage() {
+  for (;;) {
+    const list = binEntries(), admin = isAdmin();
+    const rowHTML = e => {
+      if (e.kind === 'other') {
+        const m = memberByUid(e.uid), who = m ? (m.name || m.gname || m.email) : '家人';
+        return `<div class="row"><span class="ic">${ICON.lock}</span><span class="tx"><b>${esc(who)}的隱私書籍</b><span>內容只有他自己看得到</span><span class="small muted">${esc(fmtDate(e.at))} 丟進回收桶</span></span><span class="binacts"><button type="button" class="btn small ghost danger" data-purge="${e.id}" data-uid="${esc(e.uid)}">永久刪除</button></span></div>`;
+      }
+      const x = e.book;
+      return `<div class="row">${coverThumb(x, 'thumb')}<span class="tx"><b>${e.kind === 'mine' ? `<span class="sprout" style="color:var(--ink)">${ICON.lock}</span>` : ''}${esc(x.title || '書名待補')}</b><span>${esc(authorsText(x) || '作者待補')}</span><span class="small muted">${e.kind === 'mine' ? '隱私書籍・' : esc(x.deletedBy || '有人') + ' '}${x.deleteReason === 'wish' ? '改成願望清單' : '刪除'}・${esc(fmtDate(e.at))}</span></span><span class="binacts"><button type="button" class="btn small soft" data-restore="${x.id}">還原</button>${admin ? `<button type="button" class="btn small ghost danger" data-purge="${x.id}">永久刪除</button>` : ''}</span></div>`;
+    };
+    const r = await dialog({
+      title: '刪掉的書', sheet: true, focus: false,
+      body: `<p class="hint">刪掉的書會先放在這裡，不會自動清除。${admin ? '永久刪除只有你能做，刪了就救不回來。家人的隱私書籍你看不到書名，只能幫忙永久刪除。' : '你可以還原；永久刪除只有管理者能做（你的隱私書籍他看不到書名）。'}</p><div class="list picklist mgr binbooks">${list.length ? list.map(rowHTML).join('') : '<p class="hint" style="padding:14px;margin:0">回收桶是空的。</p>'}</div>`,
+      actions: [...(admin && list.length ? [{ label: '全部永久刪除', kind: 'danger ghost', value: { empty: true } }] : []), { label: '完成', kind: 'primary', value: null }],
+      onOpen: (el, close) => el.querySelector('.mgr').addEventListener('click', ev => { const t = ev.target.closest('button'); if (!t) return; if (t.dataset.restore) close({ restore: t.dataset.restore }); else if (t.dataset.purge) close({ purge: t.dataset.purge, uid: t.dataset.uid || '' }); })
+    });
+    if (!r) { render(); return; }
+    if (r.restore) { const x = B().trash[r.restore]; B().restoreBook(r.restore); toast(`已還原《${(x && x.title) || '書名待補'}》`); }
+    else if (r.purge) {
+      const x = r.uid ? null : B().trash[r.purge];
+      const what = r.uid ? '這本隱私書籍' : `《${(x && x.title) || '書名待補'}》`;
+      if (await confirmBox('永久刪除？', `${what}和它的照片會永久刪除，沒辦法復原。`, '永久刪除', true)) { await B().purgeBook(r.purge, r.uid || undefined); toast('已永久刪除'); }
+    } else if (r.empty) {
+      if (!(await confirmBox('全部永久刪除？', `回收桶裡的 ${list.length} 本書和它們的照片會永久刪除，沒辦法復原。`, '全部刪除', true))) continue;
+      for (const e of list) await B().purgeBook(e.id, e.kind === 'other' ? e.uid : undefined);
+      toast(`已永久刪除 ${list.length} 本`);
+    }
+  }
+}
+
+/* ---------- 第六階段：家人與權限 ---------- */
+const ROLE_HINT = {
+  viewer: '可以看所有的書，記自己的閱讀狀態、評分、心得和願望清單；不能新增、修改或刪除家裡的書。',
+  editor: '可以新增、修改書和登記借閱。刪掉的書會進回收桶，可以還原，但不能永久刪除。'
+};
+function membersHTML() {
+  const b = B(), ms = Object.values(b.members || {}).filter(m => m.email !== b.me.email).sort((x, y) => String(x.addedAt || '').localeCompare(String(y.addedAt || '')));
+  return `<section class="group"><h2>家人與權限</h2><div class="list">
+    <div class="row"><span class="ic">${ICON.user}</span><span class="tx"><b>${esc(b.me.name || '我')}</b><span>${esc(b.me.email)}</span></span><span class="status">管理者</span></div>
+    ${ms.map(m => `<button type="button" class="row" data-action="member-edit" data-email="${esc(m.email)}"><span class="ic">${ICON.user}</span><span class="tx"><b>${m.minor ? `<span class="sprout" title="初心者">${ICON.sprout}</span>` : ''}${esc(m.name || m.gname || m.email)}</b><span>${m.minor ? '初心者・' : ''}${esc(m.email)}・${m.lastSeen ? `${esc(fmtDate(m.lastSeen))} 用過` : '還沒登入過'}</span></span><span class="status${m.role === 'editor' ? '' : ' demo'}">${ROLE_LABEL[m.role] || '只能檢視'}</span>${ICON.chev}</button>`).join('')}
+    <button type="button" class="row" data-action="member-add"><span class="ic">${ICON.plus}</span><span class="tx"><b>新增家人</b><span>輸入對方的 Gmail，選權限</span></span>${ICON.chev}</button>
+    ${b.kind === 'firebase' ? `<button type="button" class="row" data-action="member-invite"><span class="ic">${ICON.share}</span><span class="tx"><b>邀請連結</b><span>傳給家人，或讓他用手機掃 QR code</span></span>${ICON.chev}</button>
+    <button type="button" class="row" data-action="rules-copy"><span class="ic">${ICON.shield}</span><span class="tx"><b>更新資料庫規則</b><span>第一次加家人之前要做一次</span></span>${ICON.chev}</button>` : ''}
+  </div></section>`;
+}
+async function memberDialog(email) {
+  const b = B(), m = email ? b.members[email] : null;
+  const r = await dialog({
+    title: m ? (m.name || m.gname || m.email) : '新增家人', focus: !m,
+    body: `${m ? `<p class="small muted" style="margin-top:0">${esc(m.email)}${m.lastSeen ? `・${esc(fmtDate(m.lastSeen))} 用過` : '・還沒登入過'}</p>` : `<label class="field"><span>對方的 Gmail</span><input type="email" id="mb-email" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="name@gmail.com"></label>`}
+      <label class="field"><span>稱呼（可以不填）</span><input type="text" id="mb-name" value="${esc(m ? m.name || '' : '')}" placeholder="例如：媽媽"></label>
+      <div class="field">權限${seg('mb-role', [['viewer', '只能檢視'], ['editor', '可修改']], m ? m.role : 'viewer')}</div>
+      <p class="hint" id="mb-hint" style="margin:0 0 12px">${ROLE_HINT[m ? m.role : 'viewer'] || ''}</p>
+      <div class="switch-row"><span><b><span class="sprout">${ICON.sprout}</span>初心者</b><span class="small muted">未成年。打開後，這個人看不到「限制級」的書。</span></span><button type="button" class="switch" role="switch" aria-checked="${!!(m && m.minor)}" aria-label="初心者" id="mb-minor"></button></div>
+      ${m ? '' : `<p class="hint" style="margin:8px 0 0">加好之後，${b.kind === 'firebase' ? '把「邀請連結」傳給他，用他自己的 Google 帳號登入就好。' : '示範模式可以在上面的「試用身分」切換看看。'}</p>`}`,
+    actions: [...(m ? [{ label: '移出名單', kind: 'danger ghost', value: { del: true } }] : []), { label: '取消', kind: 'ghost', value: null },
+      { label: m ? '儲存' : '加入', kind: 'primary',
+        get: el => ({ email: m ? m.email : lowerEmail(el.querySelector('#mb-email').value), name: el.querySelector('#mb-name').value.trim(), role: (el.querySelector('[data-seg="mb-role"][aria-checked="true"]') || {}).dataset?.v || 'viewer', minor: el.querySelector('#mb-minor').getAttribute('aria-checked') === 'true' }),
+        validate: el => {
+          if (m) return true;
+          const e = lowerEmail(el.querySelector('#mb-email').value);
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) { toast('Email 的格式不對', 'err'); return false; }
+          if (e === b.me.email) { toast('這是你自己的帳號', 'err'); return false; }
+          if (b.members[e]) { toast('這個人已經在名單上了', 'err'); return false; }
+          return true;
+        } }],
+    onOpen: el => el.addEventListener('click', ev => {
+      const sw = ev.target.closest('#mb-minor'); if (sw) { sw.setAttribute('aria-checked', String(sw.getAttribute('aria-checked') !== 'true')); return; }
+      const t = ev.target.closest('[data-seg="mb-role"]'); if (!t) return;
+      el.querySelectorAll('[data-seg="mb-role"]').forEach(x => x.setAttribute('aria-checked', String(x === t)));
+      el.querySelector('#mb-hint').textContent = ROLE_HINT[t.dataset.v] || '';
+    })
+  });
+  if (!r) return;
+  if (r.del) {
+    if (!(await confirmBox('移出名單？', `${m.name || m.email} 之後就看不到書庫了。他自己的閱讀紀錄還會留著，再加回來就會恢復。`, '移出', true))) return;
+    await b.removeMember(m.email); toast('已移出名單'); render(); return;
+  }
+  await b.setMember(r.email, m ? { name: r.name, role: r.role, minor: r.minor } : { name: r.name, role: r.role, minor: r.minor, addedAt: nowISO() });
+  toast(m ? '已更新' : `已加入 ${r.name || r.email}`); render();
+  if (!m && b.kind === 'firebase') inviteDialog();
+}
+function inviteDialog() {
+  const link = B().inviteLink();
+  return dialog({
+    title: '邀請家人', focus: false,
+    body: `<div class="qrbox">${qrSVG(link)}</div>
+      <p class="hint">家人用手機相機掃這個 QR code，或把連結傳給他。打開後用他自己的 Google 帳號登入。用 LINE 傳的話，要請他點右上角選「用預設瀏覽器開啟」，在 LINE 裡面沒辦法用 Google 登入。</p>
+      <p class="hint">要先在「新增家人」加入他的 Gmail，不然登入後會看不到書。第一次加家人前，也要先「更新資料庫規則」。</p>
+      <label class="field"><span class="sr">邀請連結</span><input type="text" readonly class="mono" value="${esc(link)}" onfocus="this.select()"></label>`,
+    actions: [...(navigator.share ? [{ label: '分享', kind: 'soft', get: () => { navigator.share({ title: '吋讀邀請', text: '用這個連結加入家裡的書庫', url: link }).catch(() => {}); return 'share'; } }] : []),
+      { label: '複製連結', kind: 'ghost', get: () => { navigator.clipboard.writeText(link).then(() => toast('已複製連結')).catch(() => toast('這個環境不允許複製，請長按連結自己複製', 'err')); return 'copy'; } },
+      { label: '完成', kind: 'primary', value: null }]
+  });
+}
+function rulesDialog() {
+  const b = B(), text = rulesText(b.me.email), url = `https://console.firebase.google.com/project/${encodeURIComponent(b.cfg.projectId)}/firestore/rules`;
+  return dialog({
+    title: '更新資料庫規則', sheet: true, focus: false,
+    body: `<p class="hint" style="margin-top:0">家人要能登入，Firebase 的安全規則要換成新版。下面這份已經填好你的 Gmail（${esc(b.me.email)}）。</p>
+      <ol class="gb-steps"><li>按「複製規則」。</li><li>打開 <a href="${esc(url)}" target="_blank" rel="noopener">Firebase 主控台 › Firestore › 規則</a>。</li><li>把裡面的內容全部刪掉，貼上，按「發布」。</li></ol>
+      <p class="hint">只要做一次。之後家人登入就會照你設定的權限，就算有人繞過吋讀直接連資料庫也一樣。</p>
+      <textarea class="mono rulesbox" rows="8" readonly>${esc(text)}</textarea>`,
+    actions: [{ label: '關閉', kind: 'ghost', value: null }, { label: '複製規則', kind: 'primary', get: () => { navigator.clipboard.writeText(text).then(() => toast('已複製規則')).catch(() => toast('這個環境不允許複製，請長按文字自己複製', 'err')); return 'copy'; } }]
+  });
 }
 
 /* ---------- 借閱 ---------- */
@@ -3622,8 +5625,8 @@ function loanSectionHTML(b) {
   if (L) {
     const inn = L.dir === 'in', who = esc(L.person || '（沒填）'), n = L.date ? daysBetween(L.date, todayStr()) : null, over = overdueDays(L);
     h += `<section class="card loancard"><div class="loaninfo"><span class="chip peach">${inn ? '借入' : '借出'}</span><span class="tx"><b>${inn ? `跟 ${who} 借的` : `借給 ${who}`}</b><span class="small muted">${L.date ? `${esc(L.date)} ${inn ? '借來' : '借出'}・${n === 0 ? '今天' : n > 0 ? `已經 ${n} 天` : ''}` : '沒填借閱日期'}${L.due ? `・預計 ${esc(L.due)} 還` : ''}</span>${over > 0 ? `<span class="small overdue">超過預計歸還日 ${over} 天</span>` : ''}</span></div>
-      <div class="loanacts"><button type="button" class="btn small soft" data-action="loan-edit">修改</button><button type="button" class="btn small primary" data-action="loan-return">${inn ? '已經還回去了' : '已經還回來了'}</button></div></section>`;
-  } else if (b.ownership !== 'borrowed') h += `<div class="loanacts solo"><button type="button" class="btn small soft" data-action="loan-out">${ICON.loan}借給別人</button></div>`;
+      ${mayEditBook(b) ? `<div class="loanacts"><button type="button" class="btn small soft" data-action="loan-edit">修改</button><button type="button" class="btn small primary" data-action="loan-return">${inn ? '已經還回去了' : '已經還回來了'}</button></div>` : ''}</section>`;
+  } else if (b.ownership !== 'borrowed' && mayEditBook(b)) h += `<div class="loanacts solo"><button type="button" class="btn small soft" data-action="loan-out">${ICON.loan}借給別人</button></div>`;
   if (hist.length) h += `<section class="group"><h2>借閱紀錄</h2><div class="list">${hist.slice().reverse().map(x => { const n = daysBetween(x.date, x.returned); return `<div class="row"><span class="tx"><b>${x.dir === 'in' ? `跟 ${esc(x.person || '（沒填）')} 借` : `借給 ${esc(x.person || '（沒填）')}`}</b><span>${esc(x.date || '?')} → ${esc(x.returned || '?')}${n !== null && n >= 0 ? `・${n} 天` : ''}</span></span></div>`; }).join('')}</div></section>`;
   return h;
 }
@@ -3641,9 +5644,8 @@ async function loanAction(a, id) {
     actions: [{ label: '改成願望清單（想自己買一本）', kind: 'primary', value: 'wish' }, { label: '從書單刪除', kind: 'danger', value: 'del' }, { label: '取消', kind: 'ghost', value: null }] });
   if (c === 'wish') { B().put('books', { ...B().cache.books[id], loan: null, loanHistory: hist, ownership: 'wishlist', location: null }); toast('已改成願望清單'); }
   else if (c === 'del') {
-    let ps = []; try { ps = await B().photosFor(id); } catch (e) {}
-    ps.forEach(p => B().removePhoto(p.id)); B().remove('books', id); delete app.photoCache[id];
-    toast('已刪除'); popLevels(1);
+    B().remove('books', id); delete app.photoCache[id];
+    toast('已移到回收桶'); popLevels(1);
   }
 }
 
@@ -3655,8 +5657,8 @@ AI_PROMPTS.spines = `這是書架上一排書的書背照片。請由左到右�
 const normTitle = t => String(t || '').replace(/[\s\p{P}\p{S}]/gu, '').toLowerCase();
 async function spineScan() {
   if (!LS.get(AI_KEY)) return aiErrorBox({ code: 'nokey' });
-  const loc = sessionLoc();
-  if (!loc) { toast('先選好要放進哪一格', 'err'); openPicker('session'); return; }
+  if (!sessionReady()) { toast('先選好要登記到哪裡', 'err'); openPicker('session'); return; }
+  const where = sessionTargetLabel();
   const shot = await capturePhoto('spines'); if (!shot) return;
   const done = busyBox('AI 正在認書背…');
   let out; try { out = await aiReadPhoto({ data: shot.data }, 'spines'); } catch (e) { done(); return aiErrorBox(e); }
@@ -3669,7 +5671,7 @@ async function spineScan() {
   const owner = (app.session && app.session.owner) || firstOwner();
   const r = await dialog({
     title: `認出 ${list.length} 本書`, sheet: true, focus: false,
-    body: `<p class="small muted">勾選要登記的書，書名可以直接改。會放進 <b>${esc(locLabel(loc))}</b>${owner ? `，所有者 ${esc(owner)}` : ''}，先標成待補資料。</p>
+    body: `<p class="small muted">勾選要登記的書，書名可以直接改。會登記到 <b>${esc(where)}</b>${owner ? `，所有者 ${esc(owner)}` : ''}，先標成待補資料。</p>
       <div class="list ailist">${list.map((x, i) => `<div class="airow sprow"><input type="checkbox" data-c="${i}"${x.dup ? '' : ' checked'} aria-label="登記第 ${i + 1} 本"><span class="tx"><input type="text" class="sp-title" data-t="${i}" value="${esc(x.title)}" aria-label="第 ${i + 1} 本的書名"><small>${esc([x.author, x.publisher, x.volume ? `第 ${x.volume} 卷` : ''].filter(Boolean).join('・'))}${x.unsure ? `${x.author || x.publisher ? '・' : ''}有字看不清楚` : ''}${x.dup ? `<b class="overdue">${x.author || x.publisher || x.unsure ? '・' : ''}已經有同名的書</b>` : ''}</small></span></div>`).join('')}</div>
       <label class="check-row"><input type="checkbox" id="sp-lookup" checked><span>用書名上網查書目，書名完全一樣才補資料</span></label>`,
     actions: [{ label: '取消', kind: 'ghost', value: null }, { label: '登記勾選的書', kind: 'primary', get: el => ({ rows: list.map((x, i) => ({ ...x, title: el.querySelector(`[data-t="${i}"]`).value.trim(), on: el.querySelector(`[data-c="${i}"]`).checked })), lookup: el.querySelector('#sp-lookup').checked }) }]
@@ -3680,13 +5682,13 @@ async function spineScan() {
     if (x.author) b.authors = [{ name: x.author, role: '著' }];
     if (x.publisher) b.publisher = x.publisher;
     if (x.volume) b.volume = x.volume;
-    b.location = clone(loc); b.owner = owner; b.needsLookup = true; b.verified = false;
+    applyExtra(b, sessionExtra()); b.owner = owner; b.needsLookup = true; b.verified = false;
     return b;
   });
   if (!made.length) return;
   made.forEach(b => { rememberPublisher(b.publisher); B().put('books', b); });
   app.scan.lastSaved = `${made.length} 本（認書背）`; updateScanSheet();
-  toast(`已登記 ${made.length} 本到 ${locLabel(loc)}`);
+  toast(`已登記 ${made.length} 本到 ${where}`);
   if (!r.lookup) return;
   let filled = 0;
   for (const b of made) {
@@ -3808,18 +5810,19 @@ async function chooseBookForImage(blob, linkUrl = '') {
   let cv = null;
   if (blob) { try { cv = await loadImageFile(blob); } catch (e) { toast('這張圖片打不開', 'err'); return; } }
   const preview = cv ? cv.toDataURL('image/jpeg', 0.8) : linkUrl;
-  const recent = (LS.get(RECENT_KEY) || []).map(id => B().cache.books[id]).filter(Boolean);
+  const mayEdit = mayEditBook;   // 只能檢視的人只能換自己願望清單、隱私書籍的封面
+  const recent = (LS.get(RECENT_KEY) || []).map(id => B().cache.books[id]).filter(b => b && mayEdit(b));
   const res = await dialog({
     title: '收到一張圖片', sheet: true, focus: false,
     body: `<div class="share-head"><img src="${preview}" alt="收到的圖片"><p class="small">要當成哪一本書的封面？</p></div>
       <label class="search">${ICON.search}<span class="sr">找書</span><input id="sh-q" type="search" placeholder="輸入書名找書" autocomplete="off"></label>
       <div class="list picklist" id="sh-list"></div>`,
-    actions: [{ label: '新增一本書', kind: 'soft', value: { add: true } }, { label: '取消', kind: 'ghost', value: null }],
+    actions: [{ label: canEdit() ? '新增一本書' : '加到願望清單', kind: 'soft', value: { add: true } }, { label: '取消', kind: 'ghost', value: null }],
     onOpen: (el, close) => {
       const q = el.querySelector('#sh-q'), box = el.querySelector('#sh-list');
       const draw = () => {
         const s = q.value.trim().toLowerCase();
-        const list = s ? Object.values(B().cache.books).filter(b => [b.title, b.subtitle, authorsText(b)].some(x => String(x || '').toLowerCase().includes(s))).slice(0, 30) : recent;
+        const list = s ? Object.values(B().cache.books).filter(b => mayEdit(b) && [b.title, b.subtitle, authorsText(b)].some(x => String(x || '').toLowerCase().includes(s))).slice(0, 30) : recent;
         box.innerHTML = list.length ? `${s ? '' : '<p class="small muted" style="padding:10px 14px 0;margin:0">最近看過的書</p>'}${list.map(b => `<button type="button" class="row cb-row" data-id="${b.id}">${coverThumb(b, 'thumb')}<span class="binfo"><b>${esc(b.title || '書名待補')}</b><span>${esc(authorsText(b) || '')}</span></span></button>`).join('')}`
           : `<p class="hint" style="padding:14px;margin:0">${s ? '找不到這本書。' : '輸入書名找要換封面的書。'}</p>`;
       };
@@ -3857,8 +5860,9 @@ async function shareCheck() {
     ${ctl ? '' : '<p class="small muted">提醒：這一頁目前沒有被背景程式接手，重新整理一次再檢查。</p>'}`);
 }
 async function offerHantFix() {
+  if (!canEdit()) return;
   if (B().meta.hantFixDone) return;
-  const list = Object.values(B().cache.books).filter(b => b.language === 'zho' && b.script === 'Hans').sort(shelfOrder);
+  const list = shelfSort(Object.values(B().cache.books).filter(b => b.language === 'zho' && b.script === 'Hans'));
   if (!list.length) { B().putMeta({ hantFixDone: true }); return; }
   const r = await dialog({
     title: `有 ${list.length} 本書標成簡體中文`, sheet: true, focus: false,
@@ -3872,7 +5876,7 @@ async function offerHantFix() {
   if (r.ids && r.ids.length) toast(`已把 ${r.ids.length} 本改成正體中文`);
 }
 async function afterEnterMain() {
-  setTimeout(() => { try { purgeBin(); } catch (e) {} }, 3000);
+  setTimeout(() => { try { if (isAdmin() || Object.values(B().cache.books).some(b => b.private)) purgeBin(); } catch (e) {} }, 3000);
   const share = new URLSearchParams(location.search).get('share');
   if (share !== null) { try { history.replaceState({ tsundoku: true }, '', location.pathname); } catch (e) {} }
   const saved = app.savedDraft; app.savedDraft = null;
@@ -3899,7 +5903,7 @@ function offerFile(name, text, mime) {
     body: `<p><span class="code">${esc(name)}</span></p><p class="muted small">大小約 ${kb} KB。下載後建議存一份到雲端硬碟。如果按了下載沒有反應，可以改按「複製內容」，貼到記事本存檔。</p>`,
     actions: [
       { label: '複製內容', kind: 'ghost', get: () => {
-        navigator.clipboard.writeText(text).then(() => { toast('已複製'); B().putMeta({ lastBackupAt: nowISO() }); }).catch(() => toast('這個環境不允許複製，請改用下載', 'err'));
+        navigator.clipboard.writeText(text).then(() => { toast('已複製'); if (canEdit()) B().putMeta({ lastBackupAt: nowISO() }); }).catch(() => toast('這個環境不允許複製，請改用下載', 'err'));
         return 'copy';
       } },
       { label: '下載檔案', kind: 'primary', get: () => {
@@ -3907,7 +5911,7 @@ function offerFile(name, text, mime) {
           const url = URL.createObjectURL(new Blob([text], { type: mime }));
           const a = document.createElement('a'); a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
           setTimeout(() => URL.revokeObjectURL(url), 5000);
-          B().putMeta({ lastBackupAt: nowISO() });
+          if (canEdit()) B().putMeta({ lastBackupAt: nowISO() });
         } catch (e) { toast('下載失敗，請改用複製內容', 'err'); }
         return 'download';
       } }
@@ -3963,6 +5967,130 @@ async function importFile(file) {
 }
 
 /* ---------- Firebase 設定 ---------- */
+const RULES_TEMPLATE = `rules_version = '2';
+
+// 吋讀 Tsundoku 的 Firestore 安全規則（第六階段：家人共用）
+// 使用前請把 YOUR_EMAIL@gmail.com 換成管理者（你自己）的 Gmail，要全部小寫。
+// 也可以在吋讀的「設定 › 家人與權限 › 更新資料庫規則」直接複製已經填好的版本。
+//
+// 書庫放在 users/{管理者的 uid} 底下：
+//   rooms、cabinets、categories、books、photos、meta：全家共用
+//   members/{email}：家人名單和權限（editor 可修改、viewer 只能檢視；minor 初心者看不到限制級的書）
+//   people/{uid}/reading、wishlist：每個人自己的閱讀紀錄和願望清單
+//   people/{uid}/private：隱私書籍，只有本人看得到（管理者也看不到）
+//   people/{uid}/privatePhotos：隱私書籍和願望清單的照片，只有本人看得到
+//   people/{uid}/privateBin：隱私書籍的回收桶紀錄（沒有書名），管理者靠它永久刪除
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{lib} {
+      function signedIn() {
+        return request.auth != null && request.auth.token.email_verified == true;
+      }
+      function myEmail() {
+        return request.auth.token.email.lower();
+      }
+      function isOwner() {
+        return signedIn() && request.auth.uid == lib && myEmail() == "YOUR_EMAIL@gmail.com";
+      }
+      function memberPath() {
+        return /databases/$(database)/documents/users/$(lib)/members/$(myEmail());
+      }
+      function isMember() {
+        return signedIn() && exists(memberPath());
+      }
+      function canRead() {
+        return isOwner() || isMember();
+      }
+      function canEdit() {
+        return isOwner() || (isMember() && get(memberPath()).data.role == 'editor');
+      }
+      function isMinor() {
+        return !isOwner() && isMember() && get(memberPath()).data.get('minor', false) == true;
+      }
+      function isSelf(uid) {
+        return signedIn() && request.auth.uid == uid && canRead();
+      }
+
+      // 共用資料：大家都能看；可修改的人能新增、修改；只有管理者能真的刪除
+      match /rooms/{id} {
+        allow read: if canRead();
+        allow create, update: if canEdit();
+        allow delete: if isOwner();
+      }
+      match /cabinets/{id} {
+        allow read: if canRead();
+        allow create, update: if canEdit();
+        allow delete: if isOwner();
+      }
+      match /categories/{id} {
+        allow read: if canRead();
+        allow create, update: if canEdit();
+        allow delete: if isOwner();
+      }
+      // 刪書是把 deletedAt 寫進去（移到回收桶），只有管理者能永久刪除；
+      // 例外：把書改成隱私時，可修改的人可以把它從共用書庫拿走（同時要放進自己的隱私書籍）
+      // 初心者只讀得到 adult == false 的書
+      match /books/{id} {
+        allow read: if canRead() && (!isMinor() || resource.data.adult == false);
+        allow create, update: if canEdit();
+        allow delete: if isOwner()
+          || (canEdit() && existsAfter(/databases/$(database)/documents/users/$(lib)/people/$(request.auth.uid)/private/$(id)));
+      }
+      // 照片：只能檢視的人也能幫自己的願望清單拍照；改照片要權限；刪照片只有管理者（或搬去隱私）
+      match /photos/{id} {
+        allow read: if canRead();
+        allow create: if canRead();
+        allow update: if canEdit();
+        allow delete: if isOwner()
+          || (canEdit() && existsAfter(/databases/$(database)/documents/users/$(lib)/people/$(request.auth.uid)/privatePhotos/$(id)));
+      }
+      // 設定：回收桶的天數和開關只有管理者能改
+      match /meta/{id} {
+        allow read: if canRead();
+        allow create: if isOwner();
+        allow update: if isOwner()
+          || (canEdit() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['binDays', 'binOnVerify']));
+        allow delete: if isOwner();
+      }
+      // 家人名單：管理者管理；家人只能看自己那一筆，登入時更新自己的 uid 和最後上線時間
+      match /members/{email} {
+        allow read: if isOwner() || (signedIn() && myEmail() == email);
+        allow create, delete: if isOwner();
+        allow update: if isOwner()
+          || (signedIn() && myEmail() == email
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uid', 'gname', 'lastSeen']));
+      }
+      // 每個人自己的閱讀紀錄和願望清單：本人和管理者（備份、還原要用）
+      match /people/{uid}/reading/{id} {
+        allow read, write: if isOwner() || isSelf(uid);
+      }
+      match /people/{uid}/wishlist/{id} {
+        allow read, write: if isOwner() || isSelf(uid);
+      }
+      // 隱私書籍：只有本人能看、能改；本人不能直接刪（要丟回收桶），只有管理者能永久刪除。
+      // 例外：取消隱私或改成願望清單時，本人可以把它搬走（同時要寫到共用書庫或自己的願望清單）
+      match /people/{uid}/private/{id} {
+        allow read, create, update: if isSelf(uid);
+        allow delete: if isOwner()
+          || (isSelf(uid) && (existsAfter(/databases/$(database)/documents/users/$(lib)/books/$(id))
+                              || existsAfter(/databases/$(database)/documents/users/$(lib)/people/$(uid)/wishlist/$(id))));
+      }
+      match /people/{uid}/privatePhotos/{id} {
+        allow read, create, update: if isSelf(uid);
+        allow delete: if isSelf(uid) || isOwner();
+      }
+      match /people/{uid}/privateBin/{id} {
+        allow read: if isSelf(uid) || isOwner();
+        allow create, update: if isSelf(uid);
+        allow delete: if isSelf(uid) || isOwner();
+      }
+    }
+  }
+}
+`;
+const rulesText = email => RULES_TEMPLATE
+  .replace(/\/\/ 使用前請把 YOUR_EMAIL[^\n]*\n\/\/ 也可以在吋讀[^\n]*\n/, `// 管理者：${lowerEmail(email)}（從吋讀複製，已經填好）\n`)
+  .split('YOUR_EMAIL@gmail.com').join(lowerEmail(email));
 function parseConfig(text) {
   const keys = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId', 'measurementId'];
   const cfg = {};
@@ -4003,8 +6131,23 @@ async function startFirebase(cfg) {
   await afterLogin();
 }
 async function afterLogin() {
-  app.screen = 'loading'; app.loadingMsg = '正在同步資料…'; app.syncError = ''; render();
+  app.screen = 'loading'; app.loadingMsg = '正在確認身分…'; app.syncError = ''; render();
+  let r;
+  try { r = await B().resolveRole(); }
+  catch (e) { app.screen = 'error'; app.error = '無法確認身分：' + errMsg(e); render(); return; }
+  if (r === 'nomember' || r === 'denied') { app.noMemberKind = r; app.screen = 'nomember'; render(); return; }
+  app.loadingMsg = '正在同步資料…'; render();
+  B().onRoleChange = (role, why) => {
+    if (why === 'minor') { toast(B().minor ? '你被設成初心者，重新整理中…' : '你不再是初心者，重新整理中…'); setTimeout(() => location.reload(), 1500); return; }
+    if (!role) { app.noMemberKind = 'removed'; app.screen = 'nomember'; render(); return; }
+    toast(`你的權限改成「${ROLE_LABEL[role]}」`); if (app.screen === 'main') { if (cur() && cur().name === 'bookEdit') popLevels(1); else render(); }
+  };
   await B().startSync(e => { app.syncError = errMsg(e); toast(app.syncError, 'err'); });
+  if (B().isAdmin && B().metaExists === false) B().putMeta({ owners: B().meta.owners || [] });   // 設定要先存在，家人才能更新出版商清單
+  if (B().isAdmin && Object.values(B().raw.books).some(isLegacyBook)) {
+    app.loadingMsg = '正在把資料升級成家人共用格式…'; render();
+    try { const n = await B().migrateLegacy(); if (n) toast(`資料已升級：閱讀紀錄和願望清單都歸到你名下（${nfmt(n)} 本）`); } catch (e) { toast('升級資料失敗：' + errMsg(e), 'err'); }
+  }
   enterMain();
 }
 function registerSW() {
@@ -4017,12 +6160,23 @@ async function boot() {
   app.savedDraft = LS.get(DRAFT_KEY);
   registerSW();
   try { history.replaceState({ tsundoku: true }, ''); } catch (e) {}
+  const invP = new URLSearchParams(location.search).get('invite');
+  if (invP) {
+    try { history.replaceState({ tsundoku: true }, '', location.pathname); } catch (e) {}
+    const inv = parseInvite(invP), curLib = LS.get(LIB_KEY), curCfg = LS.get('tsundoku-firebase-config');
+    if (!inv) toast('邀請連結看不懂，可能複製得不完整', 'err');
+    else if (!(LS.get('tsundoku-mode') === 'firebase' && curCfg && curCfg.projectId === inv.cfg.projectId && curLib && curLib.lib === inv.lib)) { app.invite = inv; app.screen = 'invite'; render(); return; }
+  }
+  return bootMode();
+}
+function bootMode() {
   const mode = LS.get('tsundoku-mode');
   if (mode === 'firebase') { const cfg = LS.get('tsundoku-firebase-config'); if (cfg) return startFirebase(cfg); }
   if (mode === 'demo') return startDemo(false);
   if (app.inFrame) return startDemo(true);
   app.screen = 'setup'; render();
 }
+if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') window.tsundoku = { app, B };   // 測試用
 
 /* ---------- 事件 ---------- */
 document.addEventListener('click', async e => {
@@ -4051,6 +6205,7 @@ document.addEventListener('click', async e => {
     case 'seg': {
       const s = el.dataset.seg, v = el.dataset.v;
       if (s.startsWith('bk-') || s.startsWith('pick-')) { segExtra(s, v); break; }
+      if (s === 'demo-role') { B().setDemoRole(v); toast(`現在是「${ROLE_LABEL[v]}」的身分`); render(); break; }
       if (s === 'ed-depth') d.defaultDepth = +v;
       else if (s === 'ed-numbering') d.numbering = v;
       else if (s === 'ed-tool') app.edTool = v;
@@ -4076,9 +6231,16 @@ document.addEventListener('click', async e => {
     case 'sign-out':
       if (await confirmBox('登出？', '登出後要再用 Google 帳號登入才能看到資料。', '登出')) { await B().signOut(); app.screen = 'login'; render(); }
       break;
+    case 'switch-account': try { await B().signOut(); } catch (err) {} app.loginError = ''; app.screen = 'login'; render(); break;
     case 'change-config':
-      if (await confirmBox('更換 Firebase 設定？', '這台裝置會忘記目前的 Firebase 設定，資料仍然留在 Firebase 裡。', '更換')) { LS.del('tsundoku-firebase-config'); LS.del('tsundoku-mode'); location.reload(); }
+      if (await confirmBox('更換 Firebase 設定？', '這台裝置會忘記目前的 Firebase 設定，資料仍然留在 Firebase 裡。', '更換')) { LS.del('tsundoku-firebase-config'); LS.del('tsundoku-mode'); LS.del(LIB_KEY); location.reload(); }
       break;
+    case 'accept-invite': {
+      const inv = app.invite; if (!inv) return;
+      LS.set('tsundoku-firebase-config', inv.cfg); LS.set(LIB_KEY, { lib: inv.lib, owner: inv.owner }); LS.set('tsundoku-mode', 'firebase');
+      app.invite = null; startFirebase(inv.cfg); break;
+    }
+    case 'decline-invite': app.invite = null; bootMode(); break;
     case 'to-firebase':
       if (await confirmBox('改用 Firebase？', '示範資料不會自動搬過去。想保留的話，可以先匯出完整備份，連上 Firebase 後再匯入。', '繼續')) { LS.del('tsundoku-mode'); app.screen = 'setup'; render(); }
       break;
@@ -4094,6 +6256,7 @@ document.addEventListener('click', async e => {
 });
 document.addEventListener('input', e => {
   if (e.target.dataset && e.target.dataset.field) { if (e.target.tagName !== 'SELECT') setDraftField(e.target); return; }
+  if (e.target.id === 'pick-loan-person') { if (app.pick) app.pick.loanPerson = e.target.value; return; }
   if (e.target.id === 'book-q') { app.bookQuery = e.target.value; resetBookPage(); const l = $('#book-list'); if (l) l.innerHTML = bookListHTML(); return; }
   if (!app.draft) return;
   if (e.target.id === 'ed-code') app.draft.code = e.target.value;

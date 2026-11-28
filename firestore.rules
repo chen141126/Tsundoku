@@ -1,15 +1,120 @@
 rules_version = '2';
 
-// 吋讀 Tsundoku 的 Firestore 安全規則
-// 只有下面這個 Google 帳號能讀寫自己的資料，其他人就算拿到設定也無法使用。
-// 使用前請把 YOUR_EMAIL@gmail.com 換成你自己的 Gmail。
+// 吋讀 Tsundoku 的 Firestore 安全規則（第六階段：家人共用）
+// 使用前請把 YOUR_EMAIL@gmail.com 換成管理者（你自己）的 Gmail，要全部小寫。
+// 也可以在吋讀的「設定 › 家人與權限 › 更新資料庫規則」直接複製已經填好的版本。
+//
+// 書庫放在 users/{管理者的 uid} 底下：
+//   rooms、cabinets、categories、books、photos、meta：全家共用
+//   members/{email}：家人名單和權限（editor 可修改、viewer 只能檢視；minor 初心者看不到限制級的書）
+//   people/{uid}/reading、wishlist：每個人自己的閱讀紀錄和願望清單
+//   people/{uid}/private：隱私書籍，只有本人看得到（管理者也看不到）
+//   people/{uid}/privatePhotos：隱私書籍和願望清單的照片，只有本人看得到
+//   people/{uid}/privateBin：隱私書籍的回收桶紀錄（沒有書名），管理者靠它永久刪除
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{uid}/{document=**} {
-      allow read, write: if request.auth != null
-        && request.auth.uid == uid
-        && request.auth.token.email == "YOUR_EMAIL@gmail.com"
-        && request.auth.token.email_verified == true;
+    match /users/{lib} {
+      function signedIn() {
+        return request.auth != null && request.auth.token.email_verified == true;
+      }
+      function myEmail() {
+        return request.auth.token.email.lower();
+      }
+      function isOwner() {
+        return signedIn() && request.auth.uid == lib && myEmail() == "YOUR_EMAIL@gmail.com";
+      }
+      function memberPath() {
+        return /databases/$(database)/documents/users/$(lib)/members/$(myEmail());
+      }
+      function isMember() {
+        return signedIn() && exists(memberPath());
+      }
+      function canRead() {
+        return isOwner() || isMember();
+      }
+      function canEdit() {
+        return isOwner() || (isMember() && get(memberPath()).data.role == 'editor');
+      }
+      function isMinor() {
+        return !isOwner() && isMember() && get(memberPath()).data.get('minor', false) == true;
+      }
+      function isSelf(uid) {
+        return signedIn() && request.auth.uid == uid && canRead();
+      }
+
+      // 共用資料：大家都能看；可修改的人能新增、修改；只有管理者能真的刪除
+      match /rooms/{id} {
+        allow read: if canRead();
+        allow create, update: if canEdit();
+        allow delete: if isOwner();
+      }
+      match /cabinets/{id} {
+        allow read: if canRead();
+        allow create, update: if canEdit();
+        allow delete: if isOwner();
+      }
+      match /categories/{id} {
+        allow read: if canRead();
+        allow create, update: if canEdit();
+        allow delete: if isOwner();
+      }
+      // 刪書是把 deletedAt 寫進去（移到回收桶），只有管理者能永久刪除；
+      // 例外：把書改成隱私時，可修改的人可以把它從共用書庫拿走（同時要放進自己的隱私書籍）
+      // 初心者只讀得到 adult == false 的書
+      match /books/{id} {
+        allow read: if canRead() && (!isMinor() || resource.data.adult == false);
+        allow create, update: if canEdit();
+        allow delete: if isOwner()
+          || (canEdit() && existsAfter(/databases/$(database)/documents/users/$(lib)/people/$(request.auth.uid)/private/$(id)));
+      }
+      // 照片：只能檢視的人也能幫自己的願望清單拍照；改照片要權限；刪照片只有管理者（或搬去隱私）
+      match /photos/{id} {
+        allow read: if canRead();
+        allow create: if canRead();
+        allow update: if canEdit();
+        allow delete: if isOwner()
+          || (canEdit() && existsAfter(/databases/$(database)/documents/users/$(lib)/people/$(request.auth.uid)/privatePhotos/$(id)));
+      }
+      // 設定：回收桶的天數和開關只有管理者能改
+      match /meta/{id} {
+        allow read: if canRead();
+        allow create: if isOwner();
+        allow update: if isOwner()
+          || (canEdit() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['binDays', 'binOnVerify']));
+        allow delete: if isOwner();
+      }
+      // 家人名單：管理者管理；家人只能看自己那一筆，登入時更新自己的 uid 和最後上線時間
+      match /members/{email} {
+        allow read: if isOwner() || (signedIn() && myEmail() == email);
+        allow create, delete: if isOwner();
+        allow update: if isOwner()
+          || (signedIn() && myEmail() == email
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uid', 'gname', 'lastSeen']));
+      }
+      // 每個人自己的閱讀紀錄和願望清單：本人和管理者（備份、還原要用）
+      match /people/{uid}/reading/{id} {
+        allow read, write: if isOwner() || isSelf(uid);
+      }
+      match /people/{uid}/wishlist/{id} {
+        allow read, write: if isOwner() || isSelf(uid);
+      }
+      // 隱私書籍：只有本人能看、能改；本人不能直接刪（要丟回收桶），只有管理者能永久刪除。
+      // 例外：取消隱私或改成願望清單時，本人可以把它搬走（同時要寫到共用書庫或自己的願望清單）
+      match /people/{uid}/private/{id} {
+        allow read, create, update: if isSelf(uid);
+        allow delete: if isOwner()
+          || (isSelf(uid) && (existsAfter(/databases/$(database)/documents/users/$(lib)/books/$(id))
+                              || existsAfter(/databases/$(database)/documents/users/$(lib)/people/$(uid)/wishlist/$(id))));
+      }
+      match /people/{uid}/privatePhotos/{id} {
+        allow read, create, update: if isSelf(uid);
+        allow delete: if isSelf(uid) || isOwner();
+      }
+      match /people/{uid}/privateBin/{id} {
+        allow read: if isSelf(uid) || isOwner();
+        allow create, update: if isSelf(uid);
+        allow delete: if isSelf(uid) || isOwner();
+      }
     }
   }
 }
