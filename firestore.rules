@@ -11,6 +11,9 @@ rules_version = '2';
 //   people/{uid}/private：隱私書籍，只有本人看得到（管理者也看不到）
 //   people/{uid}/privatePhotos：隱私書籍和願望清單的照片，只有本人看得到
 //   people/{uid}/privateBin：隱私書籍的回收桶紀錄（沒有書名），管理者靠它永久刪除
+//   circles/{圈}：小圈圈（members 成員、pending 邀請中），circles/{圈}/books、photos：只有圈裡的人看得到
+//   circleBin：小圈圈書的回收桶紀錄（有圈名、沒有書名），管理者靠它永久刪除
+//   directory：家人名冊（稱呼），拉小圈圈用；moves：書搬到小圈圈的記號
 service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{lib} {
@@ -41,6 +44,21 @@ service cloud.firestore {
       function isSelf(uid) {
         return signedIn() && request.auth.uid == uid && canRead();
       }
+      function circlePath(cid) {
+        return /databases/$(database)/documents/users/$(lib)/circles/$(cid);
+      }
+      function inCircle(cid) {
+        return canRead() && request.auth.uid in get(circlePath(cid)).data.members;
+      }
+      // 書搬到小圈圈：同一批寫入要有搬家記號，而且書真的出現在那個小圈圈裡
+      function movedToCircle(id) {
+        return existsAfter(/databases/$(database)/documents/users/$(lib)/moves/$(id))
+          && existsAfter(/databases/$(database)/documents/users/$(lib)/circles/$(getAfter(/databases/$(database)/documents/users/$(lib)/moves/$(id)).data.cid)/books/$(id));
+      }
+      function photoMovedToCircle(bookId, id) {
+        return existsAfter(/databases/$(database)/documents/users/$(lib)/moves/$(bookId))
+          && existsAfter(/databases/$(database)/documents/users/$(lib)/circles/$(getAfter(/databases/$(database)/documents/users/$(lib)/moves/$(bookId)).data.cid)/photos/$(id));
+      }
 
       // 共用資料：大家都能看；可修改的人能新增、修改；只有管理者能真的刪除
       match /rooms/{id} {
@@ -65,7 +83,7 @@ service cloud.firestore {
         allow read: if canRead() && (!isMinor() || resource.data.adult == false);
         allow create, update: if canEdit();
         allow delete: if isOwner()
-          || (canEdit() && existsAfter(/databases/$(database)/documents/users/$(lib)/people/$(request.auth.uid)/private/$(id)));
+          || (canEdit() && (existsAfter(/databases/$(database)/documents/users/$(lib)/people/$(request.auth.uid)/private/$(id)) || movedToCircle(id)));
       }
       // 照片：只能檢視的人也能幫自己的願望清單拍照；改照片要權限；刪照片只有管理者（或搬去隱私）
       match /photos/{id} {
@@ -73,7 +91,8 @@ service cloud.firestore {
         allow create: if canRead();
         allow update: if canEdit();
         allow delete: if isOwner()
-          || (canEdit() && existsAfter(/databases/$(database)/documents/users/$(lib)/people/$(request.auth.uid)/privatePhotos/$(id)));
+          || (canEdit() && (existsAfter(/databases/$(database)/documents/users/$(lib)/people/$(request.auth.uid)/privatePhotos/$(id))
+                            || photoMovedToCircle(resource.data.bookId, id)));
       }
       // 設定：回收桶的天數和開關只有管理者能改
       match /meta/{id} {
@@ -104,7 +123,8 @@ service cloud.firestore {
         allow read, create, update: if isSelf(uid);
         allow delete: if isOwner()
           || (isSelf(uid) && (existsAfter(/databases/$(database)/documents/users/$(lib)/books/$(id))
-                              || existsAfter(/databases/$(database)/documents/users/$(lib)/people/$(uid)/wishlist/$(id))));
+                              || existsAfter(/databases/$(database)/documents/users/$(lib)/people/$(uid)/wishlist/$(id))
+                              || movedToCircle(id)));
       }
       match /people/{uid}/privatePhotos/{id} {
         allow read, create, update: if isSelf(uid);
@@ -114,6 +134,59 @@ service cloud.firestore {
         allow read: if isSelf(uid) || isOwner();
         allow create, update: if isSelf(uid);
         allow delete: if isSelf(uid) || isOwner();
+      }
+      // 家人名冊：大家都能看；每個人只能寫自己那一筆
+      match /directory/{uid} {
+        allow read: if canRead();
+        allow write: if isSelf(uid);
+      }
+      match /moves/{id} {
+        allow read, create, update: if canRead();
+        allow delete: if isOwner();
+      }
+      // 小圈圈：只有成員和被邀請的人看得到（管理者也一樣）；大家平等。
+      //   成員：可以改名、邀請、取消邀請、自己退出（不能直接把別人加進成員）
+      //   最後一個人退出：成員變成空的（解散），裡面剩下的書（例如初心者看不到的）由管理者永久刪除
+      //   被邀請的人：只能接受（把自己從 pending 移到 members）或拒絕（把自己從 pending 拿掉）
+      match /circles/{cid} {
+        function dissolvedForOwner() {
+          return isOwner() && get(circlePath(cid)).data.members == [];
+        }
+        allow read: if (canRead() && (request.auth.uid in resource.data.members || request.auth.uid in resource.data.pending))
+          || (isOwner() && resource.data.members == []);
+        allow create: if canRead() && request.resource.data.members == [request.auth.uid] && !(request.auth.uid in request.resource.data.pending);
+        allow update: if canRead() && (
+          (request.auth.uid in resource.data.members
+            && (request.resource.data.members == resource.data.members
+                || request.resource.data.members == resource.data.members.removeAll([request.auth.uid])))
+          || (request.auth.uid in resource.data.pending && !(request.auth.uid in resource.data.members)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'pending', 'updatedAt'])
+            && request.resource.data.pending == resource.data.pending.removeAll([request.auth.uid])
+            && (request.resource.data.members == resource.data.members
+                || request.resource.data.members == resource.data.members.concat([request.auth.uid])))
+        );
+        allow delete: if isOwner() && resource.data.members == [];
+        // 圈裡的書：成員都能新增、修改；刪除（永久）只有管理者，或搬到別的地方
+        match /books/{id} {
+          allow read: if (inCircle(cid) && (!isMinor() || resource.data.adult == false)) || dissolvedForOwner();
+          allow create, update: if inCircle(cid);
+          allow delete: if isOwner()
+            || (inCircle(cid) && (existsAfter(/databases/$(database)/documents/users/$(lib)/books/$(id))
+                                  || existsAfter(/databases/$(database)/documents/users/$(lib)/people/$(request.auth.uid)/private/$(id))
+                                  || existsAfter(/databases/$(database)/documents/users/$(lib)/people/$(request.auth.uid)/wishlist/$(id))
+                                  || movedToCircle(id)));
+        }
+        match /photos/{id} {
+          allow read, write: if inCircle(cid);
+          allow read: if dissolvedForOwner();
+          allow delete: if isOwner();
+        }
+      }
+      // 小圈圈書的回收桶紀錄：只有管理者看得到（有圈名、沒有書名）
+      match /circleBin/{id} {
+        allow read: if isOwner();
+        allow create, update: if canRead() && request.auth.uid in get(circlePath(request.resource.data.cid)).data.members;
+        allow delete: if isOwner() || (canRead() && request.auth.uid in get(circlePath(resource.data.cid)).data.members);
       }
     }
   }
